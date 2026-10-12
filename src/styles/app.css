@@ -1,0 +1,23 @@
+/*
+ * PLACEHOLDER stylesheet (phase 2a).
+ * Phase 2b replaces the theme block with the design tokens from _spec/hangar/tokens.css
+ * and adds the @fontsource imports chosen in DESIGN.md.
+ */
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-white text-slate-900 antialiased;
+  }
+}
