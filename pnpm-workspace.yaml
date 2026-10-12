@@ -1,0 +1,9 @@
+# Single-package repo; this file only carries pnpm settings.
+onlyBuiltDependencies:
+  - msw
+peerDependencyRules:
+  allowedVersions:
+    # jsx-a11y only uses context.options/report/settings, which ESLint 10 still provides.
+    eslint-plugin-jsx-a11y>eslint: '10'
+    # openapi-typescript is a CLI here; it runs fine on TypeScript 6.
+    openapi-typescript>typescript: '6'

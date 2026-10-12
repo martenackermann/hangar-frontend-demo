@@ -1,0 +1,13 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.wasm binary
+*.woff2 binary
+
+# Generated files: regenerate instead of hand-merging (see CONVENTIONS.md).
+src/routeTree.gen.ts linguist-generated=true -diff
+src/lib/api/schema.d.ts linguist-generated=true
+public/mockServiceWorker.js linguist-generated=true
+pnpm-lock.yaml linguist-generated=true -diff
