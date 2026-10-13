@@ -70,8 +70,10 @@ test('the SR drawer shows the Appointment and Deployment tabs', async ({ page })
     .first()
     .click()
   const panel = page.getByRole('complementary', { name: 'Planner panel' })
+  // a planned stop (its SR is provided), not one of the day's unplanned candidates
   await panel
-    .getByRole('button', { name: /^SR\d{7}$/ })
+    .getByRole('region', { name: 'Stops in order' })
+    .getByRole('button', { name: /^\d{2}:\d{2} SR\d{7}/ })
     .first()
     .click()
   const drawer = page.getByRole('complementary', { name: /Service request SR/ })
