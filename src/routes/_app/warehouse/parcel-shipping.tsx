@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { MoreHorizontal, Package, PackageCheck, PanelRightOpen, Truck, Undo2 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { z } from 'zod'
 import { FilterBar, type FilterDef } from '@/components/data-table/filter-bar'
 import { CopyableId, IdInk } from '@/components/domain/status'
@@ -44,6 +44,10 @@ import { useHubId } from '@/modules/staging/hooks/use-hub'
  * Parcel shipping (SCREENS.md §5.5): ready list (left) → packing station for the selected
  * request (scan, options, **Create shipment** via the carrier, label + tracking) → "Shipped"
  * table of the last 7 days. The selected request lives in `?selected=`.
+ *
+ * Parcels leave from the hubs whose regions ship by parcel (Eastgate in the demo data), so
+ * without `?siteId=` the screen opens on the hub that has parcel orders ready — the user's own
+ * hub when it has some — instead of an empty Riverton.
  */
 const PARCEL = ['parcel_to_user', 'parcel_to_pickup_point'] as const
 
@@ -62,17 +66,47 @@ export const Route = createFileRoute('/_app/warehouse/parcel-shipping')({
   component: ParcelShippingPage,
 })
 
+/** Ready parcel orders per hub (all hubs, unfiltered) → the default hub and the empty hint. */
+function useParcelHubs() {
+  const query = useQuery(stagingQueries.parcelPicking({}))
+  return useMemo(() => {
+    const counts = new Map<number, number>()
+    for (const row of query.data?.data ?? []) {
+      const id = row.supplyingSite?.id
+      if (id !== undefined) counts.set(id, (counts.get(id) ?? 0) + 1)
+    }
+    return { loaded: query.data !== undefined || query.isError, counts }
+  }, [query.data, query.isError])
+}
+
 function ParcelShippingPage() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const enums = useEnums()
   const hubs = useHubs()
-  const siteId = useHubId(search.siteId)
+  const homeHub = useHubId(undefined)
+  const explicitHub = useHubId(search.siteId)
+  const parcelHubs = useParcelHubs()
+  const busiest = [...parcelHubs.counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]
+  const siteId =
+    search.siteId !== undefined
+      ? explicitHub
+      : !parcelHubs.loaded
+        ? undefined
+        : homeHub !== undefined && parcelHubs.counts.has(homeHub)
+          ? homeHub
+          : (busiest?.[0] ?? homeHub)
   const site = hubs.find((hub) => hub.id === siteId)
   const drawer = useDrawerNavigation()
   const [created, setCreated] = useState<Record<number, ShipmentCreated>>({})
+  // Filters pin the hub, so a default hub never changes under the user while they type.
   const patch = (values: Partial<Search>) =>
-    void navigate({ search: (prev) => ({ ...prev, ...values }) })
+    void navigate({ search: (prev) => ({ ...prev, siteId: prev.siteId ?? siteId, ...values }) })
+  const filtered = Boolean(search.q) || Boolean(search.deliveryType?.length)
+  const otherHub = hubs
+    .filter((hub) => hub.id !== siteId && parcelHubs.counts.has(hub.id))
+    .map((hub) => ({ hub, count: parcelHubs.counts.get(hub.id) ?? 0 }))
+    .sort((a, b) => b.count - a.count)[0]
 
   const list = useQuery({
     ...stagingQueries.parcelPicking({
@@ -126,9 +160,40 @@ function ParcelShippingPage() {
             <SkeletonRows rows={6} widths={[90, 140, 60]} />
           ) : list.isError ? (
             <DrawerError error={list.error} onRetry={() => void list.refetch()} />
+          ) : rows.length === 0 && filtered ? (
+            <EmptyState
+              icon={Package}
+              title="No parcel orders match these filters"
+              actions={
+                <Button onClick={() => patch({ q: undefined, deliveryType: undefined })}>
+                  Clear filters
+                </Button>
+              }
+            />
           ) : rows.length === 0 ? (
-            <EmptyState icon={Package} title="No parcel orders ready for packing">
-              Orders appear here once they are closed.
+            <EmptyState
+              icon={Package}
+              title={`No parcel orders ready${site ? ` at ${site.name}` : ''}`}
+              actions={
+                <>
+                  <Button asChild variant="primary">
+                    <Link to="/warehouse/order-closing" search={{ siteId }}>
+                      Go to order closing
+                    </Link>
+                  </Button>
+                  {otherHub && (
+                    <Button
+                      onClick={() => patch({ siteId: otherHub.hub.id, selected: undefined })}
+                    >
+                      Show {otherHub.hub.name}
+                    </Button>
+                  )}
+                </>
+              }
+            >
+              {otherHub
+                ? `${otherHub.hub.name} has ${otherHub.count} ready to pack.`
+                : 'Orders appear here once order closing hands them over.'}
             </EmptyState>
           ) : (
             <ReadyList
@@ -166,6 +231,8 @@ function ParcelShippingPage() {
                 onCreated={(value) => setCreated((prev) => ({ ...prev, [selected.id]: value }))}
                 onClosed={() => patch({ selected: undefined })}
               />
+            ) : rows.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-fg-3">Nothing to pack at this hub.</p>
             ) : (
               <EmptyState icon={PackageCheck} title="Select an order to pack">
                 Scan each device into the parcel, then create the shipment.
@@ -180,7 +247,11 @@ function ParcelShippingPage() {
               <ShipmentsTable
                 shipments={shipped.data?.data ?? []}
                 onOpen={(id) => drawer.open('sr', id, 'shipping')}
-                empty={<p className="px-4 text-sm text-fg-3">No shipments in the last 7 days.</p>}
+                empty={
+                  <p className="px-4 text-sm text-fg-3">
+                    No shipments{site ? ` from ${site.name}` : ''} in the last 7 days.
+                  </p>
+                }
               />
             )}
           </section>
@@ -217,7 +288,7 @@ function ReadyList({
               )}
             >
               <span className="flex items-center gap-2">
-                <span className="hg-mono text-sm font-semibold">{row.number}</span>
+                <IdInk value={row.number} className="text-sm font-semibold" />
                 <Appointment startAt={row.appointmentStartAt} className="text-xs" />
                 <span className="ml-auto text-xs text-fg-2">
                   {packed}/{newItems.length} packed

@@ -1,15 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, stripSearchParams } from '@tanstack/react-router'
-import { Inbox } from 'lucide-react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { Inbox, PackageX } from 'lucide-react'
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import { z } from 'zod'
 import { FilterBar, type FilterDef } from '@/components/data-table/filter-bar'
-import { StatusBadge } from '@/components/domain/status'
+import { IdInk, StatusBadge } from '@/components/domain/status'
 import { DrawerError } from '@/components/drawer/drawer-states'
 import { Avatar, EmptyState, SkeletonRows } from '@/components/ui/feedback'
+import { Icon } from '@/components/ui/icon'
 import { Page, PageHeader } from '@/components/ui/page'
 import { SegmentedControl } from '@/components/ui/segmented-control'
-import { Tooltip } from '@/components/ui/tooltip'
 import { useHubs, useRegions } from '@/lib/api/core'
 import type { PersonalizationQueueItem } from '@/lib/api/types'
 import { requirePermission } from '@/lib/auth/guards'
@@ -97,6 +98,10 @@ function PersonalizationPage() {
   const rows = useMemo(() => query.data?.data ?? [], [query.data])
   const patch = (values: Partial<Search>) =>
     void navigate({ search: (prev) => ({ ...prev, ...values }) })
+  const select = useCallback(
+    (id: number) => void navigate({ search: (prev) => ({ ...prev, selected: id }) }),
+    [navigate],
+  )
 
   const filters: FilterDef[] = [
     {
@@ -173,7 +178,7 @@ function PersonalizationPage() {
               ]}
             />
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {query.isPending ? (
               <SkeletonRows rows={8} widths={[80, 160, 90]} />
             ) : query.isError ? (
@@ -183,11 +188,7 @@ function PersonalizationPage() {
                 Switch the queue tab or hub, or clear the filters.
               </EmptyState>
             ) : (
-              <QueueList
-                rows={rows}
-                selected={search.selected}
-                onSelect={(id) => patch({ selected: id })}
-              />
+              <QueueList rows={rows} selected={search.selected} onSelect={select} />
             )}
           </div>
         </section>
@@ -203,6 +204,10 @@ function PersonalizationPage() {
   )
 }
 
+/**
+ * The queue (up to 200 requests) is virtualised and its rows are memoised, so moving the
+ * selection with the arrow keys re-renders two rows, not the whole list.
+ */
 function QueueList({
   rows,
   selected,
@@ -212,72 +217,125 @@ function QueueList({
   selected: number | undefined
   onSelect: (id: number) => void
 }) {
-  const activeRef = useRef<HTMLButtonElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  // TanStack Virtual returns fresh functions each render, so React Compiler skips this component.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 76,
+    overscan: 6,
+    getItemKey: (index) => rows[index]?.id ?? index,
+  })
+  const selectedIndex = rows.findIndex((row) => row.id === selected)
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: 'nearest' })
-  }, [selected])
+    if (selectedIndex >= 0) virtualizer.scrollToIndex(selectedIndex, { align: 'auto' })
+  }, [selectedIndex, virtualizer])
   return (
-    <ul className="grid" aria-label="Requests">
-      {rows.map((row) => {
-        const active = row.id === selected
-        return (
-          <li key={row.id} className="border-b border-line-subtle">
-            <button
-              ref={active ? activeRef : undefined}
-              type="button"
-              aria-current={active ? 'true' : undefined}
-              onClick={() => onSelect(row.id)}
-              className={cn(
-                'grid w-full gap-1 px-3 py-2 text-left hover:bg-hover',
-                active && 'bg-accent-wash',
-              )}
-            >
-              <span className="flex items-center gap-2">
-                <span className="hg-mono text-sm font-semibold">{row.number}</span>
-                <Appointment startAt={row.appointmentStartAt} className="text-xs" />
-                <span className="ml-auto flex items-center gap-1.5">
-                  {row.editor && <Avatar name={row.editor.displayName} size={18} tone="workshop" />}
-                  <StatusBadge entity="serviceRequestStatus" state={row.status} size="sm" />
-                </span>
-              </span>
-              <span className="flex items-center gap-2 text-xs text-fg-2">
-                <span className="truncate">{row.contact.displayName}</span>
-                {row.region && <span className="text-fg-3">· {row.region.name}</span>}
-              </span>
-              <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-fg-2">
-                {row.stockHints.map((hint) => (
-                  <Tooltip
-                    key={hint.slot}
-                    content={
-                      hint.availableCount > 0
-                        ? `${hint.availableCount} in staging`
-                        : 'None in staging'
-                    }
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      <span
-                        aria-hidden
-                        className={cn(
-                          'size-1.5 rounded-full',
-                          hint.availableCount > 0 ? 'bg-tone-done' : 'bg-tone-critical',
-                        )}
-                      />
-                      {hint.article?.internalDescription ??
-                        row.items.find((item) => item.slot === hint.slot)?.requestedType}
-                      <span className="sr-only">
-                        {hint.availableCount > 0
-                          ? `, ${hint.availableCount} in staging`
-                          : ', none in staging'}
-                      </span>
-                    </span>
-                  </Tooltip>
-                ))}
-                {row.stockHints.length === 0 && <span className="text-fg-3">No new devices</span>}
-              </span>
-            </button>
-          </li>
-        )
-      })}
-    </ul>
+    <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+      <ul aria-label="Requests" className="relative" style={{ height: virtualizer.getTotalSize() }}>
+        {virtualizer.getVirtualItems().map((item) => {
+          const row = rows[item.index]
+          if (!row) return null
+          return (
+            <QueueRow
+              key={row.id}
+              measureRef={virtualizer.measureElement}
+              index={item.index}
+              start={item.start}
+              row={row}
+              active={row.id === selected}
+              onSelect={onSelect}
+            />
+          )
+        })}
+      </ul>
+    </div>
   )
 }
+
+/** Stock at the hub's staging per requested device: a mono count, or package-x + words. */
+function StockHint({
+  hint,
+  label,
+}: {
+  hint: PersonalizationQueueItem['stockHints'][number]
+  label: string | null | undefined
+}) {
+  const none = hint.availableCount === 0
+  return (
+    <span className="inline-flex items-center gap-1">
+      {none && <Icon icon={PackageX} size={12} className="text-tone-critical" />}
+      <span>{label}</span>
+      {none ? (
+        <span className="text-tone-critical-fg">· None in staging</span>
+      ) : (
+        <span className="text-fg-3">
+          · <span className="hg-mono text-fg-2">{formatNumber(hint.availableCount)}</span> in
+          staging
+        </span>
+      )}
+    </span>
+  )
+}
+
+const QueueRow = memo(function QueueRow({
+  measureRef,
+  index,
+  start,
+  row,
+  active,
+  onSelect,
+}: {
+  measureRef: (node: HTMLLIElement | null) => void
+  index: number
+  start: number
+  row: PersonalizationQueueItem
+  active: boolean
+  onSelect: (id: number) => void
+}) {
+  return (
+    <li
+      ref={measureRef}
+      data-index={index}
+      className="absolute inset-x-0 top-0 border-b border-line-subtle"
+      style={{ transform: `translateY(${start}px)` }}
+    >
+      <button
+        type="button"
+        aria-current={active ? 'true' : undefined}
+        onClick={() => onSelect(row.id)}
+        className={cn(
+          'grid w-full gap-1 px-3 py-2 text-left hover:bg-hover',
+          active && 'bg-accent-wash',
+        )}
+      >
+        <span className="flex items-center gap-2">
+          <IdInk value={row.number} className="text-sm font-semibold" />
+          <Appointment startAt={row.appointmentStartAt} className="text-xs" />
+          <span className="ml-auto flex items-center gap-1.5">
+            {row.editor && <Avatar name={row.editor.displayName} size={18} tone="workshop" />}
+            <StatusBadge entity="serviceRequestStatus" state={row.status} size="sm" />
+          </span>
+        </span>
+        <span className="flex items-center gap-2 text-xs text-fg-2">
+          <span className="truncate">{row.contact.displayName}</span>
+          {row.region && <span className="text-fg-3">· {row.region.name}</span>}
+        </span>
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-fg-2">
+          {row.stockHints.map((hint) => (
+            <StockHint
+              key={hint.slot}
+              hint={hint}
+              label={
+                hint.article?.internalDescription ??
+                row.items.find((item) => item.slot === hint.slot)?.requestedType
+              }
+            />
+          ))}
+          {row.stockHints.length === 0 && <span className="text-fg-3">No new devices</span>}
+        </span>
+      </button>
+    </li>
+  )
+})
