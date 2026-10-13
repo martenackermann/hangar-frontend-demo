@@ -78,7 +78,7 @@ export function ArticleEditor({
   const query = useQuery({ ...articleQueries.detail(id ?? 0), enabled: id !== null })
   if (id !== null && query.isPending) {
     return (
-      <div className="grid gap-3 px-4 py-4">
+      <div className="grid grid-cols-1 gap-3 px-4 py-4">
         <Skeleton className="h-6 w-1/2" />
         <Skeleton className="h-40 w-full" />
       </div>
@@ -160,8 +160,12 @@ function ArticleForm({
   )
 
   return (
-    <div className="grid gap-4 px-4 pt-3 pb-6">
-      <form onSubmit={(event) => void onSubmit(event)} className="grid gap-3" noValidate>
+    <div className="grid grid-cols-1 gap-4 px-4 pt-3 pb-6">
+      <form
+        onSubmit={(event) => void onSubmit(event)}
+        className="grid grid-cols-1 gap-3"
+        noValidate
+      >
         <div className="grid grid-cols-2 gap-3 max-md:grid-cols-1">
           {text('number', 'Article number', { mono: true, required: true })}
           <Field label="Category" required error={errors.category?.message}>

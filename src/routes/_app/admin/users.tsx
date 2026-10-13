@@ -139,7 +139,8 @@ function UsersPage() {
               onClick={(event) => event.stopPropagation()}
             />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          {/* menu clicks bubble through the portal to the row, which would open the editor */}
+          <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
             <DropdownMenuItem icon={Pencil} onSelect={() => setEditing(row)}>
               Edit
             </DropdownMenuItem>

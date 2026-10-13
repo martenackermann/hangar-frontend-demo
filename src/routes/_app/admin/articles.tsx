@@ -175,10 +175,13 @@ function ArticlesPage() {
   const rows = query.data?.data ?? []
   const selected = typeof search.article === 'number' ? search.article : null
   const openArticle = search.article !== undefined
-  const label =
-    search.article === 'new'
-      ? 'New article'
-      : (rows.find((a) => a.id === selected)?.name ?? 'Article')
+  // the drawer may show an article that is not on the current list page
+  const openDetail = useQuery({
+    ...articleQueries.detail(selected ?? 0),
+    enabled: selected !== null,
+  })
+  const openSummary = openDetail.data ?? rows.find((a) => a.id === selected)
+  const label = search.article === 'new' ? 'New article' : (openSummary?.name ?? 'Article')
   const newButton = canManage ? (
     <Button variant="primary" icon={Plus} shortcut="n" onClick={() => patch({ article: 'new' })}>
       New article
@@ -249,11 +252,7 @@ function ArticlesPage() {
             head={
               <div className="grid gap-0.5">
                 <h2 className="text-lg font-semibold">{label}</h2>
-                {selected && (
-                  <p className="font-mono text-xs text-fg-3">
-                    {rows.find((a) => a.id === selected)?.number}
-                  </p>
-                )}
+                {openSummary && <p className="font-mono text-xs text-fg-3">{openSummary.number}</p>}
               </div>
             }
           >

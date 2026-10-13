@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, stripSearchParams, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
   CircleAlert,
@@ -57,6 +57,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/_app/data/imports/$importId')({
   validateSearch: searchSchema,
+  search: { middlewares: [stripSearchParams({ page: 1, perPage: 50 })] },
   beforeLoad: requirePermission('imports.read'),
   staticData: { title: 'Import' },
   component: ImportDetailPage,
@@ -261,7 +262,7 @@ function ImportDetailPage() {
         }
       />
 
-      <div className="grid gap-4 px-4 pb-6 max-md:px-3">
+      <div className="grid grid-cols-1 gap-4 px-4 pb-6 max-md:px-3">
         {running && (
           <section aria-label="Progress" className="rounded-sm border border-line bg-surface p-4">
             <ImportProgress
@@ -289,13 +290,12 @@ function ImportDetailPage() {
         ))}
 
         {!running && (
-          <section aria-label="Result" className="grid gap-2">
+          <section aria-label="Result" className="grid grid-cols-1 gap-2">
             <div className="rounded-sm border border-line bg-surface">
               <KpiStrip>
                 <StatTile label="Created" value={formatNumber(job.counts.created)} />
                 <StatTile label="Updated" value={formatNumber(job.counts.updated)} />
                 <StatTile label="Unchanged" value={formatNumber(job.counts.unchanged)} />
-                <StatTile label="Skipped" value={formatNumber(job.counts.skipped)} />
                 <StatTile
                   label="Rows with errors"
                   value={formatNumber(job.counts.errors)}
@@ -314,6 +314,7 @@ function ImportDetailPage() {
               {formatNumber(job.counts.processed)} of {formatNumber(job.counts.total)} rows
               processed
               {job.startedAt ? ` in ${formatElapsed(job.startedAt, job.finishedAt)}` : ''}
+              {job.counts.skipped ? ` · ${formatNumber(job.counts.skipped)} skipped` : ''}
               {job.dryRun ? ' · dry run, nothing was changed' : ''}
               {summary ? ` · ${summary}` : ''}
               {job.options.targetLocation
@@ -324,7 +325,7 @@ function ImportDetailPage() {
           </section>
         )}
 
-        <section aria-labelledby="issues-title" className="grid gap-2">
+        <section aria-labelledby="issues-title" className="grid grid-cols-1 gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <h2 id="issues-title" className="text-md font-semibold">
               Issues

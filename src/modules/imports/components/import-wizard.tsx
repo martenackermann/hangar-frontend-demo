@@ -90,6 +90,10 @@ function WizardBody({
   const fileProblems = detection?.problems.filter((p) => p.code !== 'type_not_detected') ?? []
 
   const choose = async (next: File) => {
+    if (!/\.(csv|xlsx)$/i.test(next.name)) {
+      setDetectError(`${next.name}: only CSV and XLSX files can be imported.`)
+      return
+    }
     setFile(next)
     setDetecting(true)
     setDetectError(null)
@@ -124,8 +128,8 @@ function WizardBody({
             ? `${formatNumber(job.result.counts.created)} created · ${formatNumber(job.result.counts.updated)} updated · ${formatNumber(job.result.counts.errors)} errors`
             : undefined,
       })
+      // the parent navigates to the import detail, which closes the dialog with the page
       onStarted(accepted.importJobId)
-      onClose()
     } catch (error) {
       if (isApiError(error)) {
         const messages = Object.values(error.fieldErrors).flat()

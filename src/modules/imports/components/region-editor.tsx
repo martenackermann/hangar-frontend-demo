@@ -44,7 +44,7 @@ export function RegionEditor({ id }: { id: number }) {
   const query = useQuery(regionQueries.detail(id))
   if (query.isPending) {
     return (
-      <div className="grid gap-3 px-4 py-4">
+      <div className="grid grid-cols-1 gap-3 px-4 py-4">
         <Skeleton className="h-6 w-1/2" />
         <Skeleton className="h-40 w-full" />
       </div>
@@ -145,9 +145,9 @@ function RegionBody({ region }: { region: RegionDetail }) {
   )
 
   return (
-    <div className="grid gap-4 px-4 pt-3 pb-6">
+    <div className="grid grid-cols-1 gap-4 px-4 pt-3 pb-6">
       <form
-        className="grid gap-3"
+        className="grid grid-cols-1 gap-3"
         onSubmit={(event) => {
           event.preventDefault()
           void submit()
