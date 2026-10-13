@@ -5,16 +5,6 @@ import { expect, persona, signIn, test } from './fixtures'
  * every new device by scanning the FIFO suggestion and finishes; the viewer sees it read-only.
  */
 
-// Headless Chromium on CI boxes without an audio device can crash later pages once the scan
-// stations have played their WebAudio cues, so the specs run with sound off (F2 in the app).
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    const key = 'hangar.prefs.v1'
-    const stored = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, unknown>
-    localStorage.setItem(key, JSON.stringify({ ...stored, sound: false }))
-  })
-})
-
 test('dispatcher claims, assigns by scan and finishes personalization', async ({ page }) => {
   await signIn(page, persona('dana'))
   await page.goto('/warehouse/personalization')
@@ -30,7 +20,6 @@ test('dispatcher claims, assigns by scan and finishes personalization', async ({
   await expect(panel).toBeVisible()
   await panel.getByRole('button', { name: 'Claim', exact: true }).click()
   await expect(panel.getByText('You are editing')).toBeVisible()
-  await page.screenshot({ path: 'docs/screenshots/staging/personalization-claimed.png' })
 
   const scan = panel.getByTestId('assign-scan').getByRole('textbox')
   for (let round = 0; round < 3; round++) {
@@ -41,9 +30,11 @@ test('dispatcher claims, assigns by scan and finishes personalization', async ({
     await scan.fill(serial ?? '')
     await scan.press('Enter')
     await expect(panel.getByText(/Assigned|Not the oldest/).first()).toBeVisible()
-    await page.waitForTimeout(400)
+    // assigned: no slot suggests that device any more (the candidates were refetched)
+    await expect(
+      panel.getByTestId('suggested-asset').filter({ hasText: serial ?? '' }),
+    ).toHaveCount(0)
   }
-  await page.screenshot({ path: 'docs/screenshots/staging/personalization-assigned.png' })
 
   const finish = panel.getByRole('button', { name: 'Finish personalization' })
   await expect(finish).toBeEnabled()

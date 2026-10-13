@@ -1,29 +1,6 @@
-import { test as base } from '@playwright/test'
-import { expect, persona, signIn } from './fixtures'
+import { expect, persona, signIn, test } from './fixtures'
 
 /** H1 · Communications (SCREENS.md §4.3) and dispatch settings (§9.5). */
-
-/**
- * Same console check as `fixtures.ts`, minus one message: Playwright's trace recorder tries to
- * inject into the mail preview `iframe sandbox srcdoc` (API.md §4.8) and Chrome logs "Blocked
- * script execution in 'about:srcdoc'". Real users never see it (no scripts run in the frame).
- */
-const SANDBOX_NOISE = "Blocked script execution in 'about:srcdoc'"
-const test = base.extend<{ consoleErrors: string[] }>({
-  consoleErrors: [
-    async ({ page }, use) => {
-      const errors: string[] = []
-      page.on('console', (message) => {
-        if (message.type() === 'error' && !message.text().includes(SANDBOX_NOISE))
-          errors.push(message.text())
-      })
-      page.on('pageerror', (error) => errors.push(error.message))
-      await use(errors)
-      expect(errors, 'console errors').toEqual([])
-    },
-    { auto: true },
-  ],
-})
 
 test('Dana previews the due mails with a dry run, then sends them', async ({ page }) => {
   await signIn(page, persona('dana'))

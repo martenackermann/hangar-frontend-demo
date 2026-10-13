@@ -1,12 +1,9 @@
-import { mkdirSync } from 'node:fs'
 import { expect, persona, signIn, test } from './fixtures'
 
 /**
  * H2 master data as Ada Admin (demo mode): articles with per-hub min/max, region rule tester and
  * reapply, VIP list, user administration with the persona lock.
  */
-const OUT = 'docs/screenshots/imports'
-mkdirSync(OUT, { recursive: true })
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -36,7 +33,6 @@ test('Ada creates an article and sets a hub minimum', async ({ page }) => {
   await minRiverton.fill('4')
   await minRiverton.press('Enter')
   await expect(page.getByText('A-19901').first()).toBeVisible()
-  await page.screenshot({ path: `${OUT}/admin-articles-editor-1440.png` })
 
   await page.reload()
   await expect(page.getByLabel('Min at Riverton Hub')).toHaveValue('4')
@@ -50,13 +46,11 @@ test('Ada tests an address against the region rules and reapplies them', async (
   await tester.getByRole('button', { name: 'Resolve' }).click()
   await expect(tester.getByRole('button', { name: 'Riverton' })).toBeVisible()
   await expect(tester.getByText(/normalized: zip 10115/)).toBeVisible()
-  await page.screenshot({ path: `${OUT}/admin-regions-tester-1440.png` })
 
   // the region drawer lists its rules
   await tester.getByRole('button', { name: 'Riverton' }).click()
   await expect(page).toHaveURL(/region=\d+/)
   await expect(page.getByText(/^Rules · \d+$/)).toBeVisible()
-  await page.screenshot({ path: `${OUT}/admin-regions-drawer-1440.png` })
 
   await page.getByRole('button', { name: 'Reapply rules' }).first().click()
   const confirm = page.getByRole('alertdialog')
@@ -75,7 +69,6 @@ test('Ada adds a VIP entry', async ({ page }) => {
   await dialog.getByLabel('Last name').fill('Northcott')
   await dialog.getByLabel('Type').fill('Executive')
   await dialog.getByLabel('Title').fill('Chief Legal Officer')
-  await page.screenshot({ path: `${OUT}/admin-vip-dialog-1440.png` })
   await dialog.getByRole('button', { name: 'Add VIP' }).click()
   await expect(dialog).toBeHidden()
   await expect(page.getByText('E900777')).toBeVisible()
@@ -110,5 +103,4 @@ test('Ada creates and deactivates a user; personas are locked', async ({ page })
   await expect(confirm).toContainText('future planned tours go back to draft')
   await confirm.getByRole('button', { name: 'Deactivate' }).click()
   await expect(page.getByRole('row', { name: /Greta Holm/ }).getByText('Deactivated')).toBeVisible()
-  await page.screenshot({ path: `${OUT}/admin-users-1440.png` })
 })

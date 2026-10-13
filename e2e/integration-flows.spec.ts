@@ -178,7 +178,10 @@ async function personalize(page: Page, number: string, siteId: number) {
     await scan.fill(serial ?? '')
     await scan.press('Enter')
     await expect(panel.getByText(/Assigned|Not the oldest/).first()).toBeVisible()
-    await page.waitForTimeout(400)
+    // assigned: no slot suggests that device any more (the candidates were refetched)
+    await expect(
+      panel.getByTestId('suggested-asset').filter({ hasText: serial ?? '' }),
+    ).toHaveCount(0)
   }
   await panel.getByRole('button', { name: 'Finish personalization' }).click()
   await expect(panel.getByText('Personalization done').first()).toBeVisible()
@@ -385,8 +388,12 @@ test.describe('cross-slice flows', () => {
     for (const tag of tags) {
       await scan.fill(tag.trim())
       await scan.press('Enter')
-      await expect(page.getByText(/Packed|Already packed/).first()).toBeVisible()
-      await page.waitForTimeout(300)
+      await expect(
+        items
+          .getByRole('listitem')
+          .filter({ hasText: tag.trim() })
+          .getByLabel('Packed', { exact: true }),
+      ).toBeVisible()
     }
     const label = page.waitForEvent('download').catch(() => null)
     await page.getByRole('button', { name: 'Create shipment' }).click()

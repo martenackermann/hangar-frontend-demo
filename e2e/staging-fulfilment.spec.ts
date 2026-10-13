@@ -5,16 +5,6 @@ import { expect, persona, signIn, test } from './fixtures'
  * Staging/Shipping tabs; read-only views for the viewer.
  */
 
-// Headless Chromium on CI boxes without an audio device can crash later pages once the scan
-// stations have played their WebAudio cues, so the specs run with sound off (F2 in the app).
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    const key = 'hangar.prefs.v1'
-    const stored = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, unknown>
-    localStorage.setItem(key, JSON.stringify({ ...stored, sound: false }))
-  })
-})
-
 test('dispatcher ticks the software checklist and closes an order', async ({ page }) => {
   await signIn(page, persona('dana'))
   await page.goto('/warehouse/order-closing?checklistComplete=false')
@@ -30,7 +20,6 @@ test('dispatcher ticks the software checklist and closes an order', async ({ pag
     if ((await box.getAttribute('data-state')) !== 'checked') await box.click()
   }
   await expect(checklist.getByText('All software installed.')).toBeVisible()
-  await page.screenshot({ path: 'docs/screenshots/staging/order-closing.png' })
   const close = page.getByRole('button', { name: 'Close order', exact: true })
   await expect(close).toBeEnabled({ timeout: 5000 })
   await close.click()
@@ -43,7 +32,6 @@ test('dispatcher marks a technician order as provided', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Picking')
   const button = page.getByRole('button', { name: 'Mark provided' }).first()
   await expect(button).toBeVisible()
-  await page.screenshot({ path: 'docs/screenshots/staging/picking.png' })
   const before = await page.getByRole('button', { name: 'Mark provided' }).count()
   await button.click()
   await expect(page.getByRole('button', { name: 'Mark provided' })).toHaveCount(before - 1)
@@ -61,10 +49,14 @@ test('dispatcher packs a parcel by scanning and creates the shipment', async ({ 
   for (const tag of tags) {
     await scan.fill(tag.trim())
     await scan.press('Enter')
-    await expect(page.getByText(/Packed|Already packed/).first()).toBeVisible()
-    await page.waitForTimeout(300)
+    // the item is marked packed once the station's result is applied: then scan the next one
+    await expect(
+      items
+        .getByRole('listitem')
+        .filter({ hasText: tag.trim() })
+        .getByLabel('Packed', { exact: true }),
+    ).toBeVisible()
   }
-  await page.screenshot({ path: 'docs/screenshots/staging/parcel-packing.png' })
   const create = page.getByRole('button', { name: 'Create shipment' })
   await expect(create).toBeEnabled()
   const download = page.waitForEvent('download').catch(() => null)
@@ -73,7 +65,6 @@ test('dispatcher packs a parcel by scanning and creates the shipment', async ({ 
   await expect(page.getByRole('link', { name: 'Tracking parcel 1' }).first()).toBeVisible()
   await download
   await page.getByTestId('shipment-result').scrollIntoViewIfNeeded()
-  await page.screenshot({ path: 'docs/screenshots/staging/parcel-shipped.png' })
 })
 
 test('the SR drawer shows the Staging and Shipping tabs', async ({ page }) => {
@@ -89,7 +80,6 @@ test('the SR drawer shows the Staging and Shipping tabs', async ({ page }) => {
   await expect(
     page.getByRole('tabpanel').getByRole('table', { name: 'Assigned devices' }),
   ).toBeVisible()
-  await page.screenshot({ path: 'docs/screenshots/staging/drawer-staging-tab.png' })
 })
 
 test('viewer sees the warehouse screens without mutating controls', async ({ page }) => {
@@ -115,8 +105,13 @@ test('the drawer creates a shipment through the ship dialog (never the action en
   for (const tag of tags) {
     await scan.fill(tag.trim())
     await scan.press('Enter')
-    await expect(page.getByText(/Packed|Already packed/).first()).toBeVisible()
-    await page.waitForTimeout(300)
+    // the item is marked packed once the station's result is applied: then scan the next one
+    await expect(
+      items
+        .getByRole('listitem')
+        .filter({ hasText: tag.trim() })
+        .getByLabel('Packed', { exact: true }),
+    ).toBeVisible()
   }
   await page.getByRole('button', { name: 'Open details' }).click()
   const drawer = page.getByRole('complementary', { name: /^Service request SR/ })
@@ -128,7 +123,6 @@ test('the drawer creates a shipment through the ship dialog (never the action en
   await dialog.getByRole('button', { name: 'Create shipment' }).click()
   await expect(dialog.getByTestId('shipment-result')).toBeVisible()
   await download
-  await page.screenshot({ path: 'docs/screenshots/staging/drawer-ship-dialog.png' })
   await dialog.getByRole('button', { name: 'Done' }).click()
   await expect(drawer.getByText('Shipped').first()).toBeVisible()
 })

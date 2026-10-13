@@ -3,10 +3,8 @@ import { expect, persona, signIn, test } from './fixtures'
 
 /**
  * H4 technician flow at phone width (SCREENS.md §6.2–6.3): Theo's tour today, start, deployment
- * scans (keyboard wedge), completion and the protocol. Screenshots → docs/screenshots/field/.
+ * scans (keyboard wedge), completion and the protocol.
  */
-
-const SHOTS = 'docs/screenshots/field'
 
 interface DeploymentItem {
   direction: 'deliver' | 'collect'
@@ -42,7 +40,6 @@ test('Theo works through a stop of today’s tour on the phone', async ({ page }
   const tour = page.getByRole('region', { name: 'Tour Riverton route' })
   await expect(tour).toBeVisible()
   await expect(page.getByRole('list', { name: 'Stops' }).getByRole('listitem')).toHaveCount(5)
-  await page.screenshot({ path: `${SHOTS}/my-tour-390.png`, fullPage: true })
 
   const start = page.getByRole('button', { name: 'Start tour' })
   if (await start.isVisible()) {
@@ -53,7 +50,6 @@ test('Theo works through a stop of today’s tour on the phone', async ({ page }
   await page.getByRole('link', { name: 'Open' }).first().click()
   await expect(page).toHaveURL(/\/field\/tours\/\d+\/stops\/\d+/)
   await expect(page.getByRole('tab', { name: /Devices/ })).toHaveAttribute('aria-selected', 'true')
-  await page.screenshot({ path: `${SHOTS}/deployment-devices-390.png`, fullPage: true })
 
   const codes = await deviceCodes(page)
   expect(codes.length).toBeGreaterThan(0)
@@ -73,14 +69,12 @@ test('Theo works through a stop of today’s tour on the phone', async ({ page }
 
   await page.getByRole('tab', { name: 'Finish' }).click()
   await page.getByText('Recipient confirmed the handover').click()
-  await page.screenshot({ path: `${SHOTS}/deployment-finish-390.png`, fullPage: true })
   await page
     .getByRole('tabpanel', { name: 'Finish' })
     .getByRole('button', { name: /^Complete/ })
     .click()
   await expect(page.getByRole('status').filter({ hasText: /completed/ })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Download protocol' })).toBeVisible()
-  await page.screenshot({ path: `${SHOTS}/deployment-completed-390.png` })
   await expect(page.getByRole('link', { name: /Next stop/ })).toBeVisible()
 })
 
