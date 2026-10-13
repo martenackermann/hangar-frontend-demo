@@ -351,6 +351,14 @@ export function DataTable<T extends RowData>({
   )
 
   if (isPhone) {
+    const mobileContent = (row: T) =>
+      mobileRow
+        ? mobileRow(row)
+        : visibleColumns.slice(0, 3).map((column) => (
+            <span key={column.id} className="min-w-0 truncate">
+              {column.cell(row)}
+            </span>
+          ))
     return (
       <div className={cn('relative min-h-0 overflow-auto bg-surface', className)}>
         {progressLine}
@@ -383,19 +391,18 @@ export function DataTable<T extends RowData>({
                   ) : (
                     <span />
                   )}
-                  <button
-                    type="button"
-                    className="grid min-w-0 gap-0.5 text-left"
-                    onClick={() => onOpen?.(row)}
-                  >
-                    {mobileRow
-                      ? mobileRow(row)
-                      : visibleColumns.slice(0, 3).map((column) => (
-                          <span key={column.id} className="min-w-0 truncate">
-                            {column.cell(row)}
-                          </span>
-                        ))}
-                  </button>
+                  {onOpen ? (
+                    <button
+                      type="button"
+                      className="grid min-w-0 gap-0.5 text-left"
+                      onClick={() => onOpen(row)}
+                    >
+                      {mobileContent(row)}
+                    </button>
+                  ) : (
+                    // Not openable: cells may hold their own controls (no button around them).
+                    <div className="grid min-w-0 gap-0.5">{mobileContent(row)}</div>
+                  )}
                 </li>
               )
             })}

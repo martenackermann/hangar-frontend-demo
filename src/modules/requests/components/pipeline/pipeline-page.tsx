@@ -216,7 +216,7 @@ export function PipelinePage({
           </>
         }
       >
-        <div className="hg-no-scrollbar flex min-w-0 items-center gap-2 overflow-x-auto">
+        <div className="hg-no-scrollbar flex min-w-0 items-center gap-2 overflow-x-auto *:shrink-0">
           <Select
             prefix="Hub"
             label="Hub"
@@ -354,7 +354,10 @@ export function PipelinePage({
           ))
         )}
       </KpiStrip>
-      <div className="min-h-0 flex-1 overflow-auto overscroll-contain bg-canvas" tabIndex={-1}>
+      <div
+        className="relative min-h-0 flex-1 overflow-auto overscroll-contain bg-canvas"
+        tabIndex={-1}
+      >
         {summaryQuery.isError ? (
           <EmptyState icon={Kanban} title="The board could not be loaded.">
             <Button size="sm" onClick={() => void summaryQuery.refetch()}>
