@@ -164,7 +164,10 @@ export function srColumns(enums: EnumsResponse): DataColumn<ServiceRequestListIt
           {sr.isVip && <VipFlag />}
           {sr.isCampus && <FlagBadge icon={Building2}>Campus</FlagBadge>}
           {sr.attention.slice(0, 2).map((flag) => (
-            <ToneBadge key={flag} tone={findEnumValue(enums, 'attentionFlag', flag)?.tone ?? 'caution'}>
+            <ToneBadge
+              key={flag}
+              tone={findEnumValue(enums, 'attentionFlag', flag)?.tone ?? 'caution'}
+            >
               {enumLabel(enums, 'attentionFlag', flag)}
             </ToneBadge>
           ))}

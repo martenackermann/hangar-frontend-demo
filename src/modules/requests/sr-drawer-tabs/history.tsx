@@ -6,8 +6,6 @@ const tab: DrawerTabDescriptor<ServiceRequestDetail> = {
   id: 'history',
   label: 'History',
   order: 90,
-  component: ({ entity }) => (
-    <HistoryTimeline kind="sr" id={entity.id} />
-  ),
+  component: ({ entity }) => <HistoryTimeline kind="sr" id={entity.id} />,
 }
 export default tab

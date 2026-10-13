@@ -34,12 +34,31 @@ function ItemRow({ item }: { item: ServiceRequestItem }) {
   return (
     <li className="grid gap-1 px-3 py-2.5">
       <div className="flex items-baseline gap-2">
-        <span className="text-xs font-semibold text-fg-2">{enumLabel(enums, 'itemSlot', item.slot)}</span>
-        <span className="text-xs text-fg-3">{item.direction === 'deliver' ? 'deliver' : 'collect'}</span>
+        <span className="text-xs font-semibold text-fg-2">
+          {enumLabel(enums, 'itemSlot', item.slot)}
+        </span>
+        <span className="text-xs text-fg-3">
+          {item.direction === 'deliver' ? 'deliver' : 'collect'}
+        </span>
         <span className="ml-auto flex items-center gap-2">
-          <Mark icon={UserCheck} at={item.assignedAt} by={item.assignedBy?.displayName} label="Assigned" />
-          <Mark icon={PackageCheck} at={item.packedAt} by={item.packedBy?.displayName} label="Packed" />
-          <Mark icon={ScanLine} at={item.verifiedAt} by={item.verifiedBy?.displayName} label="Verified" />
+          <Mark
+            icon={UserCheck}
+            at={item.assignedAt}
+            by={item.assignedBy?.displayName}
+            label="Assigned"
+          />
+          <Mark
+            icon={PackageCheck}
+            at={item.packedAt}
+            by={item.packedBy?.displayName}
+            label="Packed"
+          />
+          <Mark
+            icon={ScanLine}
+            at={item.verifiedAt}
+            by={item.verifiedBy?.displayName}
+            label="Verified"
+          />
         </span>
       </div>
       <div className="text-sm">
@@ -47,15 +66,16 @@ function ItemRow({ item }: { item: ServiceRequestItem }) {
           <>
             {item.requestedType}
             {item.article ? (
-              <span className="text-fg-3"> · {item.article.name} ({item.article.number})</span>
+              <span className="text-fg-3">
+                {' '}
+                · {item.article.name} ({item.article.number})
+              </span>
             ) : (
               <span className="text-tone-caution-fg"> · unknown article</span>
             )}
           </>
         ) : (
-          <>
-            Old device {item.expectedAssetTag && <IdInk value={item.expectedAssetTag} whole />}
-          </>
+          <>Old device {item.expectedAssetTag && <IdInk value={item.expectedAssetTag} whole />}</>
         )}
       </div>
       {asset ? (

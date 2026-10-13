@@ -96,7 +96,10 @@ export function StageColumn({
   return (
     <PipelineColumn
       label={label}
-      className={cn(CLOSED_STAGES.has(summary.stage) && 'bg-[color-mix(in_srgb,var(--hg-canvas)_60%,transparent)]')}
+      className={cn(
+        CLOSED_STAGES.has(summary.stage) &&
+          'bg-[color-mix(in_srgb,var(--hg-canvas)_60%,transparent)]',
+      )}
       header={
         <>
           <ColumnHeader

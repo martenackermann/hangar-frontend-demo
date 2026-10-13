@@ -30,13 +30,27 @@ const schema = z.object({
   zip: z
     .string()
     .trim()
-    .refine((v) => v === '' || /^\d{4,5}$/.test(v.replace(/\D/g, '')), 'Enter a 4- or 5-digit zip code.'),
+    .refine(
+      (v) => v === '' || /^\d{4,5}$/.test(v.replace(/\D/g, '')),
+      'Enter a 4- or 5-digit zip code.',
+    ),
   city: z.string().max(80),
   building: z.string().max(40),
   room: z.string().max(40),
 })
 type Values = z.infer<typeof schema>
-const FIELDS = ['email', 'phone', 'mobile', 'department', 'gender', 'street', 'zip', 'city', 'building', 'room'] as const
+const FIELDS = [
+  'email',
+  'phone',
+  'mobile',
+  'department',
+  'gender',
+  'street',
+  'zip',
+  'city',
+  'building',
+  'room',
+] as const
 
 function ContactForm({ contact, onClose }: { contact: ContactDetail; onClose: () => void }) {
   const enums = useEnums()
@@ -72,12 +86,21 @@ function ContactForm({ contact, onClose }: { contact: ContactDetail; onClose: ()
       applyServerErrors(error, form.setError, FIELDS)
     }
   })
-  useShortcut('mod+s', () => void submit(), { allowInInput: true, description: 'Save', group: 'Forms' })
+  useShortcut('mod+s', () => void submit(), {
+    allowInInput: true,
+    description: 'Save',
+    group: 'Forms',
+  })
 
   const text = (name: Exclude<(typeof FIELDS)[number], 'gender'>, label: string) => (
     <Field label={label} error={errors[name]?.message}>
       {({ id, describedBy, invalid }) => (
-        <Input id={id} aria-describedby={describedBy} aria-invalid={invalid} {...form.register(name)} />
+        <Input
+          id={id}
+          aria-describedby={describedBy}
+          aria-invalid={invalid}
+          {...form.register(name)}
+        />
       )}
     </Field>
   )
@@ -147,21 +170,36 @@ export function ContactPanel({
   const [editing, setEditing] = useState(false)
   const query = useQuery(contactQuery(contactId))
   const contact = query.data
-  if (!contact) return query.isError ? <p className="text-sm text-fg-3">The contact could not be loaded.</p> : <SkeletonRows rows={5} />
-  const otherSrs = contact.serviceRequests.filter((s) => !(current.kind === 'sr' && s.id === current.id))
-  const otherLeases = contact.leaseReturns.filter((l) => !(current.kind === 'lr' && l.id === current.id))
+  if (!contact)
+    return query.isError ? (
+      <p className="text-sm text-fg-3">The contact could not be loaded.</p>
+    ) : (
+      <SkeletonRows rows={5} />
+    )
+  const otherSrs = contact.serviceRequests.filter(
+    (s) => !(current.kind === 'sr' && s.id === current.id),
+  )
+  const otherLeases = contact.leaseReturns.filter(
+    (l) => !(current.kind === 'lr' && l.id === current.id),
+  )
   const address = contact.address
 
   return (
     <div>
       {contact.vip && (
-        <Banner tone="outreach" icon={Crown} title={`VIP · ${contact.vip.vipType}`} className="mb-3">
+        <Banner
+          tone="outreach"
+          icon={Crown}
+          title={`VIP · ${contact.vip.vipType}`}
+          className="mb-3"
+        >
           {contact.vip.title ?? 'Handled personally; no automatic mails.'}
         </Banner>
       )}
       <SectionHeading
         actions={
-          canEdit && !editing && (
+          canEdit &&
+          !editing && (
             <Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditing(true)}>
               Edit
             </Button>
@@ -196,7 +234,10 @@ export function ContactPanel({
               .join(', ') || null}
             {(address.building ?? address.room) && (
               <span className="block text-xs text-fg-3">
-                {[address.building && `Building ${address.building}`, address.room && `Room ${address.room}`]
+                {[
+                  address.building && `Building ${address.building}`,
+                  address.room && `Room ${address.room}`,
+                ]
                   .filter(Boolean)
                   .join(' · ')}
               </span>

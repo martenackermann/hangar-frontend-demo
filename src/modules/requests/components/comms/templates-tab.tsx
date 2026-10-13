@@ -139,14 +139,21 @@ function TemplatePreview({ template }: { template: NotificationTemplateInfoExt }
       </p>
       {preview.isError ? (
         <p className="text-sm text-tone-critical-fg">
-          {isApiError(preview.error) ? (preview.error.detail ?? preview.error.title) : 'The preview could not be rendered.'}
+          {isApiError(preview.error)
+            ? (preview.error.detail ?? preview.error.title)
+            : 'The preview could not be rendered.'}
         </p>
       ) : !preview.data ? (
         <SkeletonRows rows={5} />
       ) : (
         <div className="grid gap-2">
           <p className="font-medium">{preview.data.subject}</p>
-          <MailBody html={preview.data.html} text={preview.data.text} title={preview.data.subject} height={460} />
+          <MailBody
+            html={preview.data.html}
+            text={preview.data.text}
+            title={preview.data.subject}
+            height={460}
+          />
         </div>
       )}
     </div>
@@ -193,20 +200,34 @@ export function TemplatesTab({
                   <p className="truncate font-medium">{template.name}</p>
                   <p className="truncate font-mono text-xs text-fg-3">{template.id}</p>
                 </div>
-                <p className="truncate text-xs text-fg-2 max-lg:hidden" title={template.subjectTemplate}>
+                <p
+                  className="truncate text-xs text-fg-2 max-lg:hidden"
+                  title={template.subjectTemplate}
+                >
                   {template.subjectTemplate}
                 </p>
-                <p className="truncate text-xs text-fg-3 max-lg:hidden" title={`${template.trigger} · ${template.recipients}`}>
+                <p
+                  className="truncate text-xs text-fg-3 max-lg:hidden"
+                  title={`${template.trigger} · ${template.recipients}`}
+                >
                   {template.trigger}
                 </p>
-                <p className="text-right font-mono text-xs max-lg:hidden" title="Sent in the last 7 days">
+                <p
+                  className="text-right font-mono text-xs max-lg:hidden"
+                  title="Sent in the last 7 days"
+                >
                   {template.sentLast7Days > 0 ? (
                     formatNumber(template.sentLast7Days)
                   ) : (
                     <span className="text-fg-3">0</span>
                   )}
                 </p>
-                <Button size="sm" variant="ghost" icon={Eye} onClick={() => onSearch({ template: template.id })}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={Eye}
+                  onClick={() => onSearch({ template: template.id })}
+                >
                   Preview
                 </Button>
               </li>
@@ -214,7 +235,10 @@ export function TemplatesTab({
           </ul>
         </section>
       ))}
-      <Dialog open={Boolean(open)} onOpenChange={(next) => !next && onSearch({ template: undefined }, true)}>
+      <Dialog
+        open={Boolean(open)}
+        onOpenChange={(next) => !next && onSearch({ template: undefined }, true)}
+      >
         {open && (
           <DialogContent
             title={open.name}

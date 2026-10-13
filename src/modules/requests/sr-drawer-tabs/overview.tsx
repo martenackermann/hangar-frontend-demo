@@ -54,7 +54,10 @@ const schema = z.object({
   zip: z
     .string()
     .trim()
-    .refine((v) => v === '' || /^\d{4,5}$/.test(v.replace(/\D/g, '')), 'Enter a 4- or 5-digit zip code.'),
+    .refine(
+      (v) => v === '' || /^\d{4,5}$/.test(v.replace(/\D/g, '')),
+      'Enter a 4- or 5-digit zip code.',
+    ),
   city: z.string().max(80),
   country: z.string().max(60),
   room: z.string().max(40),
@@ -124,7 +127,8 @@ function EditForm({ sr, onClose }: { sr: ServiceRequestDetail; onClose: () => vo
       }
       for (const [path, messages] of Object.entries(error.fieldErrors)) {
         const key = path.replace('deliveryAddress.', '')
-        if (key in values) form.setError(key as keyof Values, { type: 'server', message: messages.join(' ') })
+        if (key in values)
+          form.setError(key as keyof Values, { type: 'server', message: messages.join(' ') })
         else form.setError('root.server', { type: 'server', message: messages.join(' ') })
       }
     }
@@ -186,7 +190,11 @@ function EditForm({ sr, onClose }: { sr: ServiceRequestDetail; onClose: () => vo
         {text('country', 'Country')}
         {text('onsiteContactPhone', 'On-site phone')}
         {text('costCenter', 'Cost centre', locked)}
-        <Field label="Region" error={errors.regionId?.message} help="Manual choice overrides the rules.">
+        <Field
+          label="Region"
+          error={errors.regionId?.message}
+          help="Manual choice overrides the rules."
+        >
           {() => (
             <Controller
               control={form.control}
@@ -282,7 +290,13 @@ function OverviewTab({ entity: sr }: { entity: ServiceRequestDetail }) {
         actions={
           canEdit &&
           !editing && (
-            <Button size="sm" variant="ghost" icon={Pencil} shortcut="e" onClick={() => setEditing(true)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={Pencil}
+              shortcut="e"
+              onClick={() => setEditing(true)}
+            >
               Edit
             </Button>
           )
@@ -356,7 +370,9 @@ function OverviewTab({ entity: sr }: { entity: ServiceRequestDetail }) {
           )}
         </KeyValue>
         <KeyValue label="Hardware hold mail">
-          {sr.hardwareUnavailableNotifiedAt ? formatFullDateTime(sr.hardwareUnavailableNotifiedAt) : null}
+          {sr.hardwareUnavailableNotifiedAt
+            ? formatFullDateTime(sr.hardwareUnavailableNotifiedAt)
+            : null}
         </KeyValue>
       </KeyValues>
 

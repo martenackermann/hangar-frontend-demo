@@ -30,7 +30,11 @@ function CommentsTab({ entity: lease }: { entity: LeaseReturnDetail }) {
         setError(null)
       },
       onError: (e) =>
-        setError(isApiError(e) ? (e.fieldErrors.body?.join(' ') ?? e.detail ?? e.title) : 'Could not save.'),
+        setError(
+          isApiError(e)
+            ? (e.fieldErrors.body?.join(' ') ?? e.detail ?? e.title)
+            : 'Could not save.',
+        ),
     })
   }
   useShortcut('mod+enter', submit, {
@@ -69,7 +73,13 @@ function CommentsTab({ entity: lease }: { entity: LeaseReturnDetail }) {
           )}
           <div className="flex items-center justify-between">
             <span className="text-xs text-fg-3">{body.length}/2000</span>
-            <Button size="sm" variant="primary" type="submit" shortcut="mod+enter" loading={add.isPending}>
+            <Button
+              size="sm"
+              variant="primary"
+              type="submit"
+              shortcut="mod+enter"
+              loading={add.isPending}
+            >
               Add comment
             </Button>
           </div>

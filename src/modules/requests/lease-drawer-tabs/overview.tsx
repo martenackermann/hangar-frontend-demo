@@ -44,11 +44,18 @@ function EscalationEmail({ lease }: { lease: LeaseReturnDetail }) {
       <span className="flex items-center gap-2">
         <span className="min-w-0 truncate">{lease.escalationEmail ?? '—'}</span>
         {canEdit && (
-          <Button size="sm" variant="ghost" icon={Pencil} aria-label="Edit escalation email" onClick={() => setEditing(true)} />
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={Pencil}
+            aria-label="Edit escalation email"
+            onClick={() => setEditing(true)}
+          />
         )}
       </span>
     )
-  const error = form.formState.errors.escalationEmail?.message ?? form.formState.errors.root?.server?.message
+  const error =
+    form.formState.errors.escalationEmail?.message ?? form.formState.errors.root?.server?.message
   return (
     <form
       className="grid gap-2"
@@ -57,9 +64,20 @@ function EscalationEmail({ lease }: { lease: LeaseReturnDetail }) {
         void submit()
       }}
     >
-      <Field label="Escalation email" error={error} help="Extra recipient of the escalation mail, e.g. the cost-centre manager.">
+      <Field
+        label="Escalation email"
+        error={error}
+        help="Extra recipient of the escalation mail, e.g. the cost-centre manager."
+      >
         {({ id, describedBy, invalid }) => (
-          <Input id={id} aria-describedby={describedBy} aria-invalid={invalid} data-autofocus type="email" {...form.register('escalationEmail')} />
+          <Input
+            id={id}
+            aria-describedby={describedBy}
+            aria-invalid={invalid}
+            data-autofocus
+            type="email"
+            {...form.register('escalationEmail')}
+          />
         )}
       </Field>
       <div className="flex gap-2">
@@ -82,7 +100,9 @@ function Countdown({ lease }: { lease: LeaseReturnDetail }) {
   return (
     <ProgressMeter
       label="Lease end"
-      valueText={days < 0 ? `${-days} days overdue` : days === 0 ? 'ends today' : `${days} days left`}
+      valueText={
+        days < 0 ? `${-days} days overdue` : days === 0 ? 'ends today' : `${days} days left`
+      }
       max={window}
       segments={[{ value: passed, tone }]}
     />
@@ -104,17 +124,27 @@ function OverviewTab({ entity: lease }: { entity: LeaseReturnDetail }) {
           <KeyValue label="Retirement date">{formatDate(lease.retirementDate)}</KeyValue>
           <KeyValue label="Model">
             {lease.model}
-            {lease.modelCategory && <span className="block text-xs text-fg-3">{lease.modelCategory}</span>}
+            {lease.modelCategory && (
+              <span className="block text-xs text-fg-3">{lease.modelCategory}</span>
+            )}
           </KeyValue>
         </KeyValues>
       </div>
 
       <SectionHeading>Chain</SectionHeading>
       <KeyValues>
-        <KeyValue label="Info mail">{lease.infoSentAt ? formatFullDateTime(lease.infoSentAt) : null}</KeyValue>
-        <KeyValue label="Reminder 1">{lease.reminder1SentAt ? formatFullDateTime(lease.reminder1SentAt) : null}</KeyValue>
-        <KeyValue label="Reminder 2">{lease.reminder2SentAt ? formatFullDateTime(lease.reminder2SentAt) : null}</KeyValue>
-        <KeyValue label="Escalation">{lease.escalationSentAt ? formatFullDateTime(lease.escalationSentAt) : null}</KeyValue>
+        <KeyValue label="Info mail">
+          {lease.infoSentAt ? formatFullDateTime(lease.infoSentAt) : null}
+        </KeyValue>
+        <KeyValue label="Reminder 1">
+          {lease.reminder1SentAt ? formatFullDateTime(lease.reminder1SentAt) : null}
+        </KeyValue>
+        <KeyValue label="Reminder 2">
+          {lease.reminder2SentAt ? formatFullDateTime(lease.reminder2SentAt) : null}
+        </KeyValue>
+        <KeyValue label="Escalation">
+          {lease.escalationSentAt ? formatFullDateTime(lease.escalationSentAt) : null}
+        </KeyValue>
         <KeyValue label="Next step">
           {hint
             ? `${hint.label} · ${hint.manualOnly ? 'chain switched off' : dueText(hint.dueDate)}`
@@ -145,8 +175,14 @@ function OverviewTab({ entity: lease }: { entity: LeaseReturnDetail }) {
           onClick={() => lease.serviceRequest && drawer.open('sr', lease.serviceRequest.id)}
         >
           <IdInk value={lease.serviceRequest.number} />
-          <StatusBadge entity="serviceRequestStatus" state={lease.serviceRequest.status} size="sm" />
-          <span className="ml-auto text-xs text-fg-3">linked {lease.linkedAt ? formatDate(lease.linkedAt) : ''}</span>
+          <StatusBadge
+            entity="serviceRequestStatus"
+            state={lease.serviceRequest.status}
+            size="sm"
+          />
+          <span className="ml-auto text-xs text-fg-3">
+            linked {lease.linkedAt ? formatDate(lease.linkedAt) : ''}
+          </span>
         </button>
       ) : (
         <p className="text-xs text-fg-3">No replacement order linked yet.</p>
@@ -183,7 +219,7 @@ function OverviewTab({ entity: lease }: { entity: LeaseReturnDetail }) {
       {canComms && (
         <>
           <SectionHeading>Mails</SectionHeading>
-          <EntityMails entityType="lease_return" entityId={lease.id} />
+          <EntityMails entityType="lease_return" entityId={lease.id} revision={lease.version} />
         </>
       )}
     </div>

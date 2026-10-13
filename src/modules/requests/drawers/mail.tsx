@@ -27,12 +27,18 @@ const TRIGGERS: Record<MailLogDetail['trigger'], string> = {
 function EntityLink({ entity }: { entity: EntityRef }) {
   const drawer = useDrawerNavigation()
   const param =
-    entity.type === 'service_request' ? 'sr' : entity.type === 'lease_return' ? 'lr' : entity.type === 'asset' ? 'asset' : null
+    entity.type === 'service_request'
+      ? 'sr'
+      : entity.type === 'lease_return'
+        ? 'lr'
+        : entity.type === 'asset'
+          ? 'asset'
+          : null
   if (!param) return <span>{entity.label}</span>
   return (
     <button
       type="button"
-      className="font-mono text-accent-fg underline-offset-2 hover:underline"
+      className="text-accent-fg font-mono underline-offset-2 hover:underline"
       onClick={() => drawer.open(param, entity.id)}
     >
       {entity.label}
@@ -44,7 +50,9 @@ function MailHead({ mail }: { mail: MailLogDetail }) {
   return (
     <>
       <div className="flex items-start gap-2">
-        <h2 className="min-w-0 flex-1 text-lg leading-6 font-semibold">{mail.subject ?? mail.templateName}</h2>
+        <h2 className="min-w-0 flex-1 text-lg leading-6 font-semibold">
+          {mail.subject ?? mail.templateName}
+        </h2>
         <StatusBadge entity="mailStatus" state={mail.status} variant="wash" />
       </div>
       <p className="text-xs text-fg-3">
@@ -72,7 +80,11 @@ function MailDrawer({ id }: { id: number }) {
       </DrawerFrame>
     )
   return (
-    <DrawerFrame label={`Mail ${mail.subject ?? mail.templateName}`} onClose={drawer.close} head={<MailHead mail={mail} />}>
+    <DrawerFrame
+      label={`Mail ${mail.subject ?? mail.templateName}`}
+      onClose={drawer.close}
+      head={<MailHead mail={mail} />}
+    >
       <div className="px-4 pb-6">
         <KeyValues>
           <KeyValue label="To" full>
@@ -84,9 +96,17 @@ function MailDrawer({ id }: { id: number }) {
             </KeyValue>
           )}
           <KeyValue label="Queued">{formatFullDateTime(mail.queuedAt)}</KeyValue>
-          <KeyValue label="Sent">{mail.sentAt ? formatFullDateTime(mail.sentAt) : enumLabel(enums, 'mailStatus', mail.status)}</KeyValue>
-          <KeyValue label="Trigger">{mail.triggeredBy?.displayName ?? TRIGGERS[mail.trigger]}</KeyValue>
-          <KeyValue label="Record">{mail.entity ? <EntityLink entity={mail.entity} /> : null}</KeyValue>
+          <KeyValue label="Sent">
+            {mail.sentAt
+              ? formatFullDateTime(mail.sentAt)
+              : enumLabel(enums, 'mailStatus', mail.status)}
+          </KeyValue>
+          <KeyValue label="Trigger">
+            {mail.triggeredBy?.displayName ?? TRIGGERS[mail.trigger]}
+          </KeyValue>
+          <KeyValue label="Record">
+            {mail.entity ? <EntityLink entity={mail.entity} /> : null}
+          </KeyValue>
           {mail.error && (
             <KeyValue label="Error" full>
               <span className="text-tone-critical-fg">{mail.error}</span>
@@ -109,7 +129,9 @@ function MailDrawer({ id }: { id: number }) {
                     aria-label={`Download ${file.filename}`}
                     onClick={() =>
                       void openDownload(file.download).catch(() =>
-                        notify.error('Download failed', { description: 'The link may have expired — reopen the mail.' }),
+                        notify.error('Download failed', {
+                          description: 'The link may have expired — reopen the mail.',
+                        }),
                       )
                     }
                   />
@@ -119,7 +141,12 @@ function MailDrawer({ id }: { id: number }) {
           </>
         )}
         <SectionHeading>Message</SectionHeading>
-        <MailBody html={mail.bodyHtml} text={mail.bodyText} title={mail.subject ?? mail.templateName} height={520} />
+        <MailBody
+          html={mail.bodyHtml}
+          text={mail.bodyText}
+          title={mail.subject ?? mail.templateName}
+          height={520}
+        />
       </div>
     </DrawerFrame>
   )

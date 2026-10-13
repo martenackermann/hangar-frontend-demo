@@ -78,7 +78,9 @@ function CommunicationTab({ entity: sr }: { entity: ServiceRequestDetail }) {
           {sr.communicationDate ? formatDate(sr.communicationDate) : null}
         </KeyValue>
         <KeyValue label="Next step">
-          {hint ? `${hint.label} · ${hint.manualOnly ? 'chain switched off' : dueText(hint.dueDate)}` : null}
+          {hint
+            ? `${hint.label} · ${hint.manualOnly ? 'chain switched off' : dueText(hint.dueDate)}`
+            : null}
         </KeyValue>
         <KeyValue label="Booking link" full>
           {sr.bookingLink ? (
@@ -109,7 +111,7 @@ function CommunicationTab({ entity: sr }: { entity: ServiceRequestDetail }) {
         </div>
       )}
       <SectionHeading>Mails</SectionHeading>
-      <EntityMails entityType="service_request" entityId={sr.id} />
+      <EntityMails entityType="service_request" entityId={sr.id} revision={sr.version} />
     </div>
   )
 }

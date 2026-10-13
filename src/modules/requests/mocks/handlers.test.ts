@@ -109,7 +109,9 @@ describe('H1 mock API', () => {
   it('validates pause dates and PATCH locks', async () => {
     await signInAs(PERSONA_EMAILS.dispatcher)
     const sr = db.collection('service_requests').find((row) => row.status === 'invited')
-    const staged = db.collection('service_requests').find((row) => row.status === 'ready_for_picking')
+    const staged = db
+      .collection('service_requests')
+      .find((row) => row.status === 'ready_for_picking')
     if (!sr || !staged) throw new Error('fixture misses statuses')
     const past = await failure(
       api.post(`/service-requests/${sr.id}/actions/pause_communication`, {

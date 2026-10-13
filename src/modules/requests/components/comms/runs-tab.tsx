@@ -22,7 +22,10 @@ function sum(record: Record<string, number>): number {
 
 export function runDuration(run: DispatchRun): string {
   if (!run.finishedAt) return run.status === 'running' || run.status === 'queued' ? 'running' : '—'
-  const seconds = Math.max(0, Math.round((Date.parse(run.finishedAt) - Date.parse(run.startedAt)) / 1000))
+  const seconds = Math.max(
+    0,
+    Math.round((Date.parse(run.finishedAt) - Date.parse(run.startedAt)) / 1000),
+  )
   if (seconds < 60) return `${seconds} s`
   return `${Math.floor(seconds / 60)} min ${seconds % 60} s`
 }
@@ -102,7 +105,9 @@ export function RunsTab({
         width: 90,
         align: 'end',
         title: (run) => breakdown(run.skipped, skipLabel),
-        cell: (run) => <span className="font-mono text-fg-2">{formatNumber(sum(run.skipped))}</span>,
+        cell: (run) => (
+          <span className="font-mono text-fg-2">{formatNumber(sum(run.skipped))}</span>
+        ),
       },
       {
         id: 'errors',
@@ -133,7 +138,10 @@ export function RunsTab({
           label="Run type"
           value={filter}
           onValueChange={(value) =>
-            onSearch({ dryRun: value === 'all' ? undefined : value === 'dry', page: undefined }, true)
+            onSearch(
+              { dryRun: value === 'all' ? undefined : value === 'dry', page: undefined },
+              true,
+            )
           }
           options={[
             { value: 'all', label: 'All runs' },
@@ -233,7 +241,8 @@ export function RunDrawer({ id, onClose }: { id: number; onClose: () => void }) 
         )}
         {run.dryRun && (
           <p className="text-xs text-fg-3">
-            Dry runs never send mails. The list shows what a real run would have sent at that moment.
+            Dry runs never send mails. The list shows what a real run would have sent at that
+            moment.
           </p>
         )}
       </div>

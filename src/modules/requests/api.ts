@@ -138,7 +138,8 @@ export function leaseCommentsQuery(id: number) {
 export function leaseHistoryQuery(id: number) {
   return queryOptions({
     queryKey: leaseKeys.scope('history', id),
-    queryFn: ({ signal }) => api.get<List<HistoryEntry>>(`/lease-returns/${id}/history`, { signal }),
+    queryFn: ({ signal }) =>
+      api.get<List<HistoryEntry>>(`/lease-returns/${id}/history`, { signal }),
   })
 }
 
@@ -228,8 +229,7 @@ export const dispatchSettingsQuery = queryOptions({
 export function dispatchRunsQuery(query: Query) {
   return queryOptions({
     queryKey: commsKeys.scope('runs', query),
-    queryFn: ({ signal }) =>
-      api.get<Page<DispatchRun>>('/comms/dispatch-runs', { query, signal }),
+    queryFn: ({ signal }) => api.get<Page<DispatchRun>>('/comms/dispatch-runs', { query, signal }),
     placeholderData: keepPreviousData,
   })
 }

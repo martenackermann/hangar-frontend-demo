@@ -64,7 +64,11 @@ export function leaseColumns(
       width: 130,
       defaultHidden: true,
       cell: (lease) =>
-        lease.serialNumber ? <IdInk value={lease.serialNumber} whole /> : <span className="text-fg-disabled">—</span>,
+        lease.serialNumber ? (
+          <IdInk value={lease.serialNumber} whole />
+        ) : (
+          <span className="text-fg-disabled">—</span>
+        ),
     },
     {
       id: 'model',
@@ -74,7 +78,9 @@ export function leaseColumns(
       cell: (lease) => (
         <span className="truncate">
           {lease.model ?? '—'}
-          {lease.modelCategory && <span className="text-xs text-fg-3"> · {lease.modelCategory}</span>}
+          {lease.modelCategory && (
+            <span className="text-xs text-fg-3"> · {lease.modelCategory}</span>
+          )}
         </span>
       ),
     },
@@ -100,7 +106,11 @@ export function leaseColumns(
       sortField: 'status',
       width: 200,
       cell: (lease) => (
-        <StatusBadge entity="leaseReturnStatus" state={lease.status} since={lease.statusChangedAt} />
+        <StatusBadge
+          entity="leaseReturnStatus"
+          state={lease.status}
+          since={lease.statusChangedAt}
+        />
       ),
     },
     {
@@ -142,7 +152,11 @@ export function leaseColumns(
             }}
           >
             <IdInk value={lease.serviceRequest.number} />
-            <StatusBadge entity="serviceRequestStatus" state={lease.serviceRequest.status} size="sm" />
+            <StatusBadge
+              entity="serviceRequestStatus"
+              state={lease.serviceRequest.status}
+              size="sm"
+            />
           </button>
         ) : (
           <span className="text-fg-disabled">—</span>
@@ -170,7 +184,10 @@ export function leaseColumns(
           {lease.isVip && <VipFlag />}
           {lease.isCampus && <FlagBadge icon={Building2}>Campus</FlagBadge>}
           {lease.attention.slice(0, 2).map((flag) => (
-            <ToneBadge key={flag} tone={findEnumValue(enums, 'attentionFlag', flag)?.tone ?? 'caution'}>
+            <ToneBadge
+              key={flag}
+              tone={findEnumValue(enums, 'attentionFlag', flag)?.tone ?? 'caution'}
+            >
               {enumLabel(enums, 'attentionFlag', flag)}
             </ToneBadge>
           ))}
@@ -191,7 +208,12 @@ export function leaseMobileRow(lease: LeaseReturnListItem) {
       <div className="flex items-center gap-2 text-xs">
         <IdInk value={lease.assetTag} />
         <span className="text-fg-3">{lease.model}</span>
-        <span className={cn('ml-auto inline-flex items-center gap-1', tone === 'critical' ? 'text-tone-critical-fg' : 'text-fg-3')}>
+        <span
+          className={cn(
+            'ml-auto inline-flex items-center gap-1',
+            tone === 'critical' ? 'text-tone-critical-fg' : 'text-fg-3',
+          )}
+        >
           <Icon icon={CalendarClock} size={12} />
           {retirementText(lease.daysUntilRetirement)}
         </span>

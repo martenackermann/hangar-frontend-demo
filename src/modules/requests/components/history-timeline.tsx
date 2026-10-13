@@ -49,7 +49,8 @@ function toEvent(
           <>
             {entry.actionLabel}{' '}
             <span className="font-normal text-fg-3">
-              · {statusLabel(enums, entity, entry.fromStatus)} → {statusLabel(enums, entity, entry.toStatus)}
+              · {statusLabel(enums, entity, entry.fromStatus)} →{' '}
+              {statusLabel(enums, entity, entry.toStatus)}
             </span>
           </>
         ) : (

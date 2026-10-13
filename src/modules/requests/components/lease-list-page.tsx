@@ -26,7 +26,11 @@ import {
 } from '@/components/data-table/filter-bar'
 import { SavedViewTabs, useSavedViews, type BuiltInView } from '@/components/data-table/saved-views'
 import { useTableColumns } from '@/components/data-table/use-table-columns'
-import { useDrawerNavigation, useDrawerSearch, useDrawerSiblings } from '@/components/drawer/drawer-state'
+import {
+  useDrawerNavigation,
+  useDrawerSearch,
+  useDrawerSiblings,
+} from '@/components/drawer/drawer-state'
 import { useBulkAction, useWorkflowAction } from '@/components/drawer/workflow-actions'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/dialog'
@@ -59,7 +63,12 @@ function builtInViews(): BuiltInView[] {
       search: { retirementFrom: today, retirementTo: addDays(today, 30) },
       icon: CalendarClock,
     },
-    { key: 'overdue', name: 'Overdue', search: { retirementTo: addDays(today, -1) }, icon: CalendarX },
+    {
+      key: 'overdue',
+      name: 'Overdue',
+      search: { retirementTo: addDays(today, -1) },
+      icon: CalendarX,
+    },
     { key: 'escalated', name: 'Escalated', search: { status: ['escalated'] }, icon: AlertTriangle },
     {
       key: 'probably-closed',
@@ -136,8 +145,20 @@ export function LeaseListPage({
           label: enumLabel(enums, 'leaseReturnStatus', value),
         })),
       },
-      { kind: 'dateRange', id: 'retirement', label: 'Retirement', fromKey: 'retirementFrom', toKey: 'retirementTo' },
-      { kind: 'dateRange', id: 'communication', label: 'Last mail', fromKey: 'communicationFrom', toKey: 'communicationTo' },
+      {
+        kind: 'dateRange',
+        id: 'retirement',
+        label: 'Retirement',
+        fromKey: 'retirementFrom',
+        toKey: 'retirementTo',
+      },
+      {
+        kind: 'dateRange',
+        id: 'communication',
+        label: 'Last mail',
+        fromKey: 'communicationFrom',
+        toKey: 'communicationTo',
+      },
       { kind: 'boolean', key: 'linked', label: 'Linked to SR' },
       {
         kind: 'single',
@@ -172,14 +193,19 @@ export function LeaseListPage({
     bulk.mutateAsync({ action, ids, body }).then(clear)
   const exportRows = (onlySelected: boolean) =>
     downloadFrom(() =>
-      api.post<DownloadLink>('/lease-returns/export', {}, {
-        query: onlySelected
-          ? { ids, includeClosed: true, vip: 'include' }
-          : apiQuery({ ...search, page: undefined, perPage: undefined }),
-      }),
+      api.post<DownloadLink>(
+        '/lease-returns/export',
+        {},
+        {
+          query: onlySelected
+            ? { ids, includeClosed: true, vip: 'include' }
+            : apiQuery({ ...search, page: undefined, perPage: undefined }),
+        },
+      ),
     )
   const filtered =
-    Object.keys(apiQuery({ ...search, page: undefined, perPage: undefined, sort: undefined })).length > 0
+    Object.keys(apiQuery({ ...search, page: undefined, perPage: undefined, sort: undefined }))
+      .length > 0
 
   return (
     <Page>
@@ -252,7 +278,9 @@ export function LeaseListPage({
                 actions={
                   <Button
                     size="sm"
-                    onClick={() => onSearch(Object.fromEntries(Object.keys(search).map((k) => [k, undefined])))}
+                    onClick={() =>
+                      onSearch(Object.fromEntries(Object.keys(search).map((k) => [k, undefined])))
+                    }
                   >
                     Clear filters
                   </Button>

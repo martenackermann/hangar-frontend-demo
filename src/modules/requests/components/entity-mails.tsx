@@ -1,13 +1,12 @@
-import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight, Paperclip } from 'lucide-react'
-import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ChevronDown, ChevronRight, Mail, Paperclip } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { StatusBadge } from '@/components/domain/status'
 import { EmptyState, SkeletonRows } from '@/components/ui/feedback'
 import { Icon } from '@/components/ui/icon'
 import { formatDateTime } from '@/lib/format'
 import { mailDetailQuery, mailLogQuery } from '../api'
 import { MailBody } from './mail-preview'
-import { Mail } from 'lucide-react'
 
 function MailDetail({ id }: { id: number }) {
   const { data, isError } = useQuery(mailDetailQuery(id))
@@ -20,21 +19,39 @@ function MailDetail({ id }: { id: number }) {
         {data.cc.length > 0 && ` · cc ${data.cc.join(', ')}`}
       </p>
       {data.error && <p className="text-xs text-tone-critical-fg">{data.error}</p>}
-      <MailBody html={data.bodyHtml} text={data.bodyText} title={data.subject ?? data.templateName} height={360} />
+      <MailBody
+        html={data.bodyHtml}
+        text={data.bodyText}
+        title={data.subject ?? data.templateName}
+        height={360}
+      />
     </div>
   )
 }
 
-/** Mail log of one SR / lease return, newest first, with inline previews. */
+/**
+ * Mail log of one SR / lease return, newest first, with inline previews. `revision` (the record's
+ * `version`) refetches the list after a workflow action queued a mail.
+ */
 export function EntityMails({
   entityType,
   entityId,
+  revision,
 }: {
   entityType: 'service_request' | 'lease_return'
   entityId: number
+  revision?: number
 }) {
   const [open, setOpen] = useState<number | null>(null)
-  const query = useQuery(mailLogQuery({ entityType, entityId, perPage: 100 }))
+  const queryClient = useQueryClient()
+  const options = mailLogQuery({ entityType, entityId, perPage: 100 })
+  const query = useQuery(options)
+  const seen = useRef(revision)
+  useEffect(() => {
+    if (seen.current === revision) return
+    seen.current = revision
+    void queryClient.invalidateQueries({ queryKey: options.queryKey })
+  }, [revision, queryClient, options.queryKey])
   const mails = query.data?.data ?? []
   if (query.isPending) return <SkeletonRows rows={3} />
   if (mails.length === 0)
@@ -55,16 +72,26 @@ export function EntityMails({
               onClick={() => setOpen(expanded ? null : mail.id)}
               className="grid w-full grid-cols-[14px_1fr_auto] items-start gap-2 px-3 py-2 text-left hover:bg-hover"
             >
-              <Icon icon={expanded ? ChevronDown : ChevronRight} size={14} className="mt-0.5 text-fg-3" />
+              <Icon
+                icon={expanded ? ChevronDown : ChevronRight}
+                size={14}
+                className="mt-0.5 text-fg-3"
+              />
               <span className="grid min-w-0 gap-0.5">
                 <span className="truncate font-medium">{mail.subject ?? mail.templateName}</span>
                 <span className="truncate text-xs text-fg-3">
                   {mail.templateName} · {formatDateTime(mail.sentAt ?? mail.queuedAt)}
-                  {mail.triggeredBy ? ` · ${mail.triggeredBy.displayName}` : mail.trigger === 'job' ? ' · daily dispatch' : ''}
+                  {mail.triggeredBy
+                    ? ` · ${mail.triggeredBy.displayName}`
+                    : mail.trigger === 'job'
+                      ? ' · daily dispatch'
+                      : ''}
                 </span>
               </span>
               <span className="flex items-center gap-1.5">
-                {mail.attachmentCount > 0 && <Icon icon={Paperclip} size={12} className="text-fg-3" />}
+                {mail.attachmentCount > 0 && (
+                  <Icon icon={Paperclip} size={12} className="text-fg-3" />
+                )}
                 <StatusBadge entity="mailStatus" state={mail.status} size="sm" />
               </span>
             </button>

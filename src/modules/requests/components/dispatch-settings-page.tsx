@@ -115,7 +115,9 @@ function NumberField({
                   )
                 }
               />
-              <span className="text-xs text-fg-3">{name === 'maxMailsPerRun' ? 'mails' : 'days'}</span>
+              <span className="text-xs text-fg-3">
+                {name === 'maxMailsPerRun' ? 'mails' : 'days'}
+              </span>
             </div>
           )}
         </Field>

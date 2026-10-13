@@ -36,7 +36,12 @@ const DELIVERY_ICONS: Record<DeliveryType, typeof Truck> = {
   parcel_to_pickup_point: Store,
 }
 /** Statuses whose badge is the card's exception (caution / critical tones render washed). */
-const EXCEPTION = new Set(['hardware_unavailable', 'escalated', 'reschedule_needed', 'imported_vip'])
+const EXCEPTION = new Set([
+  'hardware_unavailable',
+  'escalated',
+  'reschedule_needed',
+  'imported_vip',
+])
 const FRESH_MS = 2 * 60_000
 
 function when(sr: ServiceRequestListItem) {
@@ -44,7 +49,10 @@ function when(sr: ServiceRequestListItem) {
     return { icon: CalendarDays, text: formatDateTime(sr.appointmentStartAt) }
   }
   if (sr.communicationResumeDate && sr.communicationResumeDate > businessToday()) {
-    return { icon: Pause, text: `Paused until ${formatDate(sr.communicationResumeDate, { year: false })}` }
+    return {
+      icon: Pause,
+      text: `Paused until ${formatDate(sr.communicationResumeDate, { year: false })}`,
+    }
   }
   if (sr.communicationDate) {
     return { icon: Mail, text: `Last mail ${formatDate(sr.communicationDate, { year: false })}` }
@@ -54,13 +62,7 @@ function when(sr: ServiceRequestListItem) {
 
 /** Quick actions on hover/focus (SCREENS.md §3.1): simple actions post directly; actions with a
  * dialog, a required comment or a destructive effect open the drawer's action bar instead. */
-function QuickActions({
-  sr,
-  onOpen,
-}: {
-  sr: ServiceRequestListItem
-  onOpen: () => void
-}) {
+function QuickActions({ sr, onOpen }: { sr: ServiceRequestListItem; onOpen: () => void }) {
   const enums = useEnums()
   const mutation = useWorkflowAction('serviceRequest', sr, sr.number)
   const [open, setOpen] = useState(false)
@@ -74,7 +76,7 @@ function QuickActions({
           label={`Actions for ${sr.number}`}
           size="sm"
           className={cn(
-            'size-6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+            'size-6 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100',
             open && 'opacity-100',
           )}
           onClick={(event) => event.stopPropagation()}
@@ -122,8 +124,7 @@ export const SrCard = forwardRef<
   const enums = useEnums()
   const status = findEnumValue(enums, 'serviceRequestStatus', sr.status)
   const tone = status?.tone ?? 'intake'
-  const exception =
-    EXCEPTION.has(sr.status) || tone === 'caution' || tone === 'critical'
+  const exception = EXCEPTION.has(sr.status) || tone === 'caution' || tone === 'critical'
   const firstFlag = sr.attention[0]
   const moment = when(sr)
   const fresh = now - Date.parse(sr.statusChangedAt) < FRESH_MS
@@ -212,7 +213,8 @@ export const SrCard = forwardRef<
           )}
           {sr.status === 'imported' && !sr.communicationDate && (
             <span className="inline-flex items-center gap-1 whitespace-nowrap text-fg-3">
-              <Icon icon={RotateCcw} size={12} /> imported {formatDate(sr.importedAt, { year: false })}
+              <Icon icon={RotateCcw} size={12} /> imported{' '}
+              {formatDate(sr.importedAt, { year: false })}
             </span>
           )}
         </PipelineCardFooter>

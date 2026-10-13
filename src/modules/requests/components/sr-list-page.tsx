@@ -26,7 +26,11 @@ import {
 } from '@/components/data-table/filter-bar'
 import { SavedViewTabs, useSavedViews, type BuiltInView } from '@/components/data-table/saved-views'
 import { useTableColumns } from '@/components/data-table/use-table-columns'
-import { useDrawerNavigation, useDrawerSearch, useDrawerSiblings } from '@/components/drawer/drawer-state'
+import {
+  useDrawerNavigation,
+  useDrawerSearch,
+  useDrawerSiblings,
+} from '@/components/drawer/drawer-state'
 import { useBulkAction, useWorkflowAction } from '@/components/drawer/workflow-actions'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/dialog'
@@ -65,7 +69,12 @@ function builtInViews(): BuiltInView[] {
       search: { appointmentFrom: today, appointmentTo: addDays(today, 7) },
       icon: CalendarCheck,
     },
-    { key: 'attention', name: 'Needs attention', search: { needsAttention: true }, icon: AlertTriangle },
+    {
+      key: 'attention',
+      name: 'Needs attention',
+      search: { needsAttention: true },
+      icon: AlertTriangle,
+    },
     { key: 'vip', name: 'VIP', search: { vip: 'only' }, icon: Crown },
     { key: 'paused', name: 'Paused', search: { paused: true }, icon: PauseCircle },
     {
@@ -117,11 +126,7 @@ export function SrListPage({
   )
 
   const openRow = rows.find((row) => row.id === openId)
-  const nextMail = useWorkflowAction(
-    'serviceRequest',
-    openRow ?? { id: 0 },
-    openRow?.number ?? '',
-  )
+  const nextMail = useWorkflowAction('serviceRequest', openRow ?? { id: 0 }, openRow?.number ?? '')
   useShortcut(
     'n',
     () => {
@@ -215,10 +220,34 @@ export function SrListPage({
         ],
       },
       { kind: 'boolean', key: 'hasAppointment', label: 'Has appointment' },
-      { kind: 'dateRange', id: 'appointment', label: 'Appointment', fromKey: 'appointmentFrom', toKey: 'appointmentTo' },
-      { kind: 'dateRange', id: 'communication', label: 'Last mail', fromKey: 'communicationFrom', toKey: 'communicationTo' },
-      { kind: 'dateRange', id: 'imported', label: 'Imported', fromKey: 'importedFrom', toKey: 'importedTo' },
-      { kind: 'dateRange', id: 'closed', label: 'Closed', fromKey: 'closedFrom', toKey: 'closedTo' },
+      {
+        kind: 'dateRange',
+        id: 'appointment',
+        label: 'Appointment',
+        fromKey: 'appointmentFrom',
+        toKey: 'appointmentTo',
+      },
+      {
+        kind: 'dateRange',
+        id: 'communication',
+        label: 'Last mail',
+        fromKey: 'communicationFrom',
+        toKey: 'communicationTo',
+      },
+      {
+        kind: 'dateRange',
+        id: 'imported',
+        label: 'Imported',
+        fromKey: 'importedFrom',
+        toKey: 'importedTo',
+      },
+      {
+        kind: 'dateRange',
+        id: 'closed',
+        label: 'Closed',
+        fromKey: 'closedFrom',
+        toKey: 'closedTo',
+      },
       { kind: 'boolean', key: 'paused', label: 'Paused' },
       { kind: 'boolean', key: 'includeClosed', label: 'Include closed' },
     ],
@@ -231,11 +260,19 @@ export function SrListPage({
     bulk.mutateAsync({ action, ids, body }).then(clear)
   const exportRows = (onlySelected: boolean) =>
     downloadFrom(() =>
-      api.post<DownloadLink>('/service-requests/export', {}, {
-        query: onlySelected ? { ids, includeClosed: true, vip: 'include' } : apiQuery({ ...search, page: undefined, perPage: undefined }),
-      }),
+      api.post<DownloadLink>(
+        '/service-requests/export',
+        {},
+        {
+          query: onlySelected
+            ? { ids, includeClosed: true, vip: 'include' }
+            : apiQuery({ ...search, page: undefined, perPage: undefined }),
+        },
+      ),
     )
-  const filtered = Object.keys(apiQuery({ ...search, page: undefined, perPage: undefined, sort: undefined })).length > 0
+  const filtered =
+    Object.keys(apiQuery({ ...search, page: undefined, perPage: undefined, sort: undefined }))
+      .length > 0
 
   return (
     <Page>
@@ -306,13 +343,21 @@ export function SrListPage({
                 icon={SearchX}
                 title="No requests match these filters."
                 actions={
-                  <Button size="sm" onClick={() => onSearch(Object.fromEntries(Object.keys(search).map((k) => [k, undefined])))}>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      onSearch(Object.fromEntries(Object.keys(search).map((k) => [k, undefined])))
+                    }
+                  >
                     Clear filters
                   </Button>
                 }
               />
             ) : (
-              <EmptyState icon={Inbox} title="No service requests yet. Import an ITSM export to get started." />
+              <EmptyState
+                icon={Inbox}
+                title="No service requests yet. Import an ITSM export to get started."
+              />
             )
           }
         />

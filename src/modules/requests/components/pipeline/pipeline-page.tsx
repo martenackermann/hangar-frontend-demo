@@ -1,14 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import {
-  Bookmark,
-  ChevronDown,
-  Inbox,
-  Kanban,
-  RefreshCw,
-  Send,
-  Table2,
-} from 'lucide-react'
+import { Bookmark, ChevronDown, Inbox, Kanban, RefreshCw, Send, Table2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useSavedViews, type BuiltInView } from '@/components/data-table/saved-views'
 import { PipelineBoard } from '@/components/domain/pipeline-board'
@@ -196,7 +188,11 @@ export function PipelinePage({
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button icon={Bookmark} iconEnd={ChevronDown} title="Saved view — stored in the URL">
+                <Button
+                  icon={Bookmark}
+                  iconEnd={ChevronDown}
+                  title="Saved view — stored in the URL"
+                >
                   {views.active?.name ?? 'Custom view'}
                   {views.modified ? ' · modified' : ''}
                 </Button>
@@ -341,9 +337,7 @@ export function PipelinePage({
             <StatTile
               label="Lead time, import → deployed"
               value={
-                summary.totals.leadTimeDays === null
-                  ? '—'
-                  : summary.totals.leadTimeDays.toFixed(1)
+                summary.totals.leadTimeDays === null ? '—' : summary.totals.leadTimeDays.toFixed(1)
               }
               unit="d median"
               context="requests deployed in the last 30 days"

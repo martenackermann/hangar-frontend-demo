@@ -191,7 +191,14 @@ export const commsSearchSchema = listSearchSchema.extend({
   ]),
   status: listParam(MAIL_STATUSES),
   trigger: listParam(TRIGGERS),
-  entityType: enumParam(['service_request', 'lease_return', 'calloff_order', 'inventory', 'import_job', 'tour']),
+  entityType: enumParam([
+    'service_request',
+    'lease_return',
+    'calloff_order',
+    'inventory',
+    'import_job',
+    'tour',
+  ]),
   from: dateParam(),
   to: dateParam(),
   /** Dispatch runs tab: only dry runs (`true`) / only real runs (`false`). */

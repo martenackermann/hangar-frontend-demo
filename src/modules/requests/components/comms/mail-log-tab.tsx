@@ -3,8 +3,17 @@ import { Link } from '@tanstack/react-router'
 import { Mail, Paperclip, SearchX } from 'lucide-react'
 import { useMemo } from 'react'
 import { DataTable, type DataColumn } from '@/components/data-table/data-table'
-import { DensityToggle, FilterBar, type FilterDef, type SearchPatch } from '@/components/data-table/filter-bar'
-import { useDrawerNavigation, useDrawerSearch, useDrawerSiblings } from '@/components/drawer/drawer-state'
+import {
+  DensityToggle,
+  FilterBar,
+  type FilterDef,
+  type SearchPatch,
+} from '@/components/data-table/filter-bar'
+import {
+  useDrawerNavigation,
+  useDrawerSearch,
+  useDrawerSiblings,
+} from '@/components/drawer/drawer-state'
 import { StatusBadge } from '@/components/domain/status'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/feedback'
@@ -29,7 +38,13 @@ const ENTITY_TYPES = [
 function Related({ entity }: { entity: EntityRef }) {
   const drawer = useDrawerNavigation()
   const param =
-    entity.type === 'service_request' ? 'sr' : entity.type === 'lease_return' ? 'lr' : entity.type === 'asset' ? 'asset' : null
+    entity.type === 'service_request'
+      ? 'sr'
+      : entity.type === 'lease_return'
+        ? 'lr'
+        : entity.type === 'asset'
+          ? 'asset'
+          : null
   const className = 'truncate font-mono text-xs text-accent-fg underline-offset-2 hover:underline'
   if (param)
     return (
@@ -49,19 +64,34 @@ function Related({ entity }: { entity: EntityRef }) {
   switch (entity.type) {
     case 'calloff_order':
       return (
-        <Link to="/stock/call-off-orders/$orderId" params={{ orderId: id }} className={className} onClick={stop}>
+        <Link
+          to="/stock/call-off-orders/$orderId"
+          params={{ orderId: id }}
+          className={className}
+          onClick={stop}
+        >
           {entity.label}
         </Link>
       )
     case 'inventory':
       return (
-        <Link to="/stock/inventory/$inventoryId" params={{ inventoryId: id }} className={className} onClick={stop}>
+        <Link
+          to="/stock/inventory/$inventoryId"
+          params={{ inventoryId: id }}
+          className={className}
+          onClick={stop}
+        >
           {entity.label}
         </Link>
       )
     case 'import_job':
       return (
-        <Link to="/data/imports/$importId" params={{ importId: id }} className={className} onClick={stop}>
+        <Link
+          to="/data/imports/$importId"
+          params={{ importId: id }}
+          className={className}
+          onClick={stop}
+        >
           {entity.label}
         </Link>
       )
@@ -192,7 +222,10 @@ export function MailLogTab({
         kind: 'multi',
         key: 'status',
         label: 'Status',
-        options: MAIL_STATUSES.map((value) => ({ value, label: enumLabel(enums, 'mailStatus', value) })),
+        options: MAIL_STATUSES.map((value) => ({
+          value,
+          label: enumLabel(enums, 'mailStatus', value),
+        })),
       },
       {
         kind: 'multi',
@@ -207,7 +240,15 @@ export function MailLogTab({
   )
 
   const filtered =
-    Object.keys(apiQuery({ ...search, page: undefined, perPage: undefined, sort: undefined, dryRun: undefined })).length > 0
+    Object.keys(
+      apiQuery({
+        ...search,
+        page: undefined,
+        perPage: undefined,
+        sort: undefined,
+        dryRun: undefined,
+      }),
+    ).length > 0
 
   return (
     <>
@@ -276,7 +317,10 @@ export function MailLogTab({
                 }
               />
             ) : (
-              <EmptyState icon={Mail} title="No mails sent yet. The daily dispatch runs at 07:00." />
+              <EmptyState
+                icon={Mail}
+                title="No mails sent yet. The daily dispatch runs at 07:00."
+              />
             )
           }
         />
