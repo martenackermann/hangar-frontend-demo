@@ -1,24 +1,27 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { RoutePlaceholder } from '@/components/app/route-placeholder'
+import { createFileRoute, stripSearchParams } from '@tanstack/react-router'
 import { requirePermission } from '@/lib/auth/guards'
+import { listSearchDefaults } from '@/lib/search/params'
+import { LeaseListPage } from '@/modules/requests/components/lease-list-page'
+import { leaseSearchSchema, type LeaseSearch } from '@/modules/requests/search'
 
-/**
- * Lease returns (SCREENS.md). Owner: H1 (Requests & Comms).
- * PLACEHOLDER created by the foundation: the owning slice replaces this file
- * (keep the path, the permission guard and `staticData.title`).
- */
+/** Lease returns (SCREENS.md §4.2). Owner: H1 (Requests & Comms). */
 export const Route = createFileRoute('/_app/lease-returns')({
+  validateSearch: leaseSearchSchema,
+  search: { middlewares: [stripSearchParams(listSearchDefaults)] },
   beforeLoad: requirePermission('lease.read'),
   staticData: { title: 'Lease returns' },
-  component: Placeholder,
+  component: LeaseReturnsRoute,
 })
 
-function Placeholder() {
+function LeaseReturnsRoute() {
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
   return (
-    <RoutePlaceholder
-      title="Lease returns"
-      owner="H1"
-      purpose="Nudge users of expiring leased devices to order replacements; track links to requests."
+    <LeaseListPage
+      search={search}
+      onSearch={(patch, replace) =>
+        void navigate({ search: ((prev: LeaseSearch) => ({ ...prev, ...patch })) as never, replace })
+      }
     />
   )
 }
