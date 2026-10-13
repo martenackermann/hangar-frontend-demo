@@ -17,7 +17,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { IdInk } from '@/components/domain/status'
 import { statusIcon } from '@/components/domain/status-meta'
 import { Icon } from '@/components/ui/icon'
@@ -121,6 +121,7 @@ function PaletteBody({
   const personas =
     useQuery({ ...coreQueries.personas(), enabled: Boolean(config?.demoMode) }).data?.data ?? []
   const recent = useMemo(() => readRecent(me?.id), [me?.id])
+  const listRef = useRef<HTMLDivElement>(null)
 
   const go = (href: string, newTab = false) => {
     close()
@@ -208,16 +209,21 @@ function PaletteBody({
           className="h-full min-w-0 flex-1 bg-transparent text-lg outline-none"
           onKeyDown={(event) => {
             const code = trimmed.toUpperCase()
-            if (event.key === 'Enter' && CODE_PATTERN.test(code) && !results?.exact) {
-              // A scanner is faster than the debounce: resolve the exact match before choosing.
-              event.preventDefault()
-              void runExact(code, event.metaKey || event.ctrlKey)
-            }
+            if (event.key !== 'Enter' || !CODE_PATTERN.test(code)) return
+            // cmdk highlights the first row only when the query changes, so the exact match that
+            // arrives later is not highlighted: Enter on a code opens it unless the user has
+            // moved to another row. A scanner is faster than the debounce: resolve it first.
+            const highlighted = listRef.current?.querySelector('[cmdk-item][data-selected="true"]')
+            if (highlighted && !highlighted.hasAttribute('data-exact')) return
+            event.preventDefault()
+            const newTab = event.metaKey || event.ctrlKey
+            if (results?.exact) go(results.exact.href, newTab)
+            else void runExact(code, newTab)
           }}
         />
         <Kbd>Esc</Kbd>
       </div>
-      <Command.List className="min-h-0 flex-1 overflow-y-auto px-1.5 pt-1 pb-2">
+      <Command.List ref={listRef} className="min-h-0 flex-1 overflow-y-auto px-1.5 pt-1 pb-2">
         <Command.Empty className="px-4 py-7 text-center text-fg-3">
           {trimmed.length >= 2 && search.isFetching
             ? 'Searching…'
@@ -389,6 +395,7 @@ function HitItem({
   return (
     <Command.Item
       value={`${exact ? 'exact' : 'hit'} ${hit.kind} ${hit.title} ${hit.subtitle ?? ''}`}
+      data-exact={exact || undefined}
       forceMount
       onSelect={() => onSelect(false)}
       onKeyDown={(event) => {
