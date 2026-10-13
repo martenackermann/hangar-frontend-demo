@@ -154,8 +154,12 @@ function NavSheet() {
   )
 }
 
-/** Stop / deployment screens bring their own sticky action footer (Complete deployment). */
-const STOP_ROUTE = /^\/field\/tours\/\d+\/stops\/\d+/
+/**
+ * Screens with their own bottom bar: a stop's Complete deployment footer and the scan stations'
+ * dock (Undo · Camera scan · Finish). One bottom bar, one amber button at a time.
+ */
+const OWN_DOCK =
+  /^\/(field\/tours\/\d+\/stops\/\d+|stock\/inventory\/\d+|warehouse\/installation-places)/
 
 /**
  * Technician bottom dock on phones (SCREENS.md §6.2): My tour · Scan (⌘K "scan anything") ·
@@ -164,7 +168,7 @@ const STOP_ROUTE = /^\/field\/tours\/\d+\/stops\/\d+/
  */
 function TechnicianDock() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  if (STOP_ROUTE.test(pathname)) return null
+  if (OWN_DOCK.test(pathname)) return null
   const item = 'flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-2xs text-fg-2'
   const onTour = pathname.startsWith('/field')
   const onInventory = pathname.startsWith('/stock/inventory')

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useMemo, useState, type KeyboardEvent } from 'react'
 import { FilterBar, type FilterDef } from '@/components/data-table/filter-bar'
-import { HeatLegend, StockHeatCell } from '@/components/domain/stock-heat-cell'
+import { HeatLegend, StockHeatCell, heatLabel } from '@/components/domain/stock-heat-cell'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -491,7 +491,7 @@ function HubCells({
         <Tooltip content={cellTooltip(cell)} side="top">
           <button
             type="button"
-            aria-label={`${articleLabel} at ${siteName}: stock ${cell.stock}, demand ${cell.demand}, buffer ${cell.buffer}, order ${cell.orderQty}`}
+            aria-label={`${articleLabel} at ${siteName}: stock ${cell.stock}, demand ${cell.demand}, buffer ${cell.buffer}, order ${cell.orderQty}${heatLabel(cell) ? `, ${heatLabel(cell)}` : ''}`}
             className="block w-full text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
           >
             <StockHeatCell cell={cell}>

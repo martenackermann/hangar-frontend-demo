@@ -98,7 +98,7 @@ function CoreFacts({ lr }: { lr: LeaseReturnDetail }) {
   return (
     <KeyValues>
       <KeyValue label="Model category">{lr.modelCategory}</KeyValue>
-      <KeyValue label="Cost center">{lr.costCenter}</KeyValue>
+      <KeyValue label="Cost centre">{lr.costCenter}</KeyValue>
       <KeyValue label="Checked in">{formatFullDateTime(lr.checkedInAt)}</KeyValue>
       <KeyValue label="Last mail">{formatDate(lr.communicationDate)}</KeyValue>
       <KeyValue label="Escalation email">{lr.escalationEmail}</KeyValue>

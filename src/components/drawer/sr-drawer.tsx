@@ -200,7 +200,7 @@ function CoreFacts({ sr }: { sr: ServiceRequestDetail }) {
       <KeyValue label="Scope of delivery">{sr.scopeOfDelivery}</KeyValue>
       <KeyValue label="ITSM state">{sr.itsmState}</KeyValue>
       <KeyValue label="Assignment group">{sr.assignmentGroup}</KeyValue>
-      <KeyValue label="Cost center">{sr.costCenter}</KeyValue>
+      <KeyValue label="Cost centre">{sr.costCenter}</KeyValue>
       <KeyValue label="Opened">{formatFullDateTime(sr.openedAt)}</KeyValue>
       <KeyValue label="Imported">{formatFullDateTime(sr.importedAt)}</KeyValue>
       <KeyValue label="Requested devices" full>

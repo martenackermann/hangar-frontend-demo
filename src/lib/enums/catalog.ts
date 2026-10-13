@@ -1237,7 +1237,7 @@ export const ENUM_CATALOG: EnumsResponse = {
     campus: { label: 'Campus' },
   }),
   regionRuleMatchKind: defineValues<RegionRuleMatchKind>({
-    cost_center: { label: 'Cost center' },
+    cost_center: { label: 'Cost centre' },
     zip: { label: 'ZIP code' },
     zip_prefix: { label: 'ZIP prefix' },
     city: { label: 'City' },

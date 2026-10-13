@@ -413,7 +413,7 @@ export function DataTable<T extends RowData>({
       aria-hidden
       className="pointer-events-none absolute inset-x-0 top-0 z-20 h-0.5 overflow-hidden"
     >
-      <div className="h-full w-1/3 animate-[hg-shimmer_1.2s_linear_infinite] bg-accent" />
+      <div className="hg-progress-indeterminate h-full" />
     </div>
   )
 
