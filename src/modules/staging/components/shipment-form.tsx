@@ -130,20 +130,20 @@ export function ShipmentForm({
   const create = useCreateShipment(srId)
   const submit = () => {
     if (!ready || create.isPending) return
-    create.mutate(
-      {
+    // mutateAsync: the request leaves the ready list on success (this form unmounts), so the
+    // result must reach the parent through the promise, not a per-call callback.
+    create
+      .mutateAsync({
         includeReturnLabel: hasOldItems && returnLabel,
         combinedParcel: combined,
         sendConfirmation: confirmation,
         ...(version !== undefined ? { version } : {}),
-      },
-      {
-        onSuccess: (created) => {
-          void openDownload(created.label).catch(() => undefined)
-          onCreated(created)
-        },
-      },
-    )
+      })
+      .then((created) => {
+        onCreated(created)
+        void openDownload(created.label).catch(() => undefined)
+      })
+      .catch(() => undefined) // shown in the banner below
   }
   useShortcut('mod+enter', submit, {
     enabled: shortcut && ready,

@@ -1113,9 +1113,24 @@ const shippingHandlers: RequestHandler[] = [
   ),
 ]
 
+/**
+ * Fallback for H4's `GET /tours` (picking enriches its groups with the day's tours). Slice
+ * handlers are collected in folder order, so H4's own handler (`field/`) answers first once it
+ * exists; until then picking gets an empty page instead of a 501.
+ */
+const toursFallback: RequestHandler[] = [
+  http.get(
+    apiPath('/tours'),
+    authed('tours.read', () =>
+      json({ data: [], meta: { page: 1, perPage: 25, total: 0, totalPages: 0 } }),
+    ),
+  ),
+]
+
 export const handlers: RequestHandler[] = [
   ...installationPlaceHandlers,
   ...personalizationHandlers,
   ...closingHandlers,
   ...shippingHandlers,
+  ...toursFallback,
 ]
