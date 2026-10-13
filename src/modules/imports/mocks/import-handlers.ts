@@ -71,9 +71,12 @@ function parseOptions(
   raw: FormDataEntryValue | null,
 ): { ok: true; options: ImportOptions } | { ok: false; errors: Record<string, string[]> } {
   if (raw === null || raw === '') return { ok: true, options: {} }
+  if (typeof raw !== 'string') {
+    return { ok: false, errors: { options: ['Options must be a JSON object.'] } }
+  }
   let value: unknown
   try {
-    value = JSON.parse(String(raw))
+    value = JSON.parse(raw)
   } catch {
     return { ok: false, errors: { options: ['Options must be a JSON object.'] } }
   }
@@ -85,11 +88,13 @@ function parseOptions(
     if (!OPTION_KEYS.includes(key)) errors[`options.${key}`] = ['Unknown field.']
     else if (key === 'targetLocationId' ? !Number.isInteger(v) : typeof v !== 'boolean') {
       errors[`options.${key}`] = [
-        key === 'targetLocationId' ? 'Input should be a valid integer' : 'Input should be a valid boolean',
+        key === 'targetLocationId'
+          ? 'Input should be a valid integer'
+          : 'Input should be a valid boolean',
       ]
     }
   }
-  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, options: value as ImportOptions }
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, options: value }
 }
 
 function importJob(id: number, request: Request) {

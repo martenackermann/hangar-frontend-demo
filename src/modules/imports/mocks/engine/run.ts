@@ -117,7 +117,13 @@ interface Ctx {
 
 const isHoldGroup = (group: string | null) => (group ?? '').trim().toLowerCase() === HOLD_GROUP
 
-function warn(ctx: Ctx, code: string, message: string, column: string | null = null, raw: unknown = null) {
+function warn(
+  ctx: Ctx,
+  code: string,
+  message: string,
+  column: string | null = null,
+  raw: unknown = null,
+) {
   ctx.warnings.push(issue('warning', code, message, column, raw))
 }
 
@@ -151,11 +157,16 @@ function transitionRow(
   })
 }
 
-const isVip = (userId: string) => db.collection('vip_entries').find((v) => v.userId === userId) !== undefined
+const isVip = (userId: string) =>
+  db.collection('vip_entries').find((v) => v.userId === userId) !== undefined
 
 // ---- contacts ---------------------------------------------------------------------------------
 
-function upsertContact(ctx: Ctx, userId: string, values: Partial<ContactRow>): [ContactRow, boolean] {
+function upsertContact(
+  ctx: Ctx,
+  userId: string,
+  values: Partial<ContactRow>,
+): [ContactRow, boolean] {
   const contacts = db.collection('contacts')
   const existing = contacts.find((c) => c.userId === userId)
   if (!existing) {
@@ -197,7 +208,9 @@ const personOf = (v: Record<string, unknown>): Partial<ContactRow> => ({
 
 function articleFor(requested: string) {
   const key = requested.trim().toLowerCase()
-  return db.collection('articles').find((a) => a.isActive && a.internalDescription.toLowerCase() === key)
+  return db
+    .collection('articles')
+    .find((a) => a.isActive && a.internalDescription.toLowerCase() === key)
 }
 
 function srFields(v: Record<string, unknown>): Partial<ServiceRequestRow> {
@@ -230,7 +243,10 @@ function srFields(v: Record<string, unknown>): Partial<ServiceRequestRow> {
 function linkLeases(ctx: Ctx, sr: ServiceRequestRow): boolean {
   const tags = db
     .collection('service_request_items')
-    .filter((i) => i.serviceRequestId === sr.id && i.slot.startsWith('old_') && i.expectedAssetTag !== null)
+    .filter(
+      (i) =>
+        i.serviceRequestId === sr.id && i.slot.startsWith('old_') && i.expectedAssetTag !== null,
+    )
     .map((i) => i.expectedAssetTag!)
   let linked = false
   for (const lease of db.collection('lease_returns').filter((l) => tags.includes(l.assetTag))) {
@@ -329,7 +345,12 @@ function applyServiceRequest(ctx: Ctx, row: Row): Outcome {
   const details = (v.order_details ?? {}) as Record<string, string | null>
   const [contact, contactChanged] = upsertContact(ctx, v.user_id as string, personOf(v))
   if (!contact.email) {
-    warn(ctx, 'email_missing', 'The contact has no email address; automatic mails cannot be sent.', 'email')
+    warn(
+      ctx,
+      'email_missing',
+      'The contact has no email address; automatic mails cannot be sent.',
+      'email',
+    )
   }
   const fields = srFields(v)
   const srs = db.collection('service_requests')
@@ -399,13 +420,23 @@ function applyServiceRequest(ctx: Ctx, row: Row): Outcome {
       protocolFileId: null,
       version: 1,
     }
-    const values = { ...base, ...Object.fromEntries(Object.entries(fields).filter(([, x]) => x !== null && x !== undefined)) }
+    const values = {
+      ...base,
+      ...Object.fromEntries(
+        Object.entries(fields).filter(([, x]) => x !== null && x !== undefined),
+      ),
+    }
     values.status = values.isVip ? 'imported_vip' : 'imported'
     const region = regionColumns({ ...values, status: values.status }, true)!
     if (region.regionId === null) {
-      warn(ctx, 'region_unresolved', 'No region rule matched the delivery address; the request stays unresolved.', 'delivery_address')
+      warn(
+        ctx,
+        'region_unresolved',
+        'No region rule matched the delivery address; the request stays unresolved.',
+        'delivery_address',
+      )
     }
-    const sr = srs.insert({ ...values, ...region } as Omit<ServiceRequestRow, 'id'>)
+    const sr = srs.insert({ ...values, ...region })
     for (const [slot, key, label] of NEW_SLOTS) {
       const requested = details[key]
       if (requested) items.insert(newItem(ctx, sr.id, slot, label, requested))
@@ -427,14 +458,23 @@ function applyServiceRequest(ctx: Ctx, row: Row): Outcome {
   const changed = new Set(Object.keys(changes(existing, fields)))
   let sr = srs.update(existing.id, {
     ...changes(existing, fields),
-    ...(existing.contactId !== contact.id ? { contactId: contact.id, isVip: isVip(contact.userId) } : {}),
+    ...(existing.contactId !== contact.id
+      ? { contactId: contact.id, isVip: isVip(contact.userId) }
+      : {}),
     lastImportedAt: ctx.now,
     lastImportJobId: ctx.jobId,
   })!
   if (existing.contactId !== contact.id) changed.add('contactId')
   const terminal = SR_TERMINAL.has(sr.status)
   const mutable = REGION_MUTABLE_STATUSES.has(sr.status)
-  const regionInputs = ['deliveryStreet', 'deliveryZip', 'deliveryCity', 'deliveryCountry', 'costCenter', 'procurementType']
+  const regionInputs = [
+    'deliveryStreet',
+    'deliveryZip',
+    'deliveryCity',
+    'deliveryCountry',
+    'costCenter',
+    'procurementType',
+  ]
   if (!terminal && regionInputs.some((k) => changed.has(k))) {
     const region = regionColumns(sr)
     if (region) {
@@ -445,7 +485,12 @@ function applyServiceRequest(ctx: Ctx, row: Row): Outcome {
         changed.add('region')
       }
       if (mutable && region.regionId === null) {
-        warn(ctx, 'region_unresolved', 'No region rule matched the delivery address; the request stays unresolved.', 'delivery_address')
+        warn(
+          ctx,
+          'region_unresolved',
+          'No region rule matched the delivery address; the request stays unresolved.',
+          'delivery_address',
+        )
       }
     }
   }
@@ -456,7 +501,7 @@ function applyServiceRequest(ctx: Ctx, row: Row): Outcome {
     const item = current.find((i) => i.slot === slot)
     const wanted = details[key] ?? null
     if (!wanted) {
-      if (item && item.assetId === null) {
+      if (item?.assetId === null) {
         itemChanges.push(slot)
         if (mutable) items.remove(item.id)
       }
@@ -475,7 +520,7 @@ function applyServiceRequest(ctx: Ctx, row: Row): Outcome {
     const item = current.find((i) => i.slot === slot)
     const wanted = details[key] ?? null
     if (!wanted) {
-      if (item && item.assetId === null) {
+      if (item?.assetId === null) {
         itemChanges.push(slot)
         if (mutable) items.remove(item.id)
       }
@@ -506,7 +551,8 @@ function applyServiceRequest(ctx: Ctx, row: Row): Outcome {
       changed.add('status')
     } else {
       if (linkLeases(ctx, sr)) changed.add('lease')
-      if (isHoldGroup(sr.assignmentGroup) && HOLD_FROM.has(sr.status) && changed.size) ctx.stats.holdCandidates++
+      if (isHoldGroup(sr.assignmentGroup) && HOLD_FROM.has(sr.status) && changed.size)
+        ctx.stats.holdCandidates++
     }
   }
   if (changed.size || contactChanged) {
@@ -549,7 +595,12 @@ function applyLease(ctx: Ctx, row: Row): Outcome {
   const userId = v.user_id as string
   const [contact, contactChanged] = upsertContact(ctx, userId, personOf(v))
   if (!contact.email) {
-    warn(ctx, 'email_missing', 'The contact has no email address; lease mails cannot be sent.', 'email')
+    warn(
+      ctx,
+      'email_missing',
+      'The contact has no email address; lease mails cannot be sent.',
+      'email',
+    )
   }
   const fields: Partial<LeaseReturnRow> = {
     serialNumber: v.serial_number as string | null,
@@ -599,8 +650,10 @@ function applyLease(ctx: Ctx, row: Row): Outcome {
       lastSeenAt: ctx.now,
       lastImportJobId: ctx.jobId,
       version: 1,
-      ...Object.fromEntries(Object.entries(fields).filter(([, x]) => x !== null && x !== undefined)),
-    } as Omit<LeaseReturnRow, 'id'>)
+      ...Object.fromEntries(
+        Object.entries(fields).filter(([, x]) => x !== null && x !== undefined),
+      ),
+    })
     leases.update(lease.id, { isCampus: leaseIsCampus(contact.id, lease.costCenter) })
     transitionRow('lease_return', lease.id, lease.status, ctx)
     ctx.stats.leaseIds.add(lease.id)
@@ -632,7 +685,8 @@ function postLeases(ctx: Ctx, seen: Set<string>, complete: boolean): Record<stri
     for (const id of ctx.stats.reopen) {
       const lease = db.collection('lease_returns').get(id)
       if (lease?.status !== 'probably_closed') continue
-      if (applyAction('leaseReturn', id, 'reopen', { actor: ctx.actor, trigger: 'import' }).ok) reopened++
+      if (applyAction('leaseReturn', id, 'reopen', { actor: ctx.actor, trigger: 'import' }).ok)
+        reopened++
     }
     // late lease imports also run linking (SPEC_RESOLUTIONS #55)
     for (const id of ctx.stats.leaseIds) {
@@ -654,10 +708,15 @@ function postLeases(ctx: Ctx, seen: Set<string>, complete: boolean): Record<stri
     }
   }
   if (ctx.options.markMissingAsProbablyClosed && complete) {
-    for (const lease of db.collection('lease_returns').filter((l) => MARK_MISSING_FROM.has(l.status))) {
+    for (const lease of db
+      .collection('lease_returns')
+      .filter((l) => MARK_MISSING_FROM.has(l.status))) {
       if (seen.has(lease.assetTag)) continue
       if (!ctx.options.dryRun) {
-        applyAction('leaseReturn', lease.id, 'mark_probably_closed', { actor: ctx.actor, trigger: 'import' })
+        applyAction('leaseReturn', lease.id, 'mark_probably_closed', {
+          actor: ctx.actor,
+          trigger: 'import',
+        })
       }
       probablyClosed++
     }
@@ -693,11 +752,17 @@ function applyContact(ctx: Ctx, row: Row): Outcome {
 
 function postContacts(ctx: Ctx): Record<string, number> {
   if (!ctx.options.dryRun) {
-    for (const lease of db.collection('lease_returns').filter(
-      (l) => l.contactId !== null && ctx.stats.changedContacts.has(l.contactId) && l.status !== 'closed',
-    )) {
+    for (const lease of db
+      .collection('lease_returns')
+      .filter(
+        (l) =>
+          l.contactId !== null &&
+          ctx.stats.changedContacts.has(l.contactId) &&
+          l.status !== 'closed',
+      )) {
       const campus = leaseIsCampus(lease.contactId, lease.costCenter)
-      if (campus !== lease.isCampus) db.collection('lease_returns').update(lease.id, { isCampus: campus })
+      if (campus !== lease.isCampus)
+        db.collection('lease_returns').update(lease.id, { isCampus: campus })
     }
   }
   return {
@@ -710,9 +775,17 @@ function postContacts(ctx: Ctx): Record<string, number> {
 
 function articleForModel(ctx: Ctx, model: string | null) {
   if (!model) return undefined
-  const article = db.collection('articles').find((a) => a.modelNumber.toLowerCase() === model.trim().toLowerCase())
+  const article = db
+    .collection('articles')
+    .find((a) => a.modelNumber.toLowerCase() === model.trim().toLowerCase())
   if (!article) {
-    warn(ctx, 'unknown_model', `Model '${model}' is not in the article catalogue; the asset has no article.`, 'model', model)
+    warn(
+      ctx,
+      'unknown_model',
+      `Model '${model}' is not in the article catalogue; the asset has no article.`,
+      'model',
+      model,
+    )
   }
   return article
 }
@@ -722,7 +795,13 @@ function checkTag(tag: string | null, serial: string) {
   const other = db.collection('assets').find((a) => a.assetTag === tag)
   if (other && other.serialNumber !== serial) {
     throw new RowError(
-      issue('error', 'asset_tag_conflict', `Asset tag ${tag} already belongs to serial ${other.serialNumber}.`, 'asset_tag', tag),
+      issue(
+        'error',
+        'asset_tag_conflict',
+        `Asset tag ${tag} already belongs to serial ${other.serialNumber}.`,
+        'asset_tag',
+        tag,
+      ),
     )
   }
 }
@@ -826,11 +905,17 @@ function applyAssetNew(ctx: Ctx, row: Row): Outcome {
   return Object.keys(patch).length ? 'updated' : 'unchanged'
 }
 
-function syncAction(state: string | null, stockroom: string | null): 'sync_in_use' | 'sync_collected' | null {
+function syncAction(
+  state: string | null,
+  stockroom: string | null,
+): 'sync_in_use' | 'sync_collected' | null {
   const s = (state ?? '').trim().toLowerCase()
   if (s === 'in use') return 'sync_in_use'
   if (s === 'in transit') return 'sync_collected'
-  if (s === 'in stock' && (stockroom ?? '').trim().toLowerCase() === OLD_DEVICE_STOCKROOM.toLowerCase())
+  if (
+    s === 'in stock' &&
+    (stockroom ?? '').trim().toLowerCase() === OLD_DEVICE_STOCKROOM.toLowerCase()
+  )
     return 'sync_collected'
   return null
 }
@@ -840,21 +925,51 @@ function applyStatusSync(ctx: Ctx, row: Row): Outcome {
   const serial = row.key!
   const action = syncAction(v.install_state as string | null, v.stockroom as string | null)
   if (!action) {
-    warn(ctx, 'unmapped_state', `Install state '${String(v.install_state)}' is not synchronised; the row was skipped.`, 'install_state', v.install_state)
+    warn(
+      ctx,
+      'unmapped_state',
+      `Install state '${String(v.install_state)}' is not synchronised; the row was skipped.`,
+      'install_state',
+      v.install_state,
+    )
     return 'skipped'
   }
   const asset = db.collection('assets').find((a) => a.serialNumber === serial)
   if (asset && ['assigned', 'prepared', 'provided'].includes(asset.status)) {
-    throw new RowError(issue('error', 'asset_in_workflow', `Serial ${serial} is reserved by a service request (${asset.status}).`, 'serial_number', serial))
+    throw new RowError(
+      issue(
+        'error',
+        'asset_in_workflow',
+        `Serial ${serial} is reserved by a service request (${asset.status}).`,
+        'serial_number',
+        serial,
+      ),
+    )
   }
   if (asset?.status.startsWith('deactivated_')) {
-    throw new RowError(issue('error', 'asset_deactivated', `Serial ${serial} has left the fleet (${asset.status}).`, 'serial_number', serial))
+    throw new RowError(
+      issue(
+        'error',
+        'asset_deactivated',
+        `Serial ${serial} has left the fleet (${asset.status}).`,
+        'serial_number',
+        serial,
+      ),
+    )
   }
   checkTag(v.asset_tag as string | null, serial)
   const srNumber = v.sr_number as string | null
-  const sr = srNumber ? db.collection('service_requests').find((s) => s.number === srNumber) : undefined
+  const sr = srNumber
+    ? db.collection('service_requests').find((s) => s.number === srNumber)
+    : undefined
   if (srNumber && !sr) {
-    warn(ctx, 'sr_not_found', `Service request ${srNumber} is unknown; the device was synchronised without it.`, 'sr_number', srNumber)
+    warn(
+      ctx,
+      'sr_not_found',
+      `Service request ${srNumber} is unknown; the device was synchronised without it.`,
+      'sr_number',
+      srNumber,
+    )
   }
   const assignedUser = v.assigned_user_id as string | null
   const contact =
@@ -862,11 +977,18 @@ function applyStatusSync(ctx: Ctx, row: Row): Outcome {
       ? db.collection('contacts').find((c) => c.userId === assignedUser)
       : undefined
   if (action === 'sync_in_use' && assignedUser && !contact) {
-    warn(ctx, 'unknown_contact', `User ${assignedUser} is not a known contact.`, 'assigned_user_id', assignedUser)
+    warn(
+      ctx,
+      'unknown_contact',
+      `User ${assignedUser} is not a known contact.`,
+      'assigned_user_id',
+      assignedUser,
+    )
   }
   const article = articleForModel(ctx, v.model as string | null)
   const target = action === 'sync_in_use' ? 'in_use' : 'collected'
-  const siteId = sr?.supplyingSiteId ?? db.collection('sites').find((s) => s.code === 'RIV')?.id ?? null
+  const siteId =
+    sr?.supplyingSiteId ?? db.collection('sites').find((s) => s.code === 'RIV')?.id ?? null
   const locationId = target === 'in_use' ? locationOf(null, 'in_use') : locationOf(siteId, 'return')
   let outcome: Outcome
   let current: AssetRow
@@ -916,9 +1038,15 @@ function applyStatusSync(ctx: Ctx, row: Row): Outcome {
     outcome = Object.keys(patch).length || asset.status !== target ? 'updated' : 'unchanged'
   }
   if (sr && target === 'collected' && current.assetTag) {
-    for (const item of db.collection('service_request_items').filter(
-      (i) => i.serviceRequestId === sr.id && i.slot.startsWith('old_') && i.expectedAssetTag === current.assetTag && i.assetId === null,
-    )) {
+    for (const item of db
+      .collection('service_request_items')
+      .filter(
+        (i) =>
+          i.serviceRequestId === sr.id &&
+          i.slot.startsWith('old_') &&
+          i.expectedAssetTag === current.assetTag &&
+          i.assetId === null,
+      )) {
       db.collection('service_request_items').update(item.id, { assetId: current.id })
       if (outcome === 'unchanged') outcome = 'updated'
     }
@@ -965,7 +1093,15 @@ export function runValidation(
       holdCandidates: 0,
     },
   }
-  const counts: ImportCountsRow = { processed: 0, created: 0, updated: 0, unchanged: 0, skipped: 0, errors: 0, warnings: 0 }
+  const counts: ImportCountsRow = {
+    processed: 0,
+    created: 0,
+    updated: 0,
+    unchanged: 0,
+    skipped: 0,
+    errors: 0,
+    warnings: 0,
+  }
   for (const row of validation.rows) {
     counts.processed++
     if (!hasErrors(row)) {
@@ -997,7 +1133,7 @@ export function runValidation(
     for (const [name, rows] of snapshot) {
       const collection = db.collection(name)
       collection.clear()
-      collection.insertMany(rows as never)
+      collection.insertMany(rows)
     }
   }
   const total = validation.rows.length

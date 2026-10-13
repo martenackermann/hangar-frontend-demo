@@ -10,7 +10,12 @@ import type {
   VipEntry,
 } from '@/lib/api/types'
 import type { MockActor } from '@/mocks/auth'
-import type { ArticleRow, ArticleSiteSettingRow, RegionRuleRow, VipEntryRow } from '@/mocks/core/tables'
+import type {
+  ArticleRow,
+  ArticleSiteSettingRow,
+  RegionRuleRow,
+  VipEntryRow,
+} from '@/mocks/core/tables'
 import {
   contactRef,
   locationRef,
@@ -95,7 +100,9 @@ export function importSummary(row: ImportJobRow, actor: MockActor | null): Impor
     startedAt: row.startedAt,
     finishedAt: row.finishedAt,
     availableActions:
-      ACTIVE.has(row.status) && !row.cancelRequested && actor?.permissions.includes('imports.create')
+      ACTIVE.has(row.status) &&
+      !row.cancelRequested &&
+      actor?.permissions.includes('imports.create')
         ? ['cancel']
         : [],
   }
@@ -196,7 +203,12 @@ export function siteSetting(row: ArticleSiteSettingRow): ArticleSiteSetting {
 }
 
 export function articleDetail(row: ArticleRow): ArticleDetail {
-  const sites = new Map(db.collection('sites').all().map((s) => [s.id, s]))
+  const sites = new Map(
+    db
+      .collection('sites')
+      .all()
+      .map((s) => [s.id, s]),
+  )
   return {
     ...article(row),
     siteSettings: db

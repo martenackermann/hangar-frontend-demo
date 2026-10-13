@@ -31,6 +31,12 @@ import {
   vipEntry,
 } from './read-models'
 
+/** Trimmed text, or `null` for an absent or blank value. */
+function blankToNull(value: string | null | undefined): string | null {
+  const text = value?.trim() ?? ''
+  return text.length > 0 ? text : null
+}
+
 /** `/articles`, `/regions/{id}`, `/region-rules`, `/vip-entries` (API.md §5.2–§5.4). */
 const nowIso = () => new Date().toISOString()
 
@@ -91,7 +97,10 @@ function articleConflicts(
   if (others.some((a) => same(a.modelNumber, values.modelNumber))) {
     errors.modelNumber = ['Another article already uses this model number.']
   }
-  if (active && others.some((a) => a.isActive && same(a.internalDescription, values.internalDescription))) {
+  if (
+    active &&
+    others.some((a) => a.isActive && same(a.internalDescription, values.internalDescription))
+  ) {
     errors.internalDescription = ['Another active article already uses this device type.']
   }
   return errors
@@ -184,7 +193,7 @@ const articleHandlers: RequestHandler[] = [
         name: body.name!.trim(),
         modelNumber: body.modelNumber!.trim(),
         manufacturer: body.manufacturer!.trim(),
-        externalPartNumber: body.externalPartNumber?.trim() || null,
+        externalPartNumber: blankToNull(body.externalPartNumber),
         internalDescription: body.internalDescription!.trim(),
         weightKg: body.weightKg!,
         isActive: true,
@@ -235,7 +244,9 @@ const articleHandlers: RequestHandler[] = [
         if (clash) {
           return problem(409, 'conflict', 'Conflict', {
             detail: `Article ${clash.number} is active with the same device type '${row.internalDescription}'. Deactivate it first.`,
-            errors: { internalDescription: ['Another active article already uses this device type.'] },
+            errors: {
+              internalDescription: ['Another active article already uses this device type.'],
+            },
             request,
           })
         }
@@ -506,7 +517,9 @@ const regionHandlers: RequestHandler[] = [
       const body = await readJson<RegionRuleInput>(request)
       const check = checkRule({ ...row, ...body }, row.id)
       if (!check.ok) return ruleProblem(check, request)
-      const updated = db.collection('region_rules').update(row.id, { ...body, pattern: check.pattern })!
+      const updated = db
+        .collection('region_rules')
+        .update(row.id, { ...body, pattern: check.pattern })!
       return HttpResponse.json(rule(updated))
     }),
   ),
@@ -542,7 +555,14 @@ function recomputeVip(userId: string) {
 
 function vipErrors(body: Partial<VipEntryInput>, partial: boolean): Record<string, string[]> {
   const errors: Record<string, string[]> = {}
-  const allowed = ['firstName', 'lastName', 'vipType', 'title', 'note', ...(partial ? [] : ['userId'])]
+  const allowed = [
+    'firstName',
+    'lastName',
+    'vipType',
+    'title',
+    'note',
+    ...(partial ? [] : ['userId']),
+  ]
   for (const key of Object.keys(body)) if (!allowed.includes(key)) errors[key] = ['Unknown field.']
   if (!partial && !/^[A-Za-z0-9]{3,16}$/.test(body.userId ?? '')) {
     errors.userId = ['Enter the ITSM user id (3–16 letters or digits).']
@@ -596,11 +616,11 @@ const vipHandlers: RequestHandler[] = [
       }
       const row = db.collection('vip_entries').insert({
         userId,
-        firstName: body.firstName?.trim() || null,
+        firstName: blankToNull(body.firstName),
         lastName: body.lastName!.trim(),
         vipType: body.vipType!.trim(),
-        title: body.title?.trim() || null,
-        note: body.note?.trim() || null,
+        title: blankToNull(body.title),
+        note: blankToNull(body.note),
         createdAt: nowIso(),
       })
       recomputeVip(userId)

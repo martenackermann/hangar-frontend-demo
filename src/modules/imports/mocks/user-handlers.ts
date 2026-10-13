@@ -14,7 +14,9 @@ export const userHandlers: RequestHandler[] = [
     apiPath('/users/:id'),
     authed<{ id: string }>('users.manage', ({ params, request }) => {
       const row = db.collection('users').get(Number(params.id))
-      return row ? HttpResponse.json(userSummary(row)) : problems.notFound('User', params.id, request)
+      return row
+        ? HttpResponse.json(userSummary(row))
+        : problems.notFound('User', params.id, request)
     }),
   ),
   http.post(
@@ -23,10 +25,11 @@ export const userHandlers: RequestHandler[] = [
       const body = await readJson<UserCreate>(request)
       const errors: Record<string, string[]> = {}
       const email = (body.email ?? '').trim().toLowerCase()
-      if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,63}$/.test(email)) errors.email = ['Enter a valid email address.']
+      if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,63}$/.test(email))
+        errors.email = ['Enter a valid email address.']
       if (!body.firstName?.trim()) errors.firstName = ['Field required']
       if (!body.lastName?.trim()) errors.lastName = ['Field required']
-      if (!ROLES.includes(body.role as Role)) errors.role = ['Field required']
+      if (!ROLES.includes(body.role!)) errors.role = ['Field required']
       if ((body.password ?? '').length < 8) {
         errors.password = ['String should have at least 8 characters']
       }
@@ -71,14 +74,16 @@ export const userHandlers: RequestHandler[] = [
         }
       }
       for (const key of ['firstName', 'lastName', 'role'] as const) {
-        if (key in body && !String(body[key] ?? '').trim()) errors[key] = ['This field cannot be empty.']
+        if (key in body && !String(body[key] ?? '').trim())
+          errors[key] = ['This field cannot be empty.']
       }
       if (body.homeSiteId != null && !db.collection('sites').get(body.homeSiteId)) {
         errors.homeSiteId = ['Unknown site.']
       }
       if (Object.keys(errors).length) return problems.validation(errors, undefined, request)
       if (body.role && body.role !== row.role) {
-        if (row.id === actor.id) return problems.conflict('You cannot change your own role.', request)
+        if (row.id === actor.id)
+          return problems.conflict('You cannot change your own role.', request)
         if (row.isDemoPersona) {
           return problems.conflict(
             'Demo personas keep their role so the demo stories stay intact.',

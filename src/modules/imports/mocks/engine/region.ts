@@ -84,7 +84,12 @@ export function candidateRules(input: {
     city: normalizeCity(input.city),
     costCenter: normalizeCostCenter(input.costCenter),
   }
-  const regions = new Map(db.collection('regions').all().map((r) => [r.id, r]))
+  const regions = new Map(
+    db
+      .collection('regions')
+      .all()
+      .map((r) => [r.id, r]),
+  )
   const rules = db.collection('region_rules').filter((rule) => {
     if (!rule.isActive || !regions.get(rule.regionId)?.isActive) return false
     if (rule.procurementType !== null && rule.procurementType !== (input.procurementType ?? null))
@@ -95,7 +100,7 @@ export function candidateRules(input: {
       case 'zip':
         return normalized.zip !== null && rule.pattern === normalized.zip
       case 'zip_prefix':
-        return normalized.zip !== null && normalized.zip.startsWith(rule.pattern)
+        return normalized.zip?.startsWith(rule.pattern) ?? false
       case 'city':
         return normalized.city !== null && rule.pattern === normalized.city
     }
@@ -144,7 +149,12 @@ export function resolveRegion(input: {
 export function regionColumns(
   sr: Pick<
     ServiceRequestRow,
-    'deliveryZip' | 'deliveryCity' | 'costCenter' | 'procurementType' | 'regionOverridden' | 'status'
+    | 'deliveryZip'
+    | 'deliveryCity'
+    | 'costCenter'
+    | 'procurementType'
+    | 'regionOverridden'
+    | 'status'
   >,
   force = false,
 ): Pick<

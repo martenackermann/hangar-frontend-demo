@@ -71,7 +71,11 @@ export const ITSM_STATES = [
   'Cancelled',
 ] as const
 export const OLD_DEVICE_STOCKROOM = 'Old device stockroom'
-const DRY_RUN = { name: 'dryRun', required: false, description: 'Validate only; nothing is changed.' } as const
+const DRY_RUN = {
+  name: 'dryRun',
+  required: false,
+  description: 'Validate only; nothing is changed.',
+} as const
 
 const GENDER: ColumnSpec = {
   name: 'gender',
@@ -162,11 +166,20 @@ export const ORDER_DETAIL_KEYS: PackedKeySpec[] = [
     name: 'new_base',
     maxLen: 120,
     requiredUnlessRemoval: true,
-    description:
-      'Ordered device type (article internal description); required unless Removal',
+    description: 'Ordered device type (article internal description); required unless Removal',
   },
-  { key: 'New peripheral 1 type', name: 'new_peripheral_1', maxLen: 120, description: 'Device type' },
-  { key: 'New peripheral 2 type', name: 'new_peripheral_2', maxLen: 120, description: 'Device type' },
+  {
+    key: 'New peripheral 1 type',
+    name: 'new_peripheral_1',
+    maxLen: 120,
+    description: 'Device type',
+  },
+  {
+    key: 'New peripheral 2 type',
+    name: 'new_peripheral_2',
+    maxLen: 120,
+    description: 'Device type',
+  },
   {
     key: 'Software without approval',
     name: 'requested_software',
@@ -203,8 +216,7 @@ export const SPECS: Record<ImportType, TypeSpec> = {
   service_requests: {
     type: 'service_requests',
     label: 'Service requests',
-    description:
-      'Hardware orders from the ITSM export, with packed order details and address.',
+    description: 'Hardware orders from the ITSM export, with packed order details and address.',
     signature: ['order_details'],
     key: 'sr_number',
     columns: [

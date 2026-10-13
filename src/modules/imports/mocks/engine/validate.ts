@@ -1,6 +1,13 @@
 import { getBusinessTimeZone } from '@/lib/format'
 import type { ImportType } from '@/lib/api/types'
-import { ITSM_STATES, SPECS, headerAnalysis, type ColumnSpec, type Kind, type PackedKeySpec } from './formats'
+import {
+  ITSM_STATES,
+  SPECS,
+  headerAnalysis,
+  type ColumnSpec,
+  type Kind,
+  type PackedKeySpec,
+} from './formats'
 import type { RawTable } from './reader'
 
 /**
@@ -40,6 +47,13 @@ export function isNull(value: string | null | undefined): boolean {
   return value === null || value === undefined || NULLS.has(value.trim().toUpperCase())
 }
 
+function rawText(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null
+  if (typeof raw === 'string') return raw
+  if (typeof raw === 'number' || typeof raw === 'boolean') return String(raw)
+  return JSON.stringify(raw)
+}
+
 export function issue(
   severity: Severity,
   code: string,
@@ -47,7 +61,7 @@ export function issue(
   column: string | null = null,
   raw: unknown = null,
 ): Issue {
-  const text = raw === null || raw === undefined ? null : String(raw)
+  const text = rawText(raw)
   return {
     severity,
     code,
@@ -57,7 +71,8 @@ export function issue(
   }
 }
 
-export const hasErrors = (row: Pick<Row, 'issues'>) => row.issues.some((i) => i.severity === 'error')
+export const hasErrors = (row: Pick<Row, 'issues'>) =>
+  row.issues.some((i) => i.severity === 'error')
 export const hasWarnings = (row: Pick<Row, 'issues'>) =>
   row.issues.some((i) => i.severity === 'warning')
 
@@ -99,7 +114,14 @@ function tzOffsetMs(utcMs: number, timeZone: string): number {
     second: '2-digit',
   }).formatToParts(new Date(utcMs))
   const get = (type: string) => Number(parts.find((p) => p.type === type)?.value)
-  const local = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'))
+  const local = Date.UTC(
+    get('year'),
+    get('month') - 1,
+    get('day'),
+    get('hour'),
+    get('minute'),
+    get('second'),
+  )
   return local - utcMs
 }
 
@@ -134,8 +156,8 @@ export function parseDateTime(value: string): string {
     throw new CellError(`'${value}' is not a valid date-time.`)
   }
   const zone = match[7]
-  if (!zone) return businessToUtc(y!, mo!, d!, h!, mi!, s)
-  const base = Date.UTC(y!, mo! - 1, d!, h!, mi!, s)
+  if (!zone) return businessToUtc(y!, mo!, d!, h, mi, s)
+  const base = Date.UTC(y!, mo! - 1, d, h, mi, s)
   if (zone === 'Z') return new Date(base).toISOString()
   const sign = zone.startsWith('-') ? -1 : 1
   const offset = sign * (Number(zone.slice(1, 3)) * 60 + Number(zone.slice(4, 6))) * 60_000
@@ -173,7 +195,13 @@ function parseCell(kind: Kind, value: string): unknown {
       return gender
     }
     case 'procurement': {
-      const found = PROCUREMENT[value.trim().toLowerCase().replace(/[\s_]+/g, ' ')]
+      const found =
+        PROCUREMENT[
+          value
+            .trim()
+            .toLowerCase()
+            .replace(/[\s_]+/g, ' ')
+        ]
       if (!found)
         throw new CellError(
           `'${value}' is not a procurement type (Replacement, New hire, Additional device, Removal).`,
@@ -185,7 +213,10 @@ function parseCell(kind: Kind, value: string): unknown {
         throw new CellError(`'${value}' is not a zip code (4–5 digits).`)
       return value.trim().padStart(5, '0')
     case 'mac': {
-      const digits = value.trim().toUpperCase().replace(/[:\-.\s]/g, '')
+      const digits = value
+        .trim()
+        .toUpperCase()
+        .replace(/[:\-.\s]/g, '')
       if (!/^[0-9A-F]{12}$/.test(digits))
         throw new CellError(`'${value}' is not a MAC address (12 hex digits).`)
       return digits.match(/.{2}/g)!.join(':')
@@ -209,7 +240,13 @@ function recordParse(row: Row, kind: Kind, column: string, raw: string): unknown
     const known = ITSM_STATES.find((s) => s.toLowerCase() === raw.trim().toLowerCase())
     if (!known)
       row.issues.push(
-        issue('warning', 'invalid_enum', `Unknown ITSM state '${raw}' (stored as given).`, column, raw),
+        issue(
+          'warning',
+          'invalid_enum',
+          `Unknown ITSM state '${raw}' (stored as given).`,
+          column,
+          raw,
+        ),
       )
     return known ?? raw.trim()
   }
@@ -228,7 +265,9 @@ function recordParse(row: Row, kind: Kind, column: string, raw: string): unknown
         row.issues.push(issue('error', 'invalid_email', message, column, raw))
         break
       case 'optional_email':
-        row.issues.push(issue('warning', 'invalid_email', `${message} It was ignored.`, column, raw))
+        row.issues.push(
+          issue('warning', 'invalid_email', `${message} It was ignored.`, column, raw),
+        )
         break
       case 'gender':
         row.issues.push(issue('warning', 'invalid_enum', `${message} It was ignored.`, column, raw))
@@ -238,7 +277,9 @@ function recordParse(row: Row, kind: Kind, column: string, raw: string): unknown
         break
       case 'mac':
       case 'phone':
-        row.issues.push(issue('warning', 'invalid_format', `${message} It was ignored.`, column, raw))
+        row.issues.push(
+          issue('warning', 'invalid_format', `${message} It was ignored.`, column, raw),
+        )
         break
       default:
         row.issues.push(issue('error', 'invalid_format', message, column, raw))
@@ -262,7 +303,12 @@ export function parsePacked(
     for (const key of keys) {
       if (key.required && (values[key.name] ?? null) === null) {
         issues.push(
-          issue('error', 'packed_missing_key', `Required key '${key.key}' is missing.`, `${column}.${key.key}`),
+          issue(
+            'error',
+            'packed_missing_key',
+            `Required key '${key.key}' is missing.`,
+            `${column}.${key.key}`,
+          ),
         )
       }
     }
@@ -273,7 +319,13 @@ export function parsePacked(
   }
   if (!text.startsWith('[') || !text.endsWith(']')) {
     issues.push(
-      issue('error', 'packed_format', 'Packed values must look like [Key: value],[Key: value].', column, raw),
+      issue(
+        'error',
+        'packed_format',
+        'Packed values must look like [Key: value],[Key: value].',
+        column,
+        raw,
+      ),
     )
     return { values, present, issues }
   }
@@ -281,7 +333,9 @@ export function parsePacked(
   for (const part of text.slice(1, -1).split('],[')) {
     const colon = part.indexOf(':')
     if (colon < 0) {
-      issues.push(issue('error', 'packed_format', `'[${part}]' is not a [Key: value] pair.`, column, raw))
+      issues.push(
+        issue('error', 'packed_format', `'[${part}]' is not a [Key: value] pair.`, column, raw),
+      )
       continue
     }
     const keyText = part.slice(0, colon).trim()
@@ -289,13 +343,25 @@ export function parsePacked(
     const spec = byKey.get(keyText.toLowerCase())
     if (!spec) {
       issues.push(
-        issue('warning', 'packed_unknown_key', `Unknown key '${keyText}' was ignored.`, `${column}.${keyText}`, valueText),
+        issue(
+          'warning',
+          'packed_unknown_key',
+          `Unknown key '${keyText}' was ignored.`,
+          `${column}.${keyText}`,
+          valueText,
+        ),
       )
       continue
     }
     if (present.has(spec.name)) {
       issues.push(
-        issue('error', 'packed_duplicate_key', `Key '${spec.key}' appears more than once.`, `${column}.${spec.key}`, valueText),
+        issue(
+          'error',
+          'packed_duplicate_key',
+          `Key '${spec.key}' appears more than once.`,
+          `${column}.${spec.key}`,
+          valueText,
+        ),
       )
       continue
     }
@@ -309,13 +375,23 @@ export function parsePacked(
 function packedValue(row: Row, key: PackedKeySpec, column: string, value: string): unknown {
   const label = `${column}.${key.key}`
   if (key.maxLen !== undefined && value.length > key.maxLen) {
-    row.issues.push(issue('error', 'too_long', `'${key.key}' is longer than ${key.maxLen} characters.`, label, value))
+    row.issues.push(
+      issue(
+        'error',
+        'too_long',
+        `'${key.key}' is longer than ${key.maxLen} characters.`,
+        label,
+        value,
+      ),
+    )
     return null
   }
   if (key.kind === 'key') {
     const upper = value.toUpperCase()
     if (key.pattern && !key.pattern.test(upper)) {
-      row.issues.push(issue('error', 'invalid_format', `'${value}' is not a valid asset tag.`, label, value))
+      row.issues.push(
+        issue('error', 'invalid_format', `'${value}' is not a valid asset tag.`, label, value),
+      )
       return null
     }
     return upper
@@ -344,13 +420,21 @@ export function validateTable(table: RawTable, type: ImportType): Validation {
     for (const column of spec.columns) {
       const value = raw[column.name] ?? null
       if (column.required && value === null) {
-        row.issues.push(issue('error', 'missing_required', `'${column.name}' is required.`, column.name))
+        row.issues.push(
+          issue('error', 'missing_required', `'${column.name}' is required.`, column.name),
+        )
       }
       if (value === null) continue
       const tooLong = column.maxLen !== undefined && value.length > column.maxLen
       if (tooLong) {
         row.issues.push(
-          issue('error', 'too_long', `'${column.name}' is longer than ${column.maxLen} characters.`, column.name, value),
+          issue(
+            'error',
+            'too_long',
+            `'${column.name}' is longer than ${column.maxLen} characters.`,
+            column.name,
+            value,
+          ),
         )
       } else if (column.pattern && !column.pattern.test(value)) {
         row.issues.push(
@@ -407,8 +491,7 @@ export function validateTable(table: RawTable, type: ImportType): Validation {
     if (type === 'service_requests') {
       const details = row.values.order_details as Record<string, unknown> | null
       if (
-        details &&
-        details.procurement_type &&
+        details?.procurement_type &&
         details.procurement_type !== 'removal' &&
         !details.new_base &&
         !row.issues.some((i) => i.code.startsWith('packed_') && i.severity === 'error')

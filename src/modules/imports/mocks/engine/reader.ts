@@ -5,11 +5,7 @@
  * backend (no spreadsheet parser in the browser demo).
  */
 export type FileProblemCode =
-  | 'encoding_unsupported'
-  | 'empty_file'
-  | 'duplicate_columns'
-  | 'file_unreadable'
-  | 'too_many_rows'
+  'encoding_unsupported' | 'empty_file' | 'duplicate_columns' | 'file_unreadable' | 'too_many_rows'
 
 export class FileProblem extends Error {
   readonly code: FileProblemCode
@@ -31,7 +27,11 @@ export interface RawTable {
 }
 
 export function normalizeHeader(value: string): string {
-  return value.replace(/﻿/g, '').trim().toLowerCase().replace(/[\s-]+/g, '_')
+  return value
+    .replace(/\uFEFF/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_')
 }
 
 /** One CSV line → fields (quote `"`, doubled quote escape). */
@@ -96,12 +96,12 @@ export function readCsv(bytes: Uint8Array, maxRows?: number): RawTable {
       "The file is not UTF-8 encoded. Save it as 'CSV UTF-8' and upload it again.",
     )
   }
-  text = text.replace(/^﻿/, '')
+  text = text.replace(/^\uFEFF/, '')
   if (!text.trim()) throw new FileProblem('empty_file', 'The file is empty.')
   const delimiter = detectDelimiter(text.split(/\r?\n/, 1)[0] ?? '')
   const records = parseCsv(text, delimiter)
   const headerCells = records[0] ?? []
-  const headers = headerCells.map((h) => h.replace(/﻿/g, '').trim())
+  const headers = headerCells.map((h) => h.replace(/\uFEFF/g, '').trim())
   const normalized = headers.map(normalizeHeader)
   const seen = new Map<string, number>()
   const duplicates: string[] = []

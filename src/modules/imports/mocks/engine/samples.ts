@@ -22,19 +22,29 @@ function prng(seed: number): () => number {
 }
 
 const BASE32 = '0123456789BCDFGHJKLMNPQRSTVWXYZ'
-const STREETS = ['Harbour Road', 'Elm Street', 'Mill Lane', 'Station Road', 'High Street', 'Ridge Avenue']
+const STREETS = [
+  'Harbour Road',
+  'Elm Street',
+  'Mill Lane',
+  'Station Road',
+  'High Street',
+  'Ridge Avenue',
+]
 const LAPTOPS = ['Laptop Standard 14', 'Laptop Performance 16', 'Laptop Convertible 13']
 const DOCKS = ['Docking Station USB-C', 'Docking Station Thunderbolt']
 const HOLD_GROUP = 'Rollout Hardware Hold'
 
-const pick = <T,>(rnd: () => number, list: readonly T[]): T => list[Math.floor(rnd() * list.length)]!
+const pick = <T>(rnd: () => number, list: readonly T[]): T => list[Math.floor(rnd() * list.length)]!
 const serial = (rnd: () => number, prefix: string) =>
   prefix + Array.from({ length: 8 }, () => pick(rnd, BASE32.split(''))).join('')
 const packed = (pairs: [string, string][]) => pairs.map(([k, v]) => `[${k}: ${v}]`).join(',')
 
 function table(type: ImportType, rows: Record<string, string>[]): string {
   const columns = SPECS[type].columns.map((c) => c.name)
-  return csv([columns, ...rows.map((row) => columns.map((c) => row[c] ?? ''))]).replace(/^﻿/, '')
+  return csv([columns, ...rows.map((row) => columns.map((c) => row[c] ?? ''))]).replace(
+    /^\uFEFF/,
+    '',
+  )
 }
 
 function contacts(rnd: () => number, count: number) {
@@ -44,7 +54,9 @@ function contacts(rnd: () => number, count: number) {
 
 function regionAddress(rnd: () => number) {
   const region = pick(rnd, db.collection('regions').all())
-  const prefix = db.collection('region_rules').find((r) => r.regionId === region.id && r.matchKind === 'zip_prefix')
+  const prefix = db
+    .collection('region_rules')
+    .find((r) => r.regionId === region.id && r.matchKind === 'zip_prefix')
   return {
     street: `${1 + Math.floor(rnd() * 120)} ${pick(rnd, STREETS)}`,
     zip: `${prefix?.pattern ?? '10'}${100 + Math.floor(rnd() * 900)}`.slice(0, 5),
@@ -72,7 +84,10 @@ function serviceRequests(rnd: () => number, count: number, withErrors: boolean):
       ['Procurement type', 'Replacement'],
       ['Scope of delivery', 'Laptop, dock, monitor'],
       ['Client component', 'Standard laptop'],
-      ['Old base device', lease?.assetTag ?? `GX1${String(Math.floor(rnd() * 99_999)).padStart(5, '0')}`],
+      [
+        'Old base device',
+        lease?.assetTag ?? `GX1${String(Math.floor(rnd() * 99_999)).padStart(5, '0')}`,
+      ],
       ['New base device type', pick(rnd, LAPTOPS)],
       ['New peripheral 1 type', pick(rnd, DOCKS)],
       ['On-site contact phone', `+00 555 ${1000 + Math.floor(rnd() * 9000)}`],
@@ -87,10 +102,14 @@ function serviceRequests(rnd: () => number, count: number, withErrors: boolean):
       opened_at: `${addDays(businessToday(), -1)}T08:${String(10 + i).padStart(2, '0')}:00Z`,
       user_id: contact?.userId ?? person.userId,
       catalog_item: 'Workplace hardware replacement',
-      short_description: `Replacement for ${contact?.firstName ?? ''} ${contact?.lastName ?? ''}`.trim(),
+      short_description:
+        `Replacement for ${contact?.firstName ?? ''} ${contact?.lastName ?? ''}`.trim(),
       order_details: packed(details),
       delivery_address: packed([
-        ['Room', `${1 + Math.floor(rnd() * 5)}.${String(1 + Math.floor(rnd() * 40)).padStart(2, '0')}`],
+        [
+          'Room',
+          `${1 + Math.floor(rnd() * 5)}.${String(1 + Math.floor(rnd() * 40)).padStart(2, '0')}`,
+        ],
         ['Building', `B${1 + Math.floor(rnd() * 6)}`],
         ['Street', campus ? '1 Campus Way' : address.street],
         ['Zip', campus ? '10500' : address.zip],
@@ -105,16 +124,31 @@ function serviceRequests(rnd: () => number, count: number, withErrors: boolean):
     }
   })
   if (withErrors && rows.length >= 6) {
-    rows[0] = { ...rows[0]!, user_id: 'E109001', first_name: 'Robin', last_name: 'Newcomer', email: '' }
+    rows[0] = {
+      ...rows[0]!,
+      user_id: 'E109001',
+      first_name: 'Robin',
+      last_name: 'Newcomer',
+      email: '',
+    }
     rows[1] = { ...rows[1]!, sr_number: 'SR12AB', task_number: '' }
-    rows[2] = { ...rows[2]!, delivery_address: rows[2]!.delivery_address.replace(/\[Zip: [^\]]*\],/, '') }
-    rows[3] = { ...rows[3]!, order_details: `${rows[3]!.order_details},[Procurement type: Replacement]` }
+    rows[2] = {
+      ...rows[2]!,
+      delivery_address: rows[2]!.delivery_address.replace(/\[Zip: [^\]]*\],/, ''),
+    }
+    rows[3] = {
+      ...rows[3]!,
+      order_details: `${rows[3]!.order_details},[Procurement type: Replacement]`,
+    }
     rows[4] = {
       ...rows[4]!,
-      order_details: rows[4]!.order_details.replace(/\[New base device type: [^\]]*\]/, '[New base device type: Laptop Ultra 15]'),
+      order_details: rows[4]!.order_details.replace(
+        /\[New base device type: [^\]]*\]/,
+        '[New base device type: Laptop Ultra 15]',
+      ),
     }
     rows[5] = { ...rows[5]!, order_details: `${rows[5]!.order_details},[Color: Blue]` }
-    rows.push({ ...rows[0]!, user_id: rows[0]!.user_id })
+    rows.push({ ...rows[0], user_id: rows[0].user_id })
   }
   return table('service_requests', rows)
 }
@@ -201,7 +235,14 @@ function assetsNew(rnd: () => number, count: number, withErrors: boolean): strin
       ci_name: '',
       model: article.modelNumber,
       mac_address: ['laptop', 'docking_station'].includes(article.category)
-        ? `02:00:5E:${[0, 0, 0].map(() => Math.floor(rnd() * 256).toString(16).padStart(2, '0').toUpperCase()).join(':')}`
+        ? `02:00:5E:${[0, 0, 0]
+            .map(() =>
+              Math.floor(rnd() * 256)
+                .toString(16)
+                .padStart(2, '0')
+                .toUpperCase(),
+            )
+            .join(':')}`
         : '',
       checked_in_date: addDays(today, -Math.floor(rnd() * 5)),
     }
@@ -251,7 +292,11 @@ export const SAMPLE_ROWS: Record<ImportType, number> = {
 
 export function buildSample(
   type: ImportType,
-  { rows = SAMPLE_ROWS[type], seed = 7, withErrors = false }: { rows?: number; seed?: number; withErrors?: boolean } = {},
+  {
+    rows = SAMPLE_ROWS[type],
+    seed = 7,
+    withErrors = false,
+  }: { rows?: number; seed?: number; withErrors?: boolean } = {},
 ): string {
   const rnd = prng(seed)
   switch (type) {

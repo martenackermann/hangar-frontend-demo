@@ -187,8 +187,7 @@ const STORY: StoryJob[] = [
         severity: 'error',
         columnName: 'sr_number',
         code: 'duplicate_in_file',
-        message:
-          'SR0012401 appears more than once in this file; only the first row is imported.',
+        message: 'SR0012401 appears more than once in this file; only the first row is imported.',
         rawValue: 'SR0012401',
         businessKey: 'SR0012401',
       },
@@ -269,7 +268,9 @@ export const seed: SeedDefinition = {
         durationMs: 0,
       })
       const targetLocationId =
-        story.type === 'assets_new' ? goodsIn(cancelled ? 'EAS-GOODS_IN' : 'RIV-GOODS_IN') : undefined
+        story.type === 'assets_new'
+          ? goodsIn(cancelled ? 'EAS-GOODS_IN' : 'RIV-GOODS_IN')
+          : undefined
       db.collection('import_jobs').insert({
         id,
         backgroundJobId: job.id,

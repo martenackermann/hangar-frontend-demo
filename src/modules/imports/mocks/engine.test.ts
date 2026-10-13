@@ -38,7 +38,8 @@ function srLine(number: string, overrides: Partial<Record<string, string>> = {})
 }
 
 const bytes = (text: string) => new TextEncoder().encode(text)
-const dana = () => actorForUser(db.collection('users').find((u) => u.email === PERSONA_EMAILS.dispatcher)!)
+const dana = () =>
+  actorForUser(db.collection('users').find((u) => u.email === PERSONA_EMAILS.dispatcher)!)
 
 function upload(content: string, filename = 'export.csv', options?: object, type?: string) {
   const form = new FormData()
@@ -93,7 +94,9 @@ describe('mock import engine (port of the backend)', () => {
   })
 
   it('creates SRs with region, VIP, campus, lease linking and hardware hold', () => {
-    const lease = db.collection('lease_returns').find((l) => l.status === 'info_sent' && !l.serviceRequestId)!
+    const lease = db
+      .collection('lease_returns')
+      .find((l) => l.status === 'info_sent' && !l.serviceRequestId)!
     const vip = db.collection('vip_entries').all()[0]!
     const table = readCsv(
       bytes(
@@ -126,7 +129,13 @@ describe('mock import engine (port of the backend)', () => {
   it('dry runs change nothing', () => {
     const before = db.collection('service_requests').count()
     const table = readCsv(bytes([SR_HEADER, srLine('SR0099201')].join('\n')))
-    const result = runValidation(998, 'service_requests', { dryRun: true }, validateTable(table, 'service_requests'), dana())
+    const result = runValidation(
+      998,
+      'service_requests',
+      { dryRun: true },
+      validateTable(table, 'service_requests'),
+      dana(),
+    )
     expect(result.counts.created).toBe(1)
     expect(db.collection('service_requests').count()).toBe(before)
   })
@@ -139,7 +148,11 @@ describe('mock /imports endpoints', () => {
     const form = new FormData()
     form.append('file', new File([content], 'itsm.csv'))
     const detection = await api.upload<ImportDetection>('/imports/detect', form)
-    expect(detection).toMatchObject({ detectedType: 'service_requests', rowCount: 2, delimiter: ',' })
+    expect(detection).toMatchObject({
+      detectedType: 'service_requests',
+      rowCount: 2,
+      delimiter: ',',
+    })
 
     const accepted = await upload(content)
     expect(accepted.status).toBe('queued')
@@ -167,28 +180,34 @@ describe('mock /imports endpoints', () => {
         if (isApiError(error)) codes.push(`${error.status} ${error.code}`)
       }
     }
-    expect(codes).toEqual([
-      '422 type_not_detected',
-      '422 missing_columns',
-      '400 empty_file',
-    ])
-    await expect(upload('serial_number,model\nKD1,KD-AERO14-G3\n')).rejects.toMatchObject({
-      status: 422,
-      fieldErrors: { 'options.targetLocationId': expect.any(Array) },
-    })
+    expect(codes).toEqual(['422 type_not_detected', '422 missing_columns', '400 empty_file'])
+    const missingTarget: unknown = await upload('serial_number,model\nKD1,KD-AERO14-G3\n').catch(
+      (error: unknown) => error,
+    )
+    expect(isApiError(missingTarget) && missingTarget.status).toBe(422)
+    expect(isApiError(missingTarget) ? Object.keys(missingTarget.fieldErrors) : []).toContain(
+      'options.targetLocationId',
+    )
   })
 
   it('cancels a queued import; viewers cannot upload', async () => {
     await signInAs(PERSONA_EMAILS.dispatcher)
     const accepted = await upload([SR_HEADER, srLine('SR0099401')].join('\n'))
-    const cancelled = await api.post<ImportJobDetail>(`/imports/${accepted.importJobId}/actions/cancel`, {})
+    const cancelled = await api.post<ImportJobDetail>(
+      `/imports/${accepted.importJobId}/actions/cancel`,
+      {},
+    )
     expect(cancelled.status).toBe('cancelled')
-    await expect(api.post(`/imports/${accepted.importJobId}/actions/cancel`, {})).rejects.toMatchObject({
+    await expect(
+      api.post(`/imports/${accepted.importJobId}/actions/cancel`, {}),
+    ).rejects.toMatchObject({
       status: 409,
       code: 'transition_not_allowed',
     })
     await signInAs(PERSONA_EMAILS.viewer)
-    await expect(upload([SR_HEADER, srLine('SR0099402')].join('\n'))).rejects.toMatchObject({ status: 403 })
+    await expect(upload([SR_HEADER, srLine('SR0099402')].join('\n'))).rejects.toMatchObject({
+      status: 403,
+    })
   })
 })
 
