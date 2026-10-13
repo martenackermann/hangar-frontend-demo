@@ -1,24 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { RoutePlaceholder } from '@/components/app/route-placeholder'
 import { requirePermission } from '@/lib/auth/guards'
+import { CallOffDetailPage } from '@/modules/stock/components/calloff-detail-page'
 
-/**
- * Call-off order (SCREENS.md). Owner: H5 (Stock, Inventory & Dashboard).
- * PLACEHOLDER created by the foundation: the owning slice replaces this file
- * (keep the path, the permission guard and `staticData.title`).
- */
+/** Call-off order detail (SCREENS.md §7.2). Owner: H5. Lines editable while draft. */
 export const Route = createFileRoute('/_app/stock/call-off-orders/$orderId')({
   beforeLoad: requirePermission('stock.read'),
   staticData: { title: 'Call-off order' },
-  component: Placeholder,
+  component: CallOffOrderRoute,
 })
 
-function Placeholder() {
-  return (
-    <RoutePlaceholder
-      title="Call-off order"
-      owner="H5"
-      purpose="One call-off order: lines, quantities, send to Initech Logistics."
-    />
-  )
+function CallOffOrderRoute() {
+  const { orderId } = Route.useParams()
+  return <CallOffDetailPage key={orderId} orderId={Number(orderId)} />
 }
