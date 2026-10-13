@@ -1,13 +1,14 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as Router from '@tanstack/react-router'
 import { api } from '@/lib/api/client'
 import type { DispatchSettings } from '@/lib/api/types'
 import { PERSONA_EMAILS, renderWithProviders, signInAs } from '@/test/utils'
 import { DispatchSettingsPage } from './dispatch-settings-page'
 
 vi.mock('@tanstack/react-router', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@tanstack/react-router')>()),
+  ...(await importOriginal<typeof Router>()),
   Link: ({ children }: { children: React.ReactNode }) => <a href="/communications">{children}</a>,
 }))
 
@@ -16,9 +17,9 @@ beforeEach(() => {
   vi.stubGlobal(
     'ResizeObserver',
     class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
     },
   )
 })
