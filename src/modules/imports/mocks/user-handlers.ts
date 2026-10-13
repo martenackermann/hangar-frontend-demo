@@ -137,6 +137,14 @@ export const userHandlers: RequestHandler[] = [
       if (params.action === 'deactivate' && row.id === actor.id) {
         return problems.conflict('You cannot deactivate your own account.', request)
       }
+      // Demo mode (the mock always is): anyone can sign in as a persona on the public demo, so
+      // locking one out — or every admin — must not be possible (backend `users.py`, same 409).
+      if (params.action === 'deactivate' && row.isDemoPersona) {
+        return problems.conflict(
+          'Demo personas stay active so the demo stays usable for everyone.',
+          request,
+        )
+      }
       const updated = db.collection('users').update(row.id, {
         isActive: params.action === 'activate',
       })!
