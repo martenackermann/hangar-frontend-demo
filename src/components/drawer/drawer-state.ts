@@ -1,3 +1,4 @@
+import { useQueryClient, type FetchQueryOptions } from '@tanstack/react-query'
 import { createStore, useSelector } from '@tanstack/react-store'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -86,3 +87,21 @@ export function useSiblings(param: DrawerParam): readonly number[] {
 }
 
 const EMPTY: readonly number[] = []
+
+/**
+ * Prefetch the records before and after the open one so J/K and the prev/next buttons show the
+ * neighbour at once instead of a loading state.
+ */
+export function usePrefetchNeighbours(
+  siblings: readonly number[],
+  index: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- any detail query options
+  options: (id: number) => FetchQueryOptions<any, any, any, any>,
+): void {
+  const queryClient = useQueryClient()
+  const prev = index > 0 ? siblings[index - 1] : undefined
+  const next = index >= 0 ? siblings[index + 1] : undefined
+  useEffect(() => {
+    for (const id of [next, prev]) if (id !== undefined) void queryClient.prefetchQuery(options(id))
+  }, [prev, next, options, queryClient])
+}

@@ -1,6 +1,14 @@
 import { ChevronDown, ChevronUp, Link2, X } from 'lucide-react'
 import { Dialog as RadixDialog } from 'radix-ui'
-import { Suspense, useCallback, useRef, useState, type ReactNode } from 'react'
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 import { useMediaQuery } from '@/lib/use-media-query'
 import { IconButton } from '@/components/ui/button'
 import { TabCount, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -57,6 +65,8 @@ export function DrawerFrame({
   const docked = useMediaQuery('(min-width: 1280px)')
   const [width, setWidth] = useState(readWidth)
   const dragging = useRef(false)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  useRestoreFocus()
 
   useShortcut('escape', onClose, { description: 'Close drawer', group: 'Drawer' })
   useShortcut('k', () => nav?.onPrev?.(), {
@@ -87,6 +97,29 @@ export function DrawerFrame({
       // ignore
     }
   }, [width])
+  // Keyboard alternative to dragging the edge: arrows ±16 px, Home/End min/max.
+  const onResizeKey = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    const step = { ArrowLeft: 16, ArrowRight: -16 }[event.key]
+    const next =
+      event.key === 'Home'
+        ? MIN_WIDTH
+        : event.key === 'End'
+          ? MAX_WIDTH
+          : step !== undefined
+            ? (current: number) => Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, current + step))
+            : undefined
+    if (next === undefined) return
+    event.preventDefault()
+    setWidth((current) => {
+      const value = typeof next === 'function' ? next(current) : next
+      try {
+        globalThis.localStorage?.setItem(WIDTH_KEY, String(value))
+      } catch {
+        // ignore
+      }
+      return value
+    })
+  }, [])
 
   const bar = (
     <div className="flex h-10 shrink-0 items-center justify-between border-b border-line-subtle pr-2 pl-3">
@@ -121,9 +154,10 @@ export function DrawerFrame({
           label="Copy link"
           size="sm"
           onClick={() => {
-            void navigator.clipboard
-              ?.writeText(window.location.href)
-              .then(() => notify.success('Link copied', { duration: 2000 }))
+            void navigator.clipboard?.writeText(window.location.href).then(
+              () => notify.success('Link copied', { duration: 2000 }),
+              () => notify.error('Could not copy the link. Copy it from the address bar.'),
+            )
           }}
         />
         <IconButton icon={X} label="Close" shortcut="escape" size="sm" onClick={onClose} />
@@ -134,6 +168,10 @@ export function DrawerFrame({
   const content = (
     <>
       {bar}
+      {/* the drawer's heading: focus target when it opens as a sheet; h1 page → h2 drawer → h3 */}
+      <h2 ref={headingRef} tabIndex={-1} className="sr-only">
+        {label}
+      </h2>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {head && <div className="grid shrink-0 gap-2 px-4 pt-3.5 pb-3">{head}</div>}
         {nextStep && <div className="shrink-0 px-4 pb-3">{nextStep}</div>}
@@ -149,7 +187,15 @@ export function DrawerFrame({
           <RadixDialog.Content
             aria-describedby={undefined}
             className="fixed inset-0 z-[60] flex flex-col bg-raised text-fg outline-none"
-            onEscapeKeyDown={(event) => event.preventDefault()}
+            onOpenAutoFocus={(event) => {
+              // land on the record, not on the first toolbar button (and its tooltip)
+              event.preventDefault()
+              headingRef.current?.focus()
+            }}
+            onEscapeKeyDown={(event) => {
+              event.preventDefault()
+              onClose()
+            }}
           >
             <RadixDialog.Title className="sr-only">{label}</RadixDialog.Title>
             {content}
@@ -170,18 +216,44 @@ export function DrawerFrame({
           : 'absolute inset-y-0 right-0 max-w-full animate-slide-in-right',
       )}
     >
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize drawer"
-        onPointerDown={onResizeStart}
-        onPointerMove={onResizeMove}
-        onPointerUp={onResizeEnd}
-        className="absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize hover:bg-[color-mix(in_srgb,var(--hg-line-strong)_40%,transparent)]"
-      />
+      {docked && (
+        // A focusable separator is the ARIA window-splitter pattern.
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize drawer"
+          aria-valuenow={width}
+          aria-valuemin={MIN_WIDTH}
+          aria-valuemax={MAX_WIDTH}
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+          tabIndex={0}
+          onPointerDown={onResizeStart}
+          onPointerMove={onResizeMove}
+          onPointerUp={onResizeEnd}
+          onKeyDown={onResizeKey}
+          className="absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize hover:bg-[color-mix(in_srgb,var(--hg-line-strong)_40%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--hg-focus)_40%,transparent)]"
+        />
+      )}
       {content}
     </aside>
   )
+}
+
+/**
+ * Return focus to whatever opened the drawer (a table row, a board card, a link) when it closes
+ * while focus was inside it — otherwise keyboard users land on <body> and start over at the rail.
+ */
+function useRestoreFocus(): void {
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    return () => {
+      requestAnimationFrame(() => {
+        const lost = !document.activeElement || document.activeElement === document.body
+        if (lost && opener?.isConnected) opener.focus({ preventScroll: true })
+      })
+    }
+  }, [])
 }
 
 export interface DrawerTab {
@@ -227,7 +299,7 @@ export function DrawerTabs({
         ))}
       </TabsList>
       {tabs.map((tab) => (
-        <TabsContent key={tab.id} value={tab.id} className="px-4 pt-3.5 pb-6 outline-none">
+        <TabsContent key={tab.id} value={tab.id} className="px-4 pt-3.5 pb-6">
           <Suspense fallback={<DrawerLoading />}>{tab.content}</Suspense>
         </TabsContent>
       ))}

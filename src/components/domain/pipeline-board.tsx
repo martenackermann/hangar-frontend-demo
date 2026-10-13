@@ -241,13 +241,15 @@ export const PipelineCard = forwardRef<HTMLDivElement, PipelineCardProps>(functi
       }}
       onKeyDown={(event) => {
         onKeyDown?.(event)
-        if (event.key === 'Enter') {
+        // role="button": Enter and Space both open the record
+        if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
           onOpen?.()
         }
       }}
       className={cn(
-        'grid min-w-0 cursor-pointer gap-px rounded-sm border border-line bg-raised px-[9px] pt-[7px] pb-2 outline-none',
+        // one shrinkable column: long exception badges truncate inside the card
+        'grid min-w-0 cursor-pointer grid-cols-[minmax(0,1fr)] gap-px rounded-sm border border-line bg-raised px-[9px] pt-[7px] pb-2',
         'transition-[border-color,background-color] duration-[var(--hg-dur-instant)] hover:border-line-strong',
         'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus',
         selected && 'border-accent-line bg-accent-wash shadow-[0_0_0_1px_var(--hg-accent-line)]',

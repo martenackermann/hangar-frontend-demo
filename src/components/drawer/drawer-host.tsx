@@ -4,7 +4,9 @@ import { hasPermission } from '@/lib/auth/permissions'
 import { usePermissions } from '@/lib/auth/store'
 import { PARAM_DRAWERS } from '@/lib/registry'
 import { AssetDrawer } from './asset-drawer'
+import { Suspense } from 'react'
 import { DrawerFrame } from './drawer-frame'
+import { DrawerLoading } from './drawer-states'
 import { useDrawerNavigation, useDrawerSearch } from './drawer-state'
 import { LeaseDrawer } from './lease-drawer'
 import { SrDrawer } from './sr-drawer'
@@ -12,11 +14,22 @@ import { SrDrawer } from './sr-drawer'
 function MailDrawer({ id }: { id: number }) {
   const drawer = useDrawerNavigation()
   const descriptor = PARAM_DRAWERS.find((d) => d.param === 'mail')
-  if (descriptor) return <descriptor.component id={id} />
+  if (descriptor)
+    return (
+      <Suspense
+        fallback={
+          <DrawerFrame label="Mail" onClose={drawer.close}>
+            <DrawerLoading />
+          </DrawerFrame>
+        }
+      >
+        <descriptor.component id={id} />
+      </Suspense>
+    )
   return (
     <DrawerFrame label="Mail" onClose={drawer.close}>
       <EmptyState icon={Mail} title="Mail preview">
-        The mail-log drawer content is built by H1 (src/modules/requests/drawers/mail.tsx).
+        This mail can't be shown.
       </EmptyState>
     </DrawerFrame>
   )
@@ -31,11 +44,11 @@ export function DrawerHost() {
   const search = useDrawerSearch()
   const permissions = usePermissions()
   if (search.sr && hasPermission(permissions, 'sr.read'))
-    return <SrDrawer key={`sr-${search.sr}`} id={search.sr} />
+    return <SrDrawer key="sr" id={search.sr} />
   if (search.lr && hasPermission(permissions, 'lease.read'))
-    return <LeaseDrawer key={`lr-${search.lr}`} id={search.lr} />
+    return <LeaseDrawer key="lr" id={search.lr} />
   if (search.asset && hasPermission(permissions, 'stock.read'))
-    return <AssetDrawer key={`asset-${search.asset}`} id={search.asset} />
+    return <AssetDrawer key="asset" id={search.asset} />
   if (search.mail && hasPermission(permissions, 'comms.read'))
     return <MailDrawer id={search.mail} />
   return null

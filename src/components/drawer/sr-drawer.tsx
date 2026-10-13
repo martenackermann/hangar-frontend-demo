@@ -33,7 +33,12 @@ import { preloadComponents } from '@/lib/registry/lazy'
 import { pushRecent } from '@/components/app/command-palette-store'
 import { DrawerFrame, DrawerTabs, type DrawerNav, type DrawerTab } from './drawer-frame'
 import { DrawerError, DrawerLoading } from './drawer-states'
-import { useDrawerNavigation, useDrawerSearch, useSiblings } from './drawer-state'
+import {
+  usePrefetchNeighbours,
+  useDrawerNavigation,
+  useDrawerSearch,
+  useSiblings,
+} from './drawer-state'
 import { WorkflowActionBar } from './workflow-actions'
 
 const DELIVERY_ICONS: Record<DeliveryType, typeof Truck> = {
@@ -218,19 +223,21 @@ export function SrDrawer({ id }: { id: number }) {
   useEffect(() => preloadComponents(SR_DRAWER_TABS), [])
   const sr = query.data
 
+  const recentNumber = sr?.number
+  const recentName = sr?.contact.displayName
   useEffect(() => {
-    if (sr) {
-      pushRecent(me?.id, {
-        kind: 'service_request',
-        id: sr.id,
-        title: sr.number,
-        subtitle: sr.contact.displayName,
-        href: `/service-requests?sr=${sr.id}`,
-      })
-    }
-  }, [sr, me?.id])
+    if (recentNumber === undefined) return
+    pushRecent(me?.id, {
+      kind: 'service_request',
+      id,
+      title: recentNumber,
+      subtitle: recentName,
+      href: `/service-requests?sr=${id}`,
+    })
+  }, [id, recentNumber, recentName, me?.id])
 
   const index = siblings.indexOf(id)
+  usePrefetchNeighbours(siblings, index, detailQueries.serviceRequest)
   const nav: DrawerNav | undefined =
     index >= 0
       ? {
@@ -273,15 +280,16 @@ export function SrDrawer({ id }: { id: number }) {
       label={`Service request ${sr.number}`}
       onClose={drawer.close}
       nav={nav}
-      head={<SrHead sr={sr} />}
+      head={<SrHead key={sr.id} sr={sr} />}
       nextStep={
         <NextStep
+          key={sr.id}
           sr={sr}
           actions={<WorkflowActionBar resource="serviceRequest" entity={sr} label={sr.number} />}
         />
       }
     >
-      <DrawerTabs tabs={tabs} value={tab} onValueChange={drawer.setTab} />
+      <DrawerTabs key={sr.id} tabs={tabs} value={tab} onValueChange={drawer.setTab} />
     </DrawerFrame>
   )
 }

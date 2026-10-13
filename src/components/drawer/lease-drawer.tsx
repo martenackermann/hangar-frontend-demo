@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { CalendarClock, Link as LinkIcon, Pause } from 'lucide-react'
-import { useEffect } from 'react'
+import { Fragment, useEffect } from 'react'
 import { pushRecent } from '@/components/app/command-palette-store'
 import { CopyableId, IdInk, StatusBadge } from '@/components/domain/status'
 import { FlagBadge, ToneBadge } from '@/components/ui/feedback'
@@ -15,7 +15,12 @@ import { LEASE_DRAWER_TABS } from '@/lib/registry'
 import { preloadComponents } from '@/lib/registry/lazy'
 import { DrawerFrame, DrawerTabs, type DrawerNav, type DrawerTab } from './drawer-frame'
 import { DrawerError, DrawerLoading } from './drawer-states'
-import { useDrawerNavigation, useDrawerSearch, useSiblings } from './drawer-state'
+import {
+  usePrefetchNeighbours,
+  useDrawerNavigation,
+  useDrawerSearch,
+  useSiblings,
+} from './drawer-state'
 import { WorkflowActionBar } from './workflow-actions'
 
 function retirementText(days: number): string {
@@ -124,6 +129,7 @@ export function LeaseDrawer({ id }: { id: number }) {
   }, [lr, me?.id])
 
   const index = siblings.indexOf(id)
+  usePrefetchNeighbours(siblings, index, detailQueries.leaseReturn)
   const nav: DrawerNav | undefined =
     index >= 0
       ? {
@@ -167,13 +173,13 @@ export function LeaseDrawer({ id }: { id: number }) {
       onClose={drawer.close}
       nav={nav}
       head={
-        <>
+        <Fragment key={lr.id}>
           <LeaseHead lr={lr} />
           <WorkflowActionBar resource="leaseReturn" entity={lr} label={lr.assetTag} />
-        </>
+        </Fragment>
       }
     >
-      <DrawerTabs tabs={tabs} value={tab} onValueChange={drawer.setTab} />
+      <DrawerTabs key={lr.id} tabs={tabs} value={tab} onValueChange={drawer.setTab} />
     </DrawerFrame>
   )
 }

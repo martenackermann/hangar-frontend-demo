@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -100,7 +100,7 @@ describe('DataTable', () => {
   it('selects rows with checkboxes, x and shift+x; opens with Enter', async () => {
     const onOpen = vi.fn()
     renderWithProviders(<Harness onOpen={onOpen} />)
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Select row 2' }))
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Select SR0012002' }))
     expect(screen.getByTestId('selected')).toHaveTextContent('2')
     await userEvent.keyboard('j') // cursor to row 1
     await userEvent.keyboard('x')
@@ -111,6 +111,20 @@ describe('DataTable', () => {
     ;(document.activeElement as HTMLElement | null)?.blur()
     await userEvent.keyboard('{Enter}')
     expect(onOpen).toHaveBeenCalledWith(rows[0])
+  })
+
+  it('makes every record reachable with Tab and the arrow keys', async () => {
+    const onOpen = vi.fn()
+    renderWithProviders(<Harness onOpen={onOpen} />)
+    // one tab stop per table: the first row's open control, named by the identifier cell
+    const first = screen.getByRole('button', { name: 'SR0012001' })
+    expect(first).toHaveAttribute('tabindex', '0')
+    expect(screen.getByRole('button', { name: 'SR0012002' })).toHaveAttribute('tabindex', '-1')
+    first.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'SR0012002' })).toHaveFocus())
+    await userEvent.keyboard('{Enter}')
+    expect(onOpen).toHaveBeenCalledWith(rows[1])
   })
 
   it('opens a row on click but ignores clicks that bubble from a portal', async () => {

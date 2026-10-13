@@ -9,7 +9,17 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, RefreshCw, SearchX } from 'lucide-react'
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 import { Button, IconButton } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { EmptyState, SkeletonRows } from '@/components/ui/feedback'
@@ -170,19 +180,28 @@ export function DataTable<T extends RowData>({
     state: { columnVisibility, columnOrder },
   })
   const byId = useMemo(() => new Map(columns.map((c) => [c.id, c])), [columns])
-  const visibleColumns = table
-    .getVisibleLeafColumns()
-    .map((column) => byId.get(column.id))
-    .filter((column): column is DataColumn<T> => column !== undefined)
+  const visibleColumns = useMemo(
+    () =>
+      table
+        .getVisibleLeafColumns()
+        .map((column) => byId.get(column.id))
+        .filter((column): column is DataColumn<T> => column !== undefined),
+    // the table reads visibility and order from these props
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [table, byId, columnVisibility, columnOrder],
+  )
 
   // Sticky offsets for pinned columns.
-  const stickyLeft = new Map<string, number>()
-  let offset = selectable ? SELECT_COLUMN_WIDTH : 0
-  for (const column of visibleColumns) {
-    if (!column.pinned) break
-    stickyLeft.set(column.id, offset)
-    offset += column.width ?? 140
-  }
+  const stickyLeft = useMemo(() => {
+    const offsets = new Map<string, number>()
+    let offset = selectable ? SELECT_COLUMN_WIDTH : 0
+    for (const column of visibleColumns) {
+      if (!column.pinned) break
+      offsets.set(column.id, offset)
+      offset += column.width ?? 140
+    }
+    return offsets
+  }, [selectable, visibleColumns])
   const lastPinnedId = [...stickyLeft.keys()].at(-1)
 
   // ---- selection & cursor ------------------------------------------------------------------
@@ -222,22 +241,59 @@ export function DataTable<T extends RowData>({
     getItemKey: (index) => ids[index] ?? index,
   })
 
+  // Keyboard focus follows the cursor while it is inside the table (roving tabindex on the
+  // row-open controls), so j/k and the arrow keys move real focus, not just the highlight.
+  const focusCursor = useRef(false)
   const moveCursor = useCallback(
-    (delta: number) => {
+    (delta: number, fromIndex = cursorIndex) => {
       if (ids.length === 0) return
-      const nextIndex = Math.max(
-        0,
-        Math.min(ids.length - 1, cursorIndex < 0 ? 0 : cursorIndex + delta),
-      )
+      const nextIndex = Math.max(0, Math.min(ids.length - 1, fromIndex < 0 ? 0 : fromIndex + delta))
       const id = ids[nextIndex]
       const row = rows[nextIndex]
       if (id === undefined || row === undefined) return
+      focusCursor.current = scrollRef.current?.contains(document.activeElement) ?? false
       setCursorId(id)
       virtualizer.scrollToIndex(nextIndex, { align: 'auto' })
       if (activeId) onOpen?.(row)
     },
     [activeId, cursorIndex, ids, onOpen, rows, virtualizer],
   )
+  useEffect(() => {
+    if (!focusCursor.current || !cursor) return
+    focusCursor.current = false
+    const focus = () =>
+      [...(scrollRef.current?.querySelectorAll<HTMLElement>('[data-row-open]') ?? [])]
+        .find((control) => control.dataset.rowOpen === cursor)
+        ?.focus({ preventScroll: true })
+    // the virtualizer may render the row on the next frame
+    requestAnimationFrame(focus)
+  }, [cursor])
+
+  // Arrow keys on a focused row work even with single-key shortcuts switched off (WCAG 2.1.4
+  // allows keys that only act while the component has focus).
+  const onRowKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLElement>) => {
+      const target = event.target as HTMLElement
+      if (!target.matches('[data-row-open]')) return
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+      event.preventDefault()
+      // move from the focused row (Tab may have put focus somewhere other than the cursor)
+      moveCursor(event.key === 'ArrowDown' ? 1 : -1, ids.indexOf(target.dataset.rowOpen ?? ''))
+    },
+    [ids, moveCursor],
+  )
+
+  // Stable callbacks for the memoized rows.
+  const latest = useRef({ toggle, onOpen })
+  useEffect(() => {
+    latest.current = { toggle, onOpen }
+  })
+  const onRowToggle = useCallback((id: string) => latest.current.toggle(id), [])
+  const onRowOpen = useCallback((id: string, row: T) => {
+    setCursorId(id)
+    latest.current.onOpen?.(row)
+  }, [])
+  const tableId = useId()
 
   const kb = keyboard && !isPhone
   useShortcut(['j', 'arrowdown'], () => moveCursor(1), {
@@ -406,7 +462,12 @@ export function DataTable<T extends RowData>({
   return (
     <div className={cn('relative flex min-h-0 flex-col bg-surface', className)}>
       {progressLine}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
+      {/* arrow keys bubble up from the focused row control */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto" onKeyDown={onRowKeyDown}>
+        <span id={`${tableId}-select`} hidden>
+          Select
+        </span>
         <table
           aria-label={label}
           aria-rowcount={totalRows + 1}
@@ -511,63 +572,24 @@ export function DataTable<T extends RowData>({
                   const row = rows[item.index]
                   const id = ids[item.index]
                   if (row === undefined || id === undefined) return null
-                  const isSelected = selected.has(id)
-                  const isCursor = id === cursor
                   return (
-                    <tr
+                    <DataTableRow<T>
                       key={id}
-                      aria-rowindex={rowOffset + item.index + 2}
-                      aria-selected={selectable ? isSelected : undefined}
-                      data-cursor={isCursor || undefined}
-                      onClick={(event) => {
-                        const target = event.target as HTMLElement
-                        // React bubbles clicks from portals (menus, dialogs opened from a
-                        // cell) through the row: only clicks inside the row's DOM open it.
-                        if (!event.currentTarget.contains(target)) return
-                        if (target.closest('button, a, input, [role="checkbox"]')) return
-                        setCursorId(id)
-                        onOpen?.(row)
-                      }}
-                      className={cn(
-                        'group/row',
-                        onOpen && 'cursor-pointer',
-                        '[&>td]:h-row [&>td]:border-b [&>td]:border-line-subtle [&>td]:bg-surface hover:[&>td]:bg-hover',
-                        isSelected && '[&>td]:bg-accent-wash hover:[&>td]:bg-accent-wash',
-                        isCursor &&
-                          '[&>td]:bg-accent-wash-strong [&>td]:shadow-[inset_0_1px_0_var(--hg-accent-line),inset_0_-1px_0_var(--hg-accent-line)] hover:[&>td]:bg-accent-wash-strong [&>td:first-child]:shadow-[inset_0_1px_0_var(--hg-accent-line),inset_0_-1px_0_var(--hg-accent-line),inset_1px_0_0_var(--hg-accent-line)] [&>td:last-child]:shadow-[inset_0_1px_0_var(--hg-accent-line),inset_0_-1px_0_var(--hg-accent-line),inset_-1px_0_0_var(--hg-accent-line)]',
-                      )}
-                    >
-                      {selectable && (
-                        <td className="sticky left-0 z-[1] pl-3" onClick={() => toggle(id)}>
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => toggle(id)}
-                            aria-label={`Select row ${rowOffset + item.index + 1}`}
-                          />
-                        </td>
-                      )}
-                      {visibleColumns.map((column) => {
-                        const left = stickyLeft.get(column.id)
-                        const title = column.title?.(row) ?? undefined
-                        return (
-                          <td
-                            key={column.id}
-                            title={title}
-                            style={left !== undefined ? { left } : undefined}
-                            className={cn(
-                              'overflow-hidden px-cell text-ellipsis whitespace-nowrap',
-                              left !== undefined && 'sticky z-[1]',
-                              column.id === lastPinnedId &&
-                                'shadow-[inset_-1px_0_0_var(--hg-line-subtle)]',
-                              column.align === 'end' && 'text-right',
-                              column.className,
-                            )}
-                          >
-                            {column.cell(row)}
-                          </td>
-                        )
-                      })}
-                    </tr>
+                      row={row}
+                      id={id}
+                      rowIndex={rowOffset + item.index + 2}
+                      tableId={tableId}
+                      columns={visibleColumns}
+                      stickyLeft={stickyLeft}
+                      lastPinnedId={lastPinnedId}
+                      selectable={Boolean(selectable)}
+                      selected={selected.has(id)}
+                      isCursor={id === cursor}
+                      tabbable={cursor ? id === cursor : item.index === 0}
+                      openable={Boolean(onOpen)}
+                      onToggle={onRowToggle}
+                      onOpen={onRowOpen}
+                    />
                   )
                 })}
                 {paddingBottom > 0 && (
@@ -584,6 +606,124 @@ export function DataTable<T extends RowData>({
     </div>
   )
 }
+
+interface DataTableRowProps<T> {
+  row: T
+  id: string
+  rowIndex: number
+  tableId: string
+  columns: readonly DataColumn<T>[]
+  stickyLeft: ReadonlyMap<string, number>
+  lastPinnedId: string | undefined
+  selectable: boolean
+  selected: boolean
+  isCursor: boolean
+  /** The row's open control is the table's single tab stop (roving tabindex). */
+  tabbable: boolean
+  openable: boolean
+  onToggle: (id: string) => void
+  onOpen: (id: string, row: T) => void
+}
+
+/**
+ * One desktop row, memoized: moving the cursor or toggling a row re-renders two rows, not the
+ * page. The first cell carries a real button (named by the cell's text), so every record can be
+ * reached and opened with Tab and Enter; the row itself stays clickable.
+ */
+const DataTableRow = memo(function DataTableRow<T>({
+  row,
+  id,
+  rowIndex,
+  tableId,
+  columns,
+  stickyLeft,
+  lastPinnedId,
+  selectable,
+  selected,
+  isCursor,
+  tabbable,
+  openable,
+  onToggle,
+  onOpen,
+}: DataTableRowProps<T>) {
+  const firstCellId = `${tableId}-${id}`
+  return (
+    <tr
+      aria-rowindex={rowIndex}
+      data-cursor={isCursor || undefined}
+      onClick={(event) => {
+        const target = event.target as HTMLElement
+        // React bubbles clicks from portals (menus, dialogs opened from a cell) through the row:
+        // only clicks inside the row's DOM open it.
+        if (!event.currentTarget.contains(target)) return
+        if (target.closest('button, a, input, [role="checkbox"]')) return
+        if (openable) onOpen(id, row)
+      }}
+      className={cn(
+        'group/row',
+        openable && 'cursor-pointer',
+        '[&>td]:h-row [&>td]:border-b [&>td]:border-line-subtle [&>td]:bg-surface hover:[&>td]:bg-hover',
+        selected && '[&>td]:bg-accent-wash hover:[&>td]:bg-accent-wash',
+        isCursor &&
+          '[&>td]:bg-accent-wash-strong [&>td]:shadow-[inset_0_1px_0_var(--hg-accent-line),inset_0_-1px_0_var(--hg-accent-line)] hover:[&>td]:bg-accent-wash-strong [&>td:first-child]:shadow-[inset_0_1px_0_var(--hg-accent-line),inset_0_-1px_0_var(--hg-accent-line),inset_1px_0_0_var(--hg-accent-line)] [&>td:last-child]:shadow-[inset_0_1px_0_var(--hg-accent-line),inset_0_-1px_0_var(--hg-accent-line),inset_-1px_0_0_var(--hg-accent-line)]',
+      )}
+    >
+      {selectable && (
+        <td className="sticky left-0 z-[1] pl-3" onClick={() => onToggle(id)}>
+          <Checkbox
+            checked={selected}
+            onCheckedChange={() => onToggle(id)}
+            aria-labelledby={`${tableId}-select ${firstCellId}`}
+          />
+        </td>
+      )}
+      {columns.map((column, index) => {
+        const left = stickyLeft.get(column.id)
+        const title = column.title?.(row) ?? undefined
+        const first = index === 0
+        return (
+          <td
+            key={column.id}
+            title={title}
+            style={left !== undefined ? { left } : undefined}
+            className={cn(
+              'overflow-hidden px-cell text-ellipsis whitespace-nowrap',
+              left !== undefined ? 'sticky z-[1]' : first && openable && 'relative',
+              column.id === lastPinnedId && 'shadow-[inset_-1px_0_0_var(--hg-line-subtle)]',
+              column.align === 'end' && 'text-right',
+              column.className,
+            )}
+          >
+            {first && openable ? (
+              <>
+                <button
+                  type="button"
+                  data-row-open={id}
+                  tabIndex={tabbable ? 0 : -1}
+                  aria-labelledby={firstCellId}
+                  aria-current={isCursor || undefined}
+                  onClick={() => onOpen(id, row)}
+                  className="absolute inset-0 cursor-pointer rounded-xs focus-visible:outline-offset-[-2px]"
+                />
+                {/* content above the open control; its own links and buttons stay clickable */}
+                <span
+                  id={firstCellId}
+                  className="pointer-events-none relative block overflow-hidden text-ellipsis [&_a]:pointer-events-auto [&_button]:pointer-events-auto"
+                >
+                  {column.cell(row)}
+                </span>
+              </>
+            ) : first ? (
+              <span id={firstCellId}>{column.cell(row)}</span>
+            ) : (
+              column.cell(row)
+            )}
+          </td>
+        )
+      })}
+    </tr>
+  )
+}) as <T>(props: DataTableRowProps<T>) => ReactNode
 
 const EMPTY_IDS: readonly string[] = []
 

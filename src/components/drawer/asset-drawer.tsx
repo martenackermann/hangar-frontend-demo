@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { MapPin } from 'lucide-react'
-import { useEffect } from 'react'
+import { Fragment, useEffect } from 'react'
 import { pushRecent } from '@/components/app/command-palette-store'
 import { CopyableId, IdInk, StatusBadge } from '@/components/domain/status'
 import { FlagBadge } from '@/components/ui/feedback'
@@ -15,7 +15,12 @@ import { ASSET_DRAWER_TABS } from '@/lib/registry'
 import { preloadComponents } from '@/lib/registry/lazy'
 import { DrawerFrame, DrawerTabs, type DrawerNav, type DrawerTab } from './drawer-frame'
 import { DrawerError, DrawerLoading } from './drawer-states'
-import { useDrawerNavigation, useDrawerSearch, useSiblings } from './drawer-state'
+import {
+  usePrefetchNeighbours,
+  useDrawerNavigation,
+  useDrawerSearch,
+  useSiblings,
+} from './drawer-state'
 import { WorkflowActionBar } from './workflow-actions'
 
 /** "Available · B4-12" (DESIGN.md §3.3). */
@@ -106,6 +111,7 @@ export function AssetDrawer({ id }: { id: number }) {
   }, [asset, me?.id])
 
   const index = siblings.indexOf(id)
+  usePrefetchNeighbours(siblings, index, detailQueries.asset)
   const nav: DrawerNav | undefined =
     index >= 0
       ? {
@@ -149,17 +155,17 @@ export function AssetDrawer({ id }: { id: number }) {
       onClose={drawer.close}
       nav={nav}
       head={
-        <>
+        <Fragment key={asset.id}>
           <AssetHead asset={asset} />
           <WorkflowActionBar
             resource="asset"
             entity={asset}
             label={asset.assetTag ?? asset.serialNumber}
           />
-        </>
+        </Fragment>
       }
     >
-      <DrawerTabs tabs={tabs} value={tab} onValueChange={drawer.setTab} />
+      <DrawerTabs key={asset.id} tabs={tabs} value={tab} onValueChange={drawer.setTab} />
     </DrawerFrame>
   )
 }
