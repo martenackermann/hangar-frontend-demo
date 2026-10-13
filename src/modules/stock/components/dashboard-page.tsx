@@ -77,8 +77,10 @@ function Tiles({
   const t = kpis.tiles
   const s = kpis.series
   const today = kpis.today
+  // The KPIs count VIP requests too, so every link overrides the list's default VIP hide.
   const sr = (search: Record<string, unknown>) =>
-    screenTarget('/service-requests', { ...scope, ...search })
+    screenTarget('/service-requests', { ...scope, vip: 'include', ...search })
+  const monday = addDays(today, -((new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7))
   const weekDelta = t.completedThisWeek - t.completedLastWeek
   return (
     <div className="grid">
@@ -89,7 +91,7 @@ function Tiles({
           context="New requests per day, last 14 days"
           spark={s.importedPerDay.map((p) => p.count)}
           sparkLabels={dayLabels(s.importedPerDay)}
-          {...sr({ vip: 'include' })}
+          {...sr({})}
         />
         <StatTile
           label="Needs attention"
@@ -104,7 +106,7 @@ function Tiles({
           context={`${formatNumber(t.appointmentsThisWeek)} this week`}
           spark={s.appointmentsPerDay.map((p) => p.count)}
           sparkLabels={dayLabels(s.appointmentsPerDay)}
-          {...sr({ appointmentFrom: today, appointmentTo: today })}
+          {...sr({ appointmentFrom: today, appointmentTo: today, includeClosed: true })}
         />
         <StatTile
           label="Completed this week"
@@ -116,7 +118,7 @@ function Tiles({
           }}
           spark={s.completionsPerDay.map((p) => p.count)}
           sparkLabels={dayLabels(s.completionsPerDay)}
-          {...sr({ status: 'completed', includeClosed: true })}
+          {...sr({ status: 'completed', includeClosed: true, closedFrom: monday })}
         />
       </KpiStrip>
       <KpiStrip>

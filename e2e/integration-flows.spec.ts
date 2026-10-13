@@ -389,6 +389,7 @@ test.describe('cross-slice flows', () => {
   })
 
   test('dashboard tiles deep-link into the lists with matching counts', async ({ page }) => {
+    test.slow()
     await page.setViewportSize({ width: 1440, height: 900 })
     await signIn(page, persona('dana'))
     const cases: { tile: RegExp; url: RegExp; heading: string }[] = [
@@ -402,6 +403,12 @@ test.describe('cross-slice flows', () => {
         url: /\/service-requests\?.*appointmentFrom=/,
         heading: 'Service requests',
       },
+      {
+        tile: /^Completed this week/,
+        url: /\/service-requests\?.*closedFrom=/,
+        heading: 'Service requests',
+      },
+      { tile: /^Needs attention/, url: /needsAttention=true/, heading: 'Service requests' },
       {
         tile: /^Hardware unavailable/,
         url: /\/service-requests\?.*status=hardware_unavailable/,
