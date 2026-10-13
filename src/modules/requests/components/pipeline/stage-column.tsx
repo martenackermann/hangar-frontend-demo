@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { MoreHorizontal, Table2 } from 'lucide-react'
+import { memo } from 'react'
 import { ColumnHeader, PipelineColumn } from '@/components/domain/pipeline-board'
 import { Button, IconButton } from '@/components/ui/button'
 import {
@@ -17,9 +18,10 @@ import { cn } from '@/lib/utils'
 import { apiQuery, srListQuery } from '@/modules/requests/api'
 import type { PipelineSearch } from '@/modules/requests/search'
 import { CLOSED_STAGES, COLUMN_PAGE, STAGE_TONES, columnQuery, type StageSummary } from './board'
-import { SrCard } from './sr-card'
+import { FRESH_MS, SrCard } from './sr-card'
 
-export function StageColumn({
+/** Memoized: a column re-renders when its own data, filters or selection change. */
+export const StageColumn = memo(function StageColumn({
   summary,
   next,
   search,
@@ -36,7 +38,7 @@ export function StageColumn({
   search: PipelineSearch
   first?: boolean
   limit: number
-  onLimit: (limit: number) => void
+  onLimit: (stage: string, limit: number) => void
   selectedId: number | undefined
   /** The board's first card takes tabIndex 0 (roving tabindex). */
   focusFirst?: boolean
@@ -142,10 +144,10 @@ export function StageColumn({
             <SrCard
               key={sr.id}
               sr={sr}
-              now={now}
+              fresh={now - Date.parse(sr.statusChangedAt) < FRESH_MS}
               selected={selectedId === sr.id}
               initialFocus={focusFirst && index === 0}
-              onOpen={() => onOpen(sr.id)}
+              onOpen={onOpen}
             />
           ))}
           {total > cards.length && (
@@ -153,7 +155,7 @@ export function StageColumn({
               size="sm"
               variant="ghost"
               loading={query.isFetching}
-              onClick={() => onLimit(Math.min(200, limit + COLUMN_PAGE))}
+              onClick={() => onLimit(summary.stage, Math.min(200, limit + COLUMN_PAGE))}
               disabled={limit >= 200}
             >
               {limit >= 200
@@ -165,4 +167,4 @@ export function StageColumn({
       )}
     </PipelineColumn>
   )
-}
+})

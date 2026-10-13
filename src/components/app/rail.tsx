@@ -1,5 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { Icon } from '@/components/ui/icon'
 import { Kbd } from '@/components/ui/kbd'
 import { Tooltip } from '@/components/ui/tooltip'
@@ -24,6 +25,11 @@ export function Rail({ collapsed, onToggle }: { collapsed: boolean; onToggle: ()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const me = useMe()
   const enums = useEnums()
+  // Keep the current page's entry in view (the admin group sits below the fold on short screens).
+  const scrollRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    scrollRef.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'nearest' })
+  }, [pathname, collapsed])
 
   return (
     <nav
@@ -47,7 +53,7 @@ export function Rail({ collapsed, onToggle }: { collapsed: boolean; onToggle: ()
           </div>
         )}
       </div>
-      <div className="hg-rail-scroll min-h-0 flex-1 overflow-y-auto pt-1 pb-3">
+      <div ref={scrollRef} className="hg-rail-scroll min-h-0 flex-1 overflow-y-auto pt-1 pb-3">
         {groups.map((group, index) => (
           <div key={group.id} role="group" aria-label={group.label}>
             {collapsed ? (

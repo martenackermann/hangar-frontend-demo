@@ -1,27 +1,23 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMatches, useNavigate, useRouter, useRouterState } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import { Link, useMatches, useRouterState } from '@tanstack/react-router'
 import {
   ChevronRight,
   CircleUserRound,
   ExternalLink,
   Keyboard,
   LoaderCircle,
-  LogOut,
   Menu,
   Monitor,
   Moon,
   RefreshCw,
   Search,
   Sun,
+  TriangleAlert,
 } from 'lucide-react'
 import { IconButton } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -32,16 +28,17 @@ import { Tooltip } from '@/components/ui/tooltip'
 import { api } from '@/lib/api/client'
 import { coreQueries, useAppConfig } from '@/lib/api/core'
 import type { SyncState } from '@/lib/api/types'
-import { logout } from '@/lib/auth/session'
 import { useCan, useMe } from '@/lib/auth/store'
 import { enumLabel, useEnums } from '@/lib/enums'
 import { formatRelative, formatTime } from '@/lib/format'
 import { NAV_GROUPS } from '@/lib/nav/types'
 import { useNavigation } from '@/lib/nav/use-navigation'
-import { setPrefs, toggleTheme, usePrefs, type Theme } from '@/lib/prefs/store'
+import { toggleTheme, usePrefs } from '@/lib/prefs/store'
+import { isMac } from '@/lib/shortcuts'
 import { cn } from '@/lib/utils'
 import { useNow } from '@/lib/use-now'
 import { openCommandPalette, setNavSheetOpen, setShortcutsOpen } from './command-palette-store'
+import { AccountMenuItems } from './account-menu'
 import { PersonaSwitcher } from './persona-switcher'
 import { isEntryActive } from './rail'
 
@@ -73,7 +70,6 @@ function Breadcrumbs() {
 }
 
 function SyncIndicator() {
-  const router = useRouter()
   const canRead = useCan('appointments.read')
   const { data, isError } = useQuery({
     queryKey: ['appointments', 'sync-state'],
@@ -87,31 +83,38 @@ function SyncIndicator() {
   if (!canRead || isError || !data) return null
   const last = data.lastIncrementalSyncAt ?? data.lastFullSyncAt
   const stale = last ? now - Date.parse(last) > 2 * 3_600_000 : true
+  // DESIGN §3.4: synced → "Synced 09:12" (quiet); stale (> 2 h) → "Sync overdue" (caution, with
+  // an icon and words at every width — never colour alone).
+  const text = data.running
+    ? 'Syncing appointments…'
+    : !last
+      ? 'Appointments never synced'
+      : stale
+        ? `Sync overdue · last ${formatTime(last)}`
+        : `Appointments synced ${formatTime(last)}`
   return (
     <Tooltip
       content={last ? `Last appointment sync ${formatRelative(last)}` : 'Appointments never synced'}
     >
-      <button
-        type="button"
-        onClick={() => router.history.push('/field/tour-planner?panel=sync')}
+      <Link
+        to="/field/tour-planner"
+        search={{ panel: 'sync' } as never}
         className={cn(
           'flex h-7 items-center gap-1.5 rounded-sm px-1.5 text-xs whitespace-nowrap hover:bg-hover',
-          stale ? 'text-tone-caution-fg' : 'text-fg-3',
+          stale && !data.running ? 'font-medium text-tone-caution-fg' : 'text-fg-3',
         )}
       >
         <Icon
-          icon={data.running ? LoaderCircle : RefreshCw}
+          icon={data.running ? LoaderCircle : stale ? TriangleAlert : RefreshCw}
           size={14}
-          className={cn(data.running && 'animate-spin')}
+          className={cn(data.running && 'animate-spin motion-reduce:animate-none')}
         />
-        <span className="max-[1439px]:hidden">
-          {data.running
-            ? 'Syncing appointments…'
-            : last
-              ? `Appointments synced ${formatTime(last)}`
-              : 'Sync overdue'}
+        {/* short label below 1440 px; the full sentence stays available to screen readers */}
+        <span className="max-[1439px]:sr-only">{text}</span>
+        <span aria-hidden className="min-[1440px]:hidden">
+          {data.running ? 'Syncing…' : stale ? 'Sync overdue' : last ? formatTime(last) : 'Never'}
         </span>
-      </button>
+      </Link>
     </Tooltip>
   )
 }
@@ -154,16 +157,13 @@ function JobsIndicator() {
 
 function UserMenu() {
   const me = useMe()
-  const theme = usePrefs((prefs) => prefs.theme)
   const enums = useEnums()
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
   if (!me) return null
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label="User menu"
-        className="grid size-7 place-items-center rounded-sm text-fg-2 hover:bg-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-focus"
+        aria-label={`${me.displayName}: account menu`}
+        className="grid size-7 place-items-center rounded-sm text-fg-2 hover:bg-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-focus pointer-coarse:size-11"
       >
         <Icon icon={CircleUserRound} />
       </DropdownMenuTrigger>
@@ -177,27 +177,7 @@ function UserMenu() {
           </span>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem icon={Keyboard} shortcut="?" onSelect={() => setShortcutsOpen(true)}>
-          Keyboard shortcuts
-        </DropdownMenuItem>
-        <DropdownMenuLabel>Theme</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={theme}
-          onValueChange={(value) => setPrefs({ theme: value as Theme })}
-        >
-          <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          icon={LogOut}
-          onSelect={() => {
-            void logout(queryClient).then(() => navigate({ to: '/login', search: {} }))
-          }}
-        >
-          Log out
-        </DropdownMenuItem>
+        <AccountMenuItems />
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -228,7 +208,7 @@ export function TopBar() {
       <button
         type="button"
         onClick={openCommandPalette}
-        aria-label="Search or scan (⌘K)"
+        aria-label={`Search or scan (${isMac ? '⌘K' : 'Ctrl+K'})`}
         className="ml-3 flex h-7 w-[340px] max-w-[34vw] items-center gap-2 rounded-sm border border-line bg-sunken pr-1 pl-2 text-left text-fg-3 transition-colors hover:border-line-strong focus-visible:outline-2 focus-visible:outline-focus max-[1439px]:w-[280px] max-md:ml-0 max-md:w-auto max-md:max-w-none max-md:flex-1"
       >
         <Icon icon={Search} size={14} />
@@ -268,8 +248,8 @@ export function TopBar() {
           onClick={() => setShortcutsOpen(true)}
         />
       </div>
-      <PersonaSwitcher />
-      <UserMenu />
+      {/* the demo's persona pill carries the account menu; no second account button */}
+      {config?.demoMode ? <PersonaSwitcher /> : <UserMenu />}
     </header>
   )
 }

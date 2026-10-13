@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Bookmark, ChevronDown, Inbox, Kanban, RefreshCw, Send, Table2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useSavedViews, type BuiltInView } from '@/components/data-table/saved-views'
 import { PipelineBoard } from '@/components/domain/pipeline-board'
 import { KpiStrip, StatTile } from '@/components/domain/stat-tile'
@@ -66,9 +66,13 @@ export function PipelinePage({
   const canDispatch = useCan('comms.dispatch')
   const canSync = useCan('appointments.manage')
   const canImport = useCan('imports.create')
-  const [dispatchOpen, setDispatchOpen] = useState(false)
   const [closedExpanded, setClosedExpanded] = useState(false)
   const [limits, setLimits] = useState<Record<string, number>>({})
+  const setLimit = useCallback(
+    (stage: string, limit: number) => setLimits((prev) => ({ ...prev, [stage]: limit })),
+    [],
+  )
+  const openCard = useCallback((id: number) => drawer.open('sr', id), [drawer])
 
   const scope = apiQuery({
     siteId: search.siteId,
@@ -93,12 +97,6 @@ export function PipelinePage({
   )
   const views = useSavedViews({ route: '/pipeline', builtIns, search })
 
-  useShortcut('m', () => canDispatch && setDispatchOpen(true), {
-    enabled: canDispatch,
-    description: 'Send due mails',
-    group: 'Actions',
-  })
-
   const syncNow = () =>
     api.post<JobAccepted>('/appointments/sync', {}).then(
       (accepted) =>
@@ -112,13 +110,17 @@ export function PipelinePage({
         }),
     )
 
-  const toggleStatus = (status: ServiceRequestStatus) => {
-    const current = search.status ?? []
-    const next = current.includes(status)
-      ? current.filter((s) => s !== status)
-      : [...current, status]
-    onSearch({ status: next.length ? next : undefined, view: undefined }, true)
-  }
+  const statusFilter = search.status
+  const toggleStatus = useCallback(
+    (status: ServiceRequestStatus) => {
+      const current = statusFilter ?? []
+      const next = current.includes(status)
+        ? current.filter((s) => s !== status)
+        : [...current, status]
+      onSearch({ status: next.length ? next : undefined, view: undefined }, true)
+    },
+    [onSearch, statusFilter],
+  )
 
   const stages = summary?.stages ?? []
   const openStages = stages.filter((s) => s.stage !== 'closed')
@@ -162,16 +164,7 @@ export function PipelinePage({
                 Sync appointments
               </Button>
             )}
-            {canDispatch && (
-              <Button
-                variant="primary"
-                icon={Send}
-                shortcut="m"
-                onClick={() => setDispatchOpen(true)}
-              >
-                Send due mails
-              </Button>
-            )}
+            {canDispatch && <SendDueMailsAction />}
           </>
         }
       />
@@ -271,7 +264,7 @@ export function PipelinePage({
             }
           />
           <Switch
-            label="Exceptions only"
+            label="Needs attention only"
             count={summary ? formatNumber(summary.totals.needsAttention) : undefined}
             checked={search.needsAttention === true}
             onCheckedChange={(on) =>
@@ -402,10 +395,10 @@ export function PipelinePage({
                 search={search}
                 first={index === 0}
                 limit={limits[stage.stage] ?? COLUMN_PAGE}
-                onLimit={(limit) => setLimits((prev) => ({ ...prev, [stage.stage]: limit }))}
+                onLimit={setLimit}
                 selectedId={selectedId}
                 focusFirst={index === firstCardColumn}
-                onOpen={(id) => drawer.open('sr', id)}
+                onOpen={openCard}
                 onToggleStatus={toggleStatus}
               />
             ))}
@@ -416,9 +409,9 @@ export function PipelinePage({
                   next={undefined}
                   search={search}
                   limit={limits.closed ?? COLUMN_PAGE}
-                  onLimit={(limit) => setLimits((prev) => ({ ...prev, closed: limit }))}
+                  onLimit={setLimit}
                   selectedId={selectedId}
-                  onOpen={(id) => drawer.open('sr', id)}
+                  onOpen={openCard}
                   onToggleStatus={toggleStatus}
                 />
               ) : (
@@ -431,7 +424,20 @@ export function PipelinePage({
           </PipelineBoard>
         )}
       </div>
-      <DispatchDialog open={dispatchOpen} onOpenChange={setDispatchOpen} />
     </Page>
+  )
+}
+
+/** The page's one amber action; its dialog state lives here so opening it leaves the board alone. */
+function SendDueMailsAction() {
+  const [open, setOpen] = useState(false)
+  useShortcut('m', () => setOpen(true), { description: 'Send due mails', group: 'Actions' })
+  return (
+    <>
+      <Button variant="primary" icon={Send} shortcut="m" onClick={() => setOpen(true)}>
+        Send due mails
+      </Button>
+      <DispatchDialog open={open} onOpenChange={setOpen} />
+    </>
   )
 }

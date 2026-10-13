@@ -250,7 +250,12 @@ function useRestoreFocus(): void {
     return () => {
       requestAnimationFrame(() => {
         const lost = !document.activeElement || document.activeElement === document.body
-        if (lost && opener?.isConnected) opener.focus({ preventScroll: true })
+        if (!lost || !opener?.isConnected) return
+        // opened from a table row: return to the row the drawer showed last (its tab stop)
+        const row = opener.matches('[data-row-open]')
+          ? opener.closest('table')?.querySelector<HTMLElement>('[data-row-open][tabindex="0"]')
+          : null
+        ;(row ?? opener).focus({ preventScroll: true })
       })
     }
   }, [])

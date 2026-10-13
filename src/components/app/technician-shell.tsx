@@ -101,7 +101,7 @@ export function TourStation({
           'relative mt-1 size-3 justify-self-center rounded-full',
           state === 'done' && 'bg-fg-3',
           state === 'now' &&
-            'bg-tone-booked shadow-[0_0_0_2px_var(--hg-canvas),0_0_0_4px_var(--hg-accent)]',
+            'bg-tone-booked shadow-[0_0_0_2px_var(--hg-canvas),0_0_0_4px_var(--hg-accent-line)]',
           state === 'next' && 'bg-canvas shadow-[inset_0_0_0_2px_var(--hg-line-strong)]',
         )}
       />
@@ -110,7 +110,7 @@ export function TourStation({
           <span className="font-mono text-sm text-fg-2">{time}</span>
           <span className="font-semibold">{title}</span>
           {state === 'now' && (
-            <span className="ml-auto text-2xs font-semibold text-accent-text">NOW</span>
+            <span className="ml-auto text-2xs font-semibold text-accent-text">Now</span>
           )}
         </div>
         {meta && <div className="text-xs text-fg-3">{meta}</div>}

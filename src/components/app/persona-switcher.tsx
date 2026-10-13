@@ -19,6 +19,7 @@ import { homePathFor } from '@/lib/auth/guards'
 import { personaLogin } from '@/lib/auth/session'
 import { useMe } from '@/lib/auth/store'
 import { cn } from '@/lib/utils'
+import { AccountMenuItems } from './account-menu'
 
 /**
  * PersonaSwitcher (DESIGN.md §10, demo only): dashed pill with initials · name · amber-wash
@@ -52,9 +53,9 @@ export function PersonaSwitcher({ compact = false }: { compact?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={`Demo persona: ${me.displayName}. Switch persona`}
+        aria-label={`${me.displayName}, demo persona: switch persona or log out`}
         className={cn(
-          'flex h-7 items-center gap-2 rounded-full border border-dashed border-line-strong bg-surface pr-2 pl-[3px] whitespace-nowrap hover:border-solid',
+          'flex h-7 items-center gap-2 rounded-full border border-dashed border-line-strong bg-surface pr-2 pl-[3px] whitespace-nowrap hover:border-solid pointer-coarse:h-11',
           'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus',
         )}
       >
@@ -93,6 +94,8 @@ export function PersonaSwitcher({ compact = false }: { compact?: boolean }) {
             </>
           )}
         </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <AccountMenuItems />
       </DropdownMenuContent>
     </DropdownMenu>
   )

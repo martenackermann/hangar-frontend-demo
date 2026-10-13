@@ -10,7 +10,7 @@ import {
   Truck,
   UserRoundCheck,
 } from 'lucide-react'
-import { forwardRef, useState } from 'react'
+import { memo, useState } from 'react'
 import { PipelineCard, PipelineCardFooter } from '@/components/domain/pipeline-board'
 import { AgingIndicator, IdInk, StatusBadge, VipFlag } from '@/components/domain/status'
 import { useWorkflowAction } from '@/components/drawer/workflow-actions'
@@ -42,7 +42,7 @@ const EXCEPTION = new Set([
   'reschedule_needed',
   'imported_vip',
 ])
-const FRESH_MS = 2 * 60_000
+export const FRESH_MS = 2 * 60_000
 
 function when(sr: ServiceRequestListItem) {
   if (sr.appointmentStartAt) {
@@ -60,14 +60,47 @@ function when(sr: ServiceRequestListItem) {
   return null
 }
 
-/** Quick actions on hover/focus (SCREENS.md §3.1): simple actions post directly; actions with a
- * dialog, a required comment or a destructive effect open the drawer's action bar instead. */
+/**
+ * Quick actions on hover/focus (SCREENS.md §3.1). A board shows hundreds of cards, so the menu
+ * (and its mutation) mounts only once the button is hovered or focused.
+ */
 function QuickActions({ sr, onOpen }: { sr: ServiceRequestListItem; onOpen: () => void }) {
+  const [armed, setArmed] = useState(false)
+  const actions = sr.availableActions.filter((action) => action !== 'ship')
+  if (actions.length === 0) return null
+  if (!armed)
+    return (
+      <IconButton
+        icon={MoreHorizontal}
+        label={`Actions for ${sr.number}`}
+        size="sm"
+        className="size-6 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
+        onPointerEnter={() => setArmed(true)}
+        onFocus={() => setArmed(true)}
+        onClick={(event) => {
+          event.stopPropagation()
+          setArmed(true)
+        }}
+        onKeyDown={(event) => event.stopPropagation()}
+      />
+    )
+  return <QuickActionsMenu sr={sr} actions={actions} onOpen={onOpen} />
+}
+
+/** Simple actions post directly; actions with a dialog, a required comment or a destructive
+ * effect open the drawer's action bar instead. */
+function QuickActionsMenu({
+  sr,
+  actions,
+  onOpen,
+}: {
+  sr: ServiceRequestListItem
+  actions: string[]
+  onOpen: () => void
+}) {
   const enums = useEnums()
   const mutation = useWorkflowAction('serviceRequest', sr, sr.number)
   const [open, setOpen] = useState(false)
-  const actions = sr.availableActions.filter((action) => action !== 'ship')
-  if (actions.length === 0) return null
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -110,24 +143,28 @@ function QuickActions({ sr, onOpen }: { sr: ServiceRequestListItem; onOpen: () =
   )
 }
 
-export const SrCard = forwardRef<
-  HTMLDivElement,
-  {
-    sr: ServiceRequestListItem
-    /** Board clock (useNow) for the "fresh" marker — no Date.now() during render. */
-    now: number
-    selected: boolean
-    initialFocus?: boolean
-    onOpen: () => void
-  }
->(function SrCard({ sr, now, selected, initialFocus, onOpen }, ref) {
+/** One board card, memoized: a board renders hundreds and most props rarely change. */
+export const SrCard = memo(function SrCard({
+  sr,
+  fresh,
+  selected,
+  initialFocus,
+  onOpen,
+}: {
+  sr: ServiceRequestListItem
+  /** Changed stage in the last two minutes (the column computes it from its clock). */
+  fresh: boolean
+  selected: boolean
+  initialFocus?: boolean | undefined
+  onOpen: (id: number) => void
+}) {
   const enums = useEnums()
   const status = findEnumValue(enums, 'serviceRequestStatus', sr.status)
   const tone = status?.tone ?? 'intake'
   const exception = EXCEPTION.has(sr.status) || tone === 'caution' || tone === 'critical'
   const firstFlag = sr.attention[0]
   const moment = when(sr)
-  const fresh = now - Date.parse(sr.statusChangedAt) < FRESH_MS
+  const open = () => onOpen(sr.id)
   const DeliveryIcon = sr.deliveryType ? DELIVERY_ICONS[sr.deliveryType] : null
   const paused =
     sr.communicationPaused ||
@@ -135,11 +172,10 @@ export const SrCard = forwardRef<
 
   return (
     <PipelineCard
-      ref={ref}
       selected={selected}
       fresh={fresh}
       initialFocus={initialFocus}
-      onOpen={onOpen}
+      onOpen={open}
       aria-label={`${sr.number}, ${sr.contact.displayName}, ${status?.label ?? sr.status}`}
       className="group"
     >
@@ -150,7 +186,7 @@ export const SrCard = forwardRef<
         )}
         <span className="ml-auto flex items-center gap-0.5">
           <AgingIndicator since={sr.statusChangedAt} stage={sr.stage} />
-          <QuickActions sr={sr} onOpen={onOpen} />
+          <QuickActions sr={sr} onOpen={open} />
         </span>
       </div>
       <div className="truncate text-[13px] font-medium text-fg">{sr.contact.displayName}</div>

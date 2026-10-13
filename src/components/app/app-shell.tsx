@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
+import { Link, useMatches, useNavigate, useRouterState } from '@tanstack/react-router'
 import { Activity, CalendarCheck, Menu, ScanLine, X } from 'lucide-react'
 import { Dialog as RadixDialog } from 'radix-ui'
 import type { ReactNode } from 'react'
@@ -10,6 +10,7 @@ import { useMe } from '@/lib/auth/store'
 import { useNavigation } from '@/lib/nav/use-navigation'
 import { setPrefs, toggleDensity, toggleTheme, usePrefs } from '@/lib/prefs/store'
 import { useShortcut } from '@/lib/shortcuts'
+import { useDocumentTitle } from '@/lib/use-document-title'
 import { cn } from '@/lib/utils'
 import { CommandPalette } from './command-palette'
 import {
@@ -153,13 +154,20 @@ function NavSheet() {
   )
 }
 
+/** Stop / deployment screens bring their own sticky action footer (Complete deployment). */
+const STOP_ROUTE = /^\/field\/tours\/\d+\/stops\/\d+/
+
 /**
  * Technician bottom dock on phones (SCREENS.md §6.2): My tour · Scan (⌘K "scan anything") ·
- * Inventory · Menu. 64 px + safe area; Scan is the 56 px amber button.
+ * Inventory · Menu. 64 px + safe area; Scan is the 56 px amber button. Hidden on a stop, whose
+ * own footer holds the primary action (one bottom bar at a time).
  */
 function TechnicianDock() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const item = 'flex flex-1 flex-col items-center justify-center gap-0.5 text-2xs text-fg-2'
+  if (STOP_ROUTE.test(pathname)) return null
+  const item = 'flex h-full flex-1 flex-col items-center justify-center gap-0.5 text-2xs text-fg-2'
+  const onTour = pathname.startsWith('/field')
+  const onInventory = pathname.startsWith('/stock/inventory')
   return (
     <nav
       aria-label="Technician"
@@ -167,21 +175,23 @@ function TechnicianDock() {
     >
       <Link
         to="/field/my-tour"
-        className={cn(item, pathname.startsWith('/field') && 'text-accent-text')}
+        aria-current={onTour ? 'page' : undefined}
+        className={cn(item, onTour && 'text-accent-text')}
       >
         <Icon icon={CalendarCheck} size={20} /> My tour
       </Link>
       <button
         type="button"
         onClick={openCommandPalette}
-        className="mx-2 grid size-14 place-items-center rounded-md bg-accent text-fg-on-accent shadow-bar"
+        className="mx-2 grid size-14 shrink-0 place-items-center rounded-md bg-accent text-fg-on-accent shadow-bar focus-visible:shadow-[0_0_0_1px_var(--hg-canvas)] focus-visible:outline-offset-2"
         aria-label="Scan anything"
       >
         <Icon icon={ScanLine} size={24} />
       </button>
       <Link
         to="/stock/inventory"
-        className={cn(item, pathname.startsWith('/stock/inventory') && 'text-accent-text')}
+        aria-current={onInventory ? 'page' : undefined}
+        className={cn(item, onInventory && 'text-accent-text')}
       >
         <Icon icon={ScanLine} size={20} /> Inventory
       </Link>
@@ -189,6 +199,32 @@ function TechnicianDock() {
         <Icon icon={Menu} size={20} /> Menu
       </button>
     </nav>
+  )
+}
+
+/** `<title>` from the route's `staticData.title` ("My tour · Hangar"); a PageHeader refines it. */
+function RouteTitle() {
+  const title = useMatches({
+    select: (matches) =>
+      [...matches].reverse().find((match) => match.staticData.title)?.staticData.title,
+  })
+  useDocumentTitle(title)
+  return null
+}
+
+/** WCAG 2.4.1: first tab stop jumps past the rail and the top bar. */
+function SkipLink() {
+  return (
+    <a
+      href="#main"
+      onClick={(event) => {
+        event.preventDefault()
+        document.getElementById('main')?.focus()
+      }}
+      className="sr-only rounded-sm bg-overlay px-3 py-2 font-medium text-fg shadow-popover focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[80]"
+    >
+      Skip to content
+    </a>
   )
 }
 
@@ -201,18 +237,26 @@ export function AppShell({ children }: { children: ReactNode }) {
   const me = useMe()
   const railPref = usePrefs((prefs) => prefs.railCollapsed)
   const wide = useMediaQuery('(min-width: 1440px)')
-  const collapsed = railPref ?? !wide
+  // DESIGN §9.1: collapsed by default below 1440 px and on the pipeline board (it needs the width)
+  const onBoard = useRouterState({ select: (state) => state.location.pathname === '/pipeline' })
+  const collapsed = railPref ?? (!wide || onBoard)
   const toggleRail = () => setPrefs({ railCollapsed: !collapsed })
 
   return (
     <div className="grid h-dvh grid-cols-[auto_minmax(0,1fr)] grid-rows-[minmax(0,1fr)] max-md:grid-cols-[minmax(0,1fr)]">
+      <SkipLink />
+      <RouteTitle />
       <div className="flex min-h-0 max-md:hidden">
         <Rail collapsed={collapsed} onToggle={toggleRail} />
       </div>
       <div className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto]">
         <TopBar />
         <div className="relative flex min-h-0 min-w-0">
-          <main id="main" className="min-h-0 min-w-0 flex-1 overflow-auto">
+          <main
+            id="main"
+            tabIndex={-1}
+            className="min-h-0 min-w-0 flex-1 overflow-auto outline-none"
+          >
             {children}
           </main>
           <DrawerHost />

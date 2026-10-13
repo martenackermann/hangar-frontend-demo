@@ -208,6 +208,12 @@ export function DataTable<T extends RowData>({
   const selected = useMemo(() => new Set(selectedIds), [selectedIds])
   const ids = useMemo(() => rows.map((row) => getRowId(row)), [rows, getRowId])
   const [cursorId, setCursorId] = useState<string | null>(null)
+  // remember the last record the drawer showed: closing it leaves the cursor (and tab stop) there
+  const [lastActive, setLastActive] = useState(activeId)
+  if (activeId && activeId !== lastActive) {
+    setLastActive(activeId)
+    setCursorId(activeId)
+  }
   const cursor = activeId ?? cursorId
   const cursorIndex = cursor ? ids.indexOf(cursor) : -1
   const allSelected = ids.length > 0 && ids.every((id) => selected.has(id))
@@ -243,7 +249,7 @@ export function DataTable<T extends RowData>({
 
   // Keyboard focus follows the cursor while it is inside the table (roving tabindex on the
   // row-open controls), so j/k and the arrow keys move real focus, not just the highlight.
-  const focusCursor = useRef(false)
+  const focusCursor = useRef<string | null>(null)
   const moveCursor = useCallback(
     (delta: number, fromIndex = cursorIndex) => {
       if (ids.length === 0) return
@@ -251,7 +257,7 @@ export function DataTable<T extends RowData>({
       const id = ids[nextIndex]
       const row = rows[nextIndex]
       if (id === undefined || row === undefined) return
-      focusCursor.current = scrollRef.current?.contains(document.activeElement) ?? false
+      focusCursor.current = scrollRef.current?.contains(document.activeElement) ? id : null
       setCursorId(id)
       virtualizer.scrollToIndex(nextIndex, { align: 'auto' })
       if (activeId) onOpen?.(row)
@@ -259,8 +265,9 @@ export function DataTable<T extends RowData>({
     [activeId, cursorIndex, ids, onOpen, rows, virtualizer],
   )
   useEffect(() => {
-    if (!focusCursor.current || !cursor) return
-    focusCursor.current = false
+    // wait until the cursor really is the target (with a drawer open it follows the URL)
+    if (!cursor || focusCursor.current !== cursor) return
+    focusCursor.current = null
     const focus = () =>
       [...(scrollRef.current?.querySelectorAll<HTMLElement>('[data-row-open]') ?? [])]
         .find((control) => control.dataset.rowOpen === cursor)
@@ -268,6 +275,25 @@ export function DataTable<T extends RowData>({
     // the virtualizer may render the row on the next frame
     requestAnimationFrame(focus)
   }, [cursor])
+
+  // The drawer moved to another record (J/K, prev/next): if focus is on a row, follow it.
+  useEffect(() => {
+    if (!activeId) return
+    const focused = document.activeElement
+    if (
+      focused instanceof HTMLElement &&
+      focused.dataset.rowOpen &&
+      focused.dataset.rowOpen !== activeId &&
+      scrollRef.current?.contains(focused)
+    ) {
+      focusCursor.current = activeId
+      requestAnimationFrame(() =>
+        [...(scrollRef.current?.querySelectorAll<HTMLElement>('[data-row-open]') ?? [])]
+          .find((control) => control.dataset.rowOpen === activeId)
+          ?.focus({ preventScroll: true }),
+      )
+    }
+  }, [activeId])
 
   // Arrow keys on a focused row work even with single-key shortcuts switched off (WCAG 2.1.4
   // allows keys that only act while the component has focus).

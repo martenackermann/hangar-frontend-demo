@@ -171,7 +171,7 @@ export function StatTile({
     </>
   )
   const cls = cn(
-    'grid min-w-0 gap-1 px-4 py-3',
+    'grid min-w-0 content-start gap-1 px-4 py-3',
     to &&
       'hover:bg-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus',
     className,
@@ -188,7 +188,8 @@ export function StatTile({
 /** Hairline-divided strip of StatTiles; the sixth tile hides below 1360 px. */
 export function KpiStrip({ children }: { children: ReactNode }) {
   return (
-    <div className="grid auto-cols-fr grid-flow-col divide-x divide-line border-b border-line bg-surface max-md:grid-flow-row max-md:grid-cols-2 max-md:divide-x-0 [&>*:nth-child(6)]:max-[1359px]:hidden">
+    // Phones: one swipeable row instead of a 2×3 block that pushes the board off screen.
+    <div className="hg-no-scrollbar grid auto-cols-fr grid-flow-col divide-x divide-line border-b border-line bg-surface max-md:snap-x max-md:auto-cols-[minmax(156px,44%)] max-md:overflow-x-auto [&>*]:max-md:snap-start [&>*:nth-child(6)]:max-[1359px]:min-[768px]:hidden">
       {children}
     </div>
   )
