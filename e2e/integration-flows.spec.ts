@@ -44,6 +44,15 @@ function workingMorning(): { at: Date; day: string } {
   return { at: new Date(utcGuess.getTime() - (hourThere - 7) * 3600_000), day }
 }
 
+/**
+ * SR number and ITSM user id unique per run, so the spec can also run repeatedly against a
+ * (stateful) backend. Demo mode resets per test anyway.
+ */
+function uniqueIds(offset: number): { number: string; userId: string } {
+  const base = 9_000_000 + (Math.floor(Date.now() / 1000) % 450_000) * 2 + offset
+  return { number: `SR${base}`, userId: `E${base % 1_000_000}` }
+}
+
 /** A one-row ITSM service-request export (SPEC §7.2 columns), a new hire with one laptop. */
 function srExport(row: {
   number: string
@@ -134,8 +143,9 @@ async function inviteAndBook(page: Page, number: string) {
   await drawer.getByRole('tab', { name: /Communication/ }).click()
   await drawer.getByRole('tabpanel').getByRole('button', { name: 'Send next mail' }).click()
   await expect(drawer.getByText('Invited').first()).toBeVisible()
+  // demo mode sends at once (subject); against the API the worker may still have it queued
   await expect(drawer.getByRole('list', { name: 'Mails' })).toContainText(
-    /Book your hardware appointment/,
+    /Book your hardware appointment|Booking invitation/,
   )
   // H4 · the employee books today at 17:00 (dispatcher books on their behalf)
   await drawer.getByRole('button', { name: 'Book appointment' }).click()
@@ -233,7 +243,7 @@ test.describe('cross-slice flows', () => {
   }) => {
     test.slow()
     const { day } = workingMorning()
-    const number = 'SR0099101'
+    const { number, userId } = uniqueIds(0)
     await page.setViewportSize({ width: 1440, height: 900 })
 
     // H2 · Dana imports the ITSM export (Riverton, technician delivery); H1 · the pipeline counts it
@@ -243,7 +253,7 @@ test.describe('cross-slice flows', () => {
       page,
       srExport({
         number,
-        userId: 'E990101',
+        userId,
         first: 'Quinn',
         last: 'Larkspur',
         zip: '10020',
@@ -331,7 +341,7 @@ test.describe('cross-slice flows', () => {
     await expect(drawer.getByText(/Deployed · stage 7 of 8/).first()).toBeVisible()
     await drawer.getByRole('tab', { name: /Communication/ }).click()
     const mails = drawer.getByRole('list', { name: 'Mails' })
-    await expect(mails).toContainText(/Book your hardware appointment/)
+    await expect(mails).toContainText(/Book your hardware appointment|Booking invitation/)
     await expect(mails).toContainText(/protocol/i)
     await page.goto(`/stock/assets?q=${encodeURIComponent(codes[0] ?? '')}`)
     await expect(page.getByRole('table').getByText('In use').first()).toBeVisible()
@@ -342,7 +352,7 @@ test.describe('cross-slice flows', () => {
   }) => {
     test.slow()
     const { day } = workingMorning()
-    const number = 'SR0099102'
+    const { number, userId } = uniqueIds(1)
     await page.setViewportSize({ width: 1440, height: 900 })
     await signIn(page, persona('dana'))
     // Westbay: parcel to the user, supplied by the Eastgate hub
@@ -350,7 +360,7 @@ test.describe('cross-slice flows', () => {
       page,
       srExport({
         number,
-        userId: 'E990102',
+        userId,
         first: 'Rowan',
         last: 'Ashdown',
         zip: '50610',
@@ -440,6 +450,57 @@ test.describe('cross-slice flows', () => {
     await page.getByRole('link', { name: /^Stock shortfall/ }).click()
     await expect(page).toHaveURL(/\/stock\/matrix/)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  })
+
+  test('demo app shell: deep link through login, reload, service worker + mock API, reset demo data', async ({
+    page,
+  }) => {
+    test.slow()
+    await page.setViewportSize({ width: 1440, height: 900 })
+    // a deep link survives the login round trip and a reload (SPA rewrite + service worker)
+    await page.goto('/service-requests?status=imported')
+    await expect(page).toHaveURL(/\/login\?redirect=/)
+    await page.getByRole('button', { name: 'Sign in as Ada Admin, Admin' }).click()
+    await expect(page).toHaveURL(/\/service-requests\?status=imported$/)
+    const table = page.getByRole('table', { name: 'Service requests' })
+    await expect(table.getByRole('row').nth(1)).toContainText('Imported')
+    await page.reload()
+    await expect(table.getByRole('row').nth(1)).toContainText('Imported')
+    // one service worker controls the page (PWA worker in builds, MSW's in dev) and the API still
+    // answers from the in-browser database
+    const worker = await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL ?? null)
+    expect(worker).toMatch(/\/(sw|mockServiceWorker)\.js$/)
+
+    // a change survives a reload; "Reset demo data" brings the fixture back
+    const number = (
+      (await table
+        .getByRole('row')
+        .nth(1)
+        .getByText(/^SR\d{7}$/)
+        .first()
+        .textContent()) ?? ''
+    ).trim()
+    expect(number).toMatch(/^SR\d{7}$/)
+    await table.getByRole('row').nth(1).click()
+    const drawer = page.getByRole('complementary', { name: `Service request ${number}` })
+    await drawer.getByRole('tab', { name: /Communication/ }).click()
+    await drawer.getByRole('tabpanel').getByRole('button', { name: 'Send next mail' }).click()
+    await expect(drawer.getByText('Invited').first()).toBeVisible()
+    await page.reload()
+    await expect(
+      page
+        .getByRole('complementary', { name: `Service request ${number}` })
+        .getByText('Invited')
+        .first(),
+    ).toBeVisible()
+
+    await page.keyboard.press('ControlOrMeta+k')
+    const palette = page.getByRole('dialog', { name: 'Command palette' })
+    await palette.getByRole('combobox').fill('reset demo data')
+    await page.keyboard.press('Enter')
+    await expect(page.getByText('Demo data reset').first()).toBeVisible({ timeout: 15_000 })
+    const after = await openSr(page, number)
+    await expect(after.getByText('Imported').first()).toBeVisible()
   })
 
   test('permissions across slices: Vic reads, Theo works his tour, neither manages', async ({
