@@ -5,6 +5,7 @@ import type {
   Appointment,
   BookingCalendar,
   DeploymentView,
+  DownloadLink,
   List,
   ScanResult,
   ServiceRequestDetail,
@@ -173,5 +174,16 @@ describe('H4 endpoints', () => {
     expect(done.status).toBe('reschedule_needed')
     expect(done.resumeStatus).toBe('ready_for_picking')
     expect(db.collection('tour_stops').get(stop.id)?.outcome).toBe('rescheduled')
+  })
+
+  it('serves the protocol PDF of a completed request', async () => {
+    await signInAs(PERSONA_EMAILS.viewer)
+    const sr = db.collection('service_requests').find((s) => s.status === 'completed')
+    if (!sr) throw new Error('fixture')
+    const link = await api.get<DownloadLink>(`/service-requests/${sr.id}/protocol`)
+    expect(link.contentType).toBe('application/pdf')
+    const response = await fetch(link.url)
+    expect(response.status).toBe(200)
+    expect((await response.text()).startsWith('%PDF')).toBe(true)
   })
 })

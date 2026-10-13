@@ -905,8 +905,11 @@ export const handlers: RequestHandler[] = [
       const sr = srOr404(params.id, request)
       if (sr instanceof Response) return sr
       if (sr.status !== 'completed') return problems.notFound('Protocol', sr.number, request)
-      if (!sr.protocolFileId || !db.collection('stored_files').get(sr.protocolFileId))
-        storeProtocol(sr.id, actor.id)
+      // backend-exported file rows carry no bytes: regenerate the demo protocol then
+      const existing = sr.protocolFileId
+        ? db.collection('stored_files').get(sr.protocolFileId)
+        : undefined
+      if (!existing?.contentBase64) storeProtocol(sr.id, actor.id)
       const fileId = db.collection('service_requests').get(sr.id)?.protocolFileId
       const file = fileId ? db.collection('stored_files').get(fileId) : undefined
       return file
