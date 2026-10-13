@@ -528,12 +528,11 @@ export function DataTable<T extends RowData>({
                       aria-selected={selectable ? isSelected : undefined}
                       data-cursor={isCursor || undefined}
                       onClick={(event) => {
-                        if (
-                          (event.target as HTMLElement).closest(
-                            'button, a, input, [role="checkbox"]',
-                          )
-                        )
-                          return
+                        const target = event.target as HTMLElement
+                        // React bubbles clicks from portals (menus, dialogs opened from a
+                        // cell) through the row: only clicks inside the row's DOM open it.
+                        if (!event.currentTarget.contains(target)) return
+                        if (target.closest('button, a, input, [role="checkbox"]')) return
                         setCursorId(id)
                         onOpen?.(row)
                       }}

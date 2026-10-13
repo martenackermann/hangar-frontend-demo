@@ -87,9 +87,6 @@ const ROUTES: { path: string; title: RegExp }[] = [
   { path: '/warehouse/order-closing', title: /order closing/i },
   { path: '/warehouse/picking', title: /picking/i },
   { path: '/warehouse/parcel-shipping', title: /parcel shipping/i },
-  { path: '/field/my-tour', title: /my tour/i },
-  { path: '/field/tour-planner', title: /tour planner/i },
-  { path: '/field/tours/1/stops/1', title: /deployment|stop/i },
   { path: '/stock/matrix', title: /matrix/i },
   { path: '/stock/call-off-orders', title: /call-off orders/i },
   { path: '/stock/call-off-orders/1', title: /call-off order/i },
@@ -97,13 +94,6 @@ const ROUTES: { path: string; title: RegExp }[] = [
   { path: '/stock/inventory/1', title: /inventor/i },
   { path: '/stock/assets', title: /assets/i },
   { path: '/stock/deactivation', title: /deactivation/i },
-  { path: '/data/imports', title: /imports/i },
-  { path: '/data/imports/1', title: /import/i },
-  { path: '/admin/articles', title: /articles/i },
-  { path: '/admin/regions', title: /regions/i },
-  { path: '/admin/vip-list', title: /vip/i },
-  { path: '/admin/users', title: /users/i },
-  { path: '/admin/calendars', title: /calendars/i },
   { path: '/admin/dispatch-settings', title: /dispatch settings/i },
 ]
 
@@ -112,7 +102,7 @@ test('every placeholder route renders inside the shell', async ({ page }) => {
   await signIn(page, persona('ada'))
   for (const route of ROUTES) {
     await page.goto(route.path)
-    await expect(page.getByTestId('route-placeholder'), route.path).toBeVisible()
+    // routes a slice has replaced keep their title; only the shell and the h1 are asserted
     await expect(page.getByRole('heading', { level: 1 }), route.path).toHaveText(route.title)
     await expect(page).toHaveTitle(/Hangar/)
   }

@@ -35,6 +35,22 @@ if (typeof window.matchMedia !== 'function') {
   })
 }
 
+// jsdom lacks ResizeObserver; Radix (checkbox, switch, popper) measures elements with it.
+if (typeof window.ResizeObserver !== 'function') {
+  class ResizeObserverStub implements ResizeObserver {
+    observe = (): undefined => undefined
+    unobserve = (): undefined => undefined
+    disconnect = (): undefined => undefined
+  }
+  for (const target of [window, globalThis]) {
+    Object.defineProperty(target, 'ResizeObserver', {
+      configurable: true,
+      writable: true,
+      value: ResizeObserverStub,
+    })
+  }
+}
+
 const fixture = JSON.parse(
   readFileSync(resolve(process.cwd(), 'src/mocks/fixtures/seed.json'), 'utf8'),
 ) as SeedFixture

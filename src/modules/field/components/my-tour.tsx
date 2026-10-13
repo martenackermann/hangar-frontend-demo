@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ChevronRight, MapPin, Phone, Play, RotateCw, WifiOff } from 'lucide-react'
-import { useEffect } from 'react'
 import { useOnline } from '@/components/scan/scan-station'
 import { StatusBadge, VipFlag } from '@/components/domain/status'
 import { TechnicianShell, TourStation } from '@/components/app/technician-shell'
@@ -23,25 +22,6 @@ import {
 } from '@/modules/field/lib/stops'
 import { cn } from '@/lib/utils'
 
-const CACHE_PREFIX = 'hangar.field.my-tour.'
-
-function readCache(date: string): TourDetail[] | null {
-  try {
-    const raw = localStorage.getItem(CACHE_PREFIX + date)
-    return raw ? (JSON.parse(raw) as TourDetail[]) : null
-  } catch {
-    return null
-  }
-}
-
-function writeCache(date: string, tours: TourDetail[]): void {
-  try {
-    localStorage.setItem(CACHE_PREFIX + date, JSON.stringify(tours))
-  } catch {
-    // storage full or disabled: the offline copy is a convenience only
-  }
-}
-
 /**
  * My tour (SCREENS.md §6.2, DESIGN.md §9.4): the technician's day at 390 px — date stepper,
  * tour card with progress and Start, the Line of stops with call / navigate-free big targets.
@@ -58,15 +38,12 @@ export function MyTour({
   onTourChange: (tourId: number) => void
 }) {
   const online = useOnline()
+  // The query keeps an offline copy in IndexedDB (`meta.persist`, `@/lib/query/persist`), so a
+  // reload without a connection still shows the last loaded tour.
   const query = useQuery(fieldQueries.myTours(date))
-  useEffect(() => {
-    if (query.data) writeCache(date, query.data.data)
-  }, [date, query.data])
-  // Read the saved copy only when it is needed (offline or a failed load).
-  const cached = !online || query.isError ? readCache(date) : null
 
-  const offline = !online || (query.isError && cached !== null)
-  const tours = query.data?.data ?? (offline ? (cached ?? []) : [])
+  const offline = !online || (query.isError && query.data !== undefined)
+  const tours = query.data?.data ?? []
   const tour = tours.find((t) => t.id === tourId) ?? tours[0]
   const devices = tour
     ? tour.stops.reduce(

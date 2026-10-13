@@ -6,6 +6,8 @@ import { isApiError } from '@/lib/api/errors'
 export interface HangarQueryMeta extends Record<string, unknown> {
   /** Toast background-refetch failures of this query (default true). Initial load errors render inline. */
   errorToast?: boolean
+  /** Keep an offline copy in IndexedDB (`@/lib/query/persist`; also set `gcTime: PERSIST_MAX_AGE`). */
+  persist?: boolean
 }
 
 export interface HangarMutationMeta extends Record<string, unknown> {

@@ -8,7 +8,6 @@ import type {
   InstallationPlaceOccupancy,
   ItemSlot,
   OrderClosingQueueItem,
-  OsReinstallTiming,
   Page,
   ParcelPickingItem,
   PersonalizationQueueItem,
@@ -19,6 +18,7 @@ import type {
   ShipmentCreate,
   ShipmentCreated,
   SoftwareChecklist,
+  StagingPatch,
   TechnicianPicking,
 } from '@/lib/api/types'
 
@@ -155,11 +155,7 @@ export function useUnpack(srId: number) {
 }
 
 /** `PATCH /service-requests/{id}/staging`: API.md body plus the optional `addedSoftware`. */
-export interface StagingOptionsPatch {
-  osReinstall?: OsReinstallTiming | null
-  addedSoftware?: string[]
-  version?: number
-}
+export type StagingOptionsPatch = StagingPatch
 
 export function usePatchStaging(srId: number) {
   const queryClient = useQueryClient()

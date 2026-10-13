@@ -19,6 +19,7 @@ import { problem, problemInfo, problems } from './http'
  *   registerEffect('serviceRequest', 'claim', ({ row, actor, update }) => update({ editorUserId: actor?.id ?? null }))
  *   registerResolver('serviceRequest', 'send_next_mail', ({ row }) => ({ to: nextChainStatus(row), action: … }))
  *   registerAuthorizer('serviceRequest', 'complete_deployment', ({ row, actor }) => ownsTour(row, actor))
+ *   registerCondition('serviceRequest', 'claim', ({ row, actor }) => row.editorUserId !== actor?.id)
  *
  * `apply()` order: unknown action 404 → permission 403 → authorizer 403 `not_own_tour` →
  * status 409 `transition_not_allowed` (+ allowedActions) → version 409 `version_conflict` →
@@ -68,6 +69,8 @@ export type Guard<R extends WorkflowRow = WorkflowRow> = (
   ctx: ActionContext<R>,
 ) => GuardFailure | null | undefined
 export type Authorizer<R extends WorkflowRow = WorkflowRow> = (ctx: ActionContext<R>) => boolean
+/** Extra from-rule (backend `Transition.condition`): false = not offered, 409 `transition_not_allowed`. */
+export type Condition<R extends WorkflowRow = WorkflowRow> = (ctx: ActionContext<R>) => boolean
 /** Computed target: `to: null` = status unchanged (pause/resume); `action` = resolved action name. */
 export type Resolver<R extends WorkflowRow = WorkflowRow> = (
   ctx: ActionContext<R>,
@@ -91,6 +94,7 @@ interface Registry {
   validators: Map<string, Validator[]>
   guards: Map<string, { guard: Guard; triggers?: readonly Trigger[] | undefined }[]>
   authorizers: Map<string, Authorizer[]>
+  conditions: Map<string, Condition[]>
   resolvers: Map<string, Resolver>
   effects: Map<string, Effect[]>
   subscribers: Effect[]
@@ -101,6 +105,7 @@ const registries: Record<Resource, Registry> = {
     validators: new Map(),
     guards: new Map(),
     authorizers: new Map(),
+    conditions: new Map(),
     resolvers: new Map(),
     effects: new Map(),
     subscribers: [],
@@ -109,6 +114,7 @@ const registries: Record<Resource, Registry> = {
     validators: new Map(),
     guards: new Map(),
     authorizers: new Map(),
+    conditions: new Map(),
     resolvers: new Map(),
     effects: new Map(),
     subscribers: [],
@@ -117,6 +123,7 @@ const registries: Record<Resource, Registry> = {
     validators: new Map(),
     guards: new Map(),
     authorizers: new Map(),
+    conditions: new Map(),
     resolvers: new Map(),
     effects: new Map(),
     subscribers: [],
@@ -156,6 +163,20 @@ export function registerAuthorizer<R extends WorkflowRow>(
   fn: Authorizer<R>,
 ): void {
   push(registries[resource].authorizers, action, fn as unknown as Authorizer)
+}
+
+/**
+ * Extra from-rule mirroring the backend's `Transition.condition` (e.g. claim take-over only from
+ * someone else, skip_preparation from `appointment_booked` only without new items): when false
+ * the action is neither available nor blocked, and applying it answers 409
+ * `transition_not_allowed` (not a guard).
+ */
+export function registerCondition<R extends WorkflowRow>(
+  resource: Resource,
+  action: string,
+  fn: Condition<R>,
+): void {
+  push(registries[resource].conditions, action, fn as unknown as Condition)
 }
 
 /**
@@ -233,6 +254,10 @@ function authorized(resource: Resource, ctx: ActionContext): boolean {
   return (registries[resource].authorizers.get(ctx.action) ?? []).every((fn) => fn(ctx))
 }
 
+function conditionsMet(resource: Resource, ctx: ActionContext): boolean {
+  return (registries[resource].conditions.get(ctx.action) ?? []).every((fn) => fn(ctx))
+}
+
 /** Executable without a slice? Computed targets need a registered resolver. */
 function executable(resource: Resource, def: TransitionDef): boolean {
   return def.to !== null || registries[resource].resolvers.has(def.action)
@@ -253,7 +278,7 @@ export function evaluateActions(
     if (def.internal || !def.triggers.includes('user') || !def.from.includes(row.status)) continue
     if (!hasPerm(actor, def.permission) || !executable(resource, def)) continue
     const ctx = context(resource, def.action, row, actor, 'user')
-    if (!authorized(resource, ctx)) continue
+    if (!conditionsMet(resource, ctx) || !authorized(resource, ctx)) continue
     const failure = runGuards(resource, ctx)
     if (failure) blocked.push({ action: def.action, guard: failure.code, reason: failure.message })
     else available.push(def.action)
@@ -307,7 +332,7 @@ export function applyAction<R extends WorkflowRow>(
       }),
     }
   }
-  if (!def.from.includes(row.status)) {
+  if (!def.from.includes(row.status) || !conditionsMet(resource, ctx)) {
     const allowed = evaluateActions(resource, row, actor).availableActions
     return {
       ok: false,

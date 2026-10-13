@@ -101,6 +101,20 @@ describe('transition maps (SPEC §4, served by /meta/enums)', () => {
     expect(!result.ok && problemInfo(result.response).code).toBe('guard_failed')
   })
 
+  it('treats backend conditions as from-rules: re-claiming your own request is 409 transition_not_allowed', () => {
+    const sr = firstSr('appointment_booked')
+    expect(applyAction('serviceRequest', sr.id, 'claim', { actor: dana() }).ok).toBe(true)
+    const claimed = db.collection('service_requests').get(sr.id) ?? sr
+    const { availableActions, blockedActions } = evaluateActions('serviceRequest', claimed, dana())
+    expect(availableActions).not.toContain('claim')
+    expect(blockedActions.map((b) => b.action)).not.toContain('claim')
+    const again = applyAction('serviceRequest', sr.id, 'claim', { actor: dana() })
+    expect(!again.ok && problemInfo(again.response).code).toBe('transition_not_allowed')
+    // someone else may take it over
+    const ada = actor('ada.admin@example.com')
+    expect(evaluateActions('serviceRequest', claimed, ada).availableActions).toContain('claim')
+  })
+
   it('cancels with released assets and summarises bulk actions', () => {
     const sr = firstSr('ready_for_picking')
     const result = applyAction('serviceRequest', sr.id, 'cancel', {

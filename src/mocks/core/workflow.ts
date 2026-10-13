@@ -10,6 +10,7 @@ import { addDays, businessToday } from '@/lib/format'
 import type { MockActor } from '@/mocks/auth'
 import { db } from '@/mocks/db'
 import {
+  registerCondition,
   registerEffect,
   registerGuard,
   registerResolver,
@@ -184,13 +185,17 @@ for (const action of [
 for (const action of ['send_invitation', 'send_reminder_1', 'send_reminder_2', 'escalate']) {
   registerGuard<ServiceRequestRow>(SR, action, regionResolved)
 }
-registerGuard<ServiceRequestRow>(SR, 'claim', ({ row, actor }) => {
-  if (!row.appointmentStartAt) return fail('has_appointment', 'The request has no appointment yet.')
-  if (row.status === 'personalization_in_progress' && row.editorUserId === actor?.id) {
-    return fail('is_editor', 'You already work on this request.')
-  }
-  return null
-})
+// Backend `Transition.condition`: taking over is only possible from someone else (re-claiming
+// your own request is 409 transition_not_allowed, not a guard).
+registerCondition<ServiceRequestRow>(
+  SR,
+  'claim',
+  ({ row, actor }) =>
+    row.status === 'appointment_booked' || (actor !== null && row.editorUserId !== actor.id),
+)
+registerGuard<ServiceRequestRow>(SR, 'claim', ({ row }) =>
+  row.appointmentStartAt ? null : fail('has_appointment', 'The request has no appointment.'),
+)
 registerGuard<ServiceRequestRow>(SR, 'release', ({ row, actor }) =>
   row.editorUserId === actor?.id || actor?.role === 'admin'
     ? null
@@ -198,14 +203,16 @@ registerGuard<ServiceRequestRow>(SR, 'release', ({ row, actor }) =>
 )
 registerGuard<ServiceRequestRow>(SR, 'finish_personalization', isEditor)
 registerGuard<ServiceRequestRow>(SR, 'finish_personalization', allNewItemsAssigned)
-registerGuard<ServiceRequestRow>(SR, 'skip_preparation', (ctx) => {
-  if (ctx.row.status === 'appointment_booked') {
-    return newItems(ctx.row.id).length === 0
-      ? null
-      : fail('all_new_items_assigned', 'Claim the request and assign its devices first.')
-  }
-  return isEditor(ctx) ?? allNewItemsAssigned(ctx)
-})
+// Backend condition: from `appointment_booked` only without new items (else 409
+// transition_not_allowed); in progress the editor guard and the assignment guard apply.
+registerCondition<ServiceRequestRow>(
+  SR,
+  'skip_preparation',
+  ({ row }) => row.status !== 'appointment_booked' || newItems(row.id).length === 0,
+)
+registerGuard<ServiceRequestRow>(SR, 'skip_preparation', (ctx) =>
+  ctx.row.status === 'appointment_booked' ? null : (isEditor(ctx) ?? allNewItemsAssigned(ctx)),
+)
 registerGuard<ServiceRequestRow>(SR, 'close_order', allNewItemsAssigned)
 registerGuard<ServiceRequestRow>(SR, 'close_order', ({ row }) => {
   const required = [
@@ -619,12 +626,12 @@ registerEffect<LeaseReturnRow>(LR, 'resume_communication', ({ update, today }) =
 const AS = 'asset'
 type AssetCtx = ActionContext<AssetRow>
 
-registerEffect<AssetRow>(AS, 'mark_missing', ({ updated, actor, trigger, payload }) => {
+registerEffect<AssetRow>(AS, 'mark_missing', ({ updated, from, actor, trigger, payload }) => {
   // The engine already wrote the status; record the movement (location unchanged).
   db.collection('asset_movements').insert({
     assetId: updated.id,
     action: 'mark_missing',
-    fromStatus: null,
+    fromStatus: from as AssetStatus,
     toStatus: 'missing',
     fromLocationId: updated.locationId,
     toLocationId: updated.locationId,
