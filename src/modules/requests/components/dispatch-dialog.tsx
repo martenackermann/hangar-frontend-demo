@@ -1,17 +1,16 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { MailCheck, Send } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDrawerNavigation } from '@/components/drawer/drawer-state'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Banner, EmptyState, SkeletonRows } from '@/components/ui/feedback'
-import { notify } from '@/components/ui/toast'
 import { isApiError } from '@/lib/api/errors'
 import type { DispatchRun } from '@/lib/api/types'
 import { useCan } from '@/lib/auth/store'
 import { formatNumber, plural } from '@/lib/format'
-import { trackJob } from '@/lib/jobs'
-import { DISPATCH_INVALIDATES, templatesQuery, useDryRun, useRunDispatch } from '../api'
+import { templatesQuery, useDryRun } from '../api'
+import { startDispatch } from '../dispatch'
 import { skipLabel } from './labels'
 
 /**
@@ -29,32 +28,13 @@ export function useTemplateNames(): (id: string) => string {
 
 export function useStartDispatch() {
   const queryClient = useQueryClient()
-  const run = useRunDispatch()
+  const [pending, setPending] = useState(false)
   return {
-    pending: run.isPending,
-    start: () =>
-      run.mutateAsync().then(
-        (accepted) =>
-          trackJob(queryClient, accepted, {
-            title: 'Sending due mails',
-            invalidate: [...DISPATCH_INVALIDATES],
-            describe: (job) =>
-              job.result?.kind === 'comms_dispatch'
-                ? `${plural(
-                    Object.values(job.result.counts).reduce((sum, n) => sum + n, 0),
-                    'mail',
-                  )} sent · ${plural(
-                    Object.values(job.result.skipped).reduce((sum, n) => sum + n, 0),
-                    'record',
-                  )} skipped`
-                : undefined,
-          }),
-        (error: unknown) => {
-          notify.error(isApiError(error) ? error.title : 'Could not start the dispatch', {
-            description: isApiError(error) ? error.detail : undefined,
-          })
-        },
-      ),
+    pending,
+    start: () => {
+      setPending(true)
+      return startDispatch(queryClient).finally(() => setPending(false))
+    },
   }
 }
 
