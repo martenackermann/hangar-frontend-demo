@@ -108,7 +108,10 @@ export default defineConfig(({ mode }) => {
       ...(demoMode ? [preloadDemoMocks()] : []),
       VitePWA({
         registerType: 'autoUpdate',
-        injectRegister: 'auto',
+        // Demo builds: MSW registers /sw.js itself (src/mocks/browser.ts). A second registration
+        // from registerSW.js races it on the first visit: MSW reloads a page that is not yet
+        // controlled while the worker installs, in a loop until precaching is done.
+        injectRegister: demoMode ? false : 'auto',
         // Never run the PWA service worker in dev: it would fight the MSW worker and cache HMR assets.
         devOptions: { enabled: false },
         // public/ assets are precached through workbox.globPatterns below.
@@ -187,9 +190,18 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       sourcemap: true,
-      // The only chunk above 500 kB is the demo mock layer (MSW + faker + workflow engine),
-      // loaded lazily and only in demo builds.
+      // The only chunk above 500 kB is the demo mock layer (MSW + workflow engine + slice mocks,
+      // ~760 kB), only in demo builds; faker (~415 kB) is a separate chunk loaded only to seed.
       chunkSizeWarningLimit: 1000,
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            // One chunk for the lucide icons instead of ~60 sub-kilobyte chunks shared between
+            // routes (each one a request and a precache entry).
+            groups: [{ name: 'icons', test: /[\\/]node_modules[\\/]lucide-react[\\/]/ }],
+          },
+        },
+      },
     },
   }
 })

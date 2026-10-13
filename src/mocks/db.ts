@@ -1,4 +1,3 @@
-import type * as FakerLib from '@faker-js/faker'
 import type { Faker } from '@faker-js/faker'
 import { addDays, businessToday, daysBetween } from '@/lib/format'
 import {
@@ -10,6 +9,7 @@ import {
   type StoredRow,
   type TableChange,
 } from './persistence'
+import type * as SeedFaker from './seed-faker'
 
 export {
   DB_PREFIX,
@@ -231,7 +231,7 @@ export interface SeedDefinition {
 
 const DEMO_SEED = 20_261_013
 
-type FakerModule = Pick<typeof FakerLib, 'Faker' | 'en' | 'base'>
+type FakerModule = typeof SeedFaker
 let fakerModule: FakerModule | null = null
 
 /**
@@ -243,7 +243,7 @@ export function provideSeedFaker(module: FakerModule): void {
 }
 
 export async function loadSeedFaker(): Promise<void> {
-  fakerModule ??= await import('@faker-js/faker')
+  fakerModule ??= await import('./seed-faker')
 }
 
 function hashString(value: string): number {
