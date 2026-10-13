@@ -1,5 +1,23 @@
-import { base, en, Faker } from '@faker-js/faker'
+import type * as FakerLib from '@faker-js/faker'
+import type { Faker } from '@faker-js/faker'
 import { addDays, businessToday, daysBetween } from '@/lib/format'
+import {
+  bucketOf,
+  newEpoch,
+  type DemoStorage,
+  type PersistedDatabase,
+  type SaveRequest,
+  type StoredRow,
+  type TableChange,
+} from './persistence'
+
+export {
+  DB_PREFIX,
+  webStorage,
+  type DemoStorage,
+  type PersistedDatabase,
+  type SaveRequest,
+} from './persistence'
 
 /**
  * In-browser demo database for the MSW mock API.
@@ -15,9 +33,12 @@ import { addDays, businessToday, daysBetween } from '@/lib/format'
  *
  * - Slice seeds (`src/modules/<m>/mocks/seed.ts` → `seed: SeedDefinition`) run after the core
  *   tables are loaded, in `order`, each with its own deterministic faker.
- * - Persistence: a snapshot is saved through a `DemoStorage` (the browser uses IndexedDB, see
- *   `src/mocks/browser.ts`; localStorage is too small for the ~3.5 MB fixture). A changed fixture
- *   or seed `version` reseeds. "Reset demo data" reloads the fixture for today.
+ * - Persistence (`./persistence.ts`): every change marks its rows dirty; a save (debounced, or
+ *   awaited through `persist()`) writes only the changed 64-row buckets of the changed tables
+ *   through a `DemoStorage` (IndexedDB in the browser, see `src/mocks/idb-storage.ts`). A changed
+ *   fixture or seed `version` reseeds. "Reset demo data" reloads the fixture for today.
+ * - A restored database needs neither the fixture nor faker: `open()` restores it, `seed()`
+ *   (first visit, changed manifest) and `reset()` need the fixture and `loadSeedFaker()`.
  */
 
 export type Id = number
@@ -38,20 +59,43 @@ type RecordOf<K extends CollectionName> = DemoCollections[K] extends BaseRecord
 
 export type Patch<T> = Partial<Omit<T, 'id'>> | ((current: T) => T)
 
+/** Rows that changed (`'all'`: every row) and whether rows were added or removed. */
+type ChangeListener = (ids: Iterable<Id> | 'all', membership: boolean) => void
+
+/**
+ * Rows are immutable snapshots: persistence writes only rows reported through the collection
+ * API and shares row objects between the live tables and the reset cache. Dev and tests freeze
+ * every stored row so an in-place mutation fails loudly instead of silently not being saved.
+ */
+const freeze: <T>(row: T) => T = import.meta.env.DEV ? deepFreeze : (row) => row
+
+function deepFreeze<T>(value: T): T {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value)
+    for (const inner of Object.values(value)) deepFreeze(inner)
+  }
+  return value
+}
+
 export class Collection<T extends BaseRecord> {
   readonly name: string
   readonly #rows: Map<number, T>
-  readonly #onChange: () => void
+  readonly #onChange: ChangeListener
 
-  constructor(name: string, rows: readonly T[], onChange: () => void) {
+  constructor(name: string, rows: readonly T[], onChange: ChangeListener) {
     this.name = name
-    this.#rows = new Map(rows.map((row) => [row.id, row]))
+    this.#rows = new Map(rows.map((row) => [row.id, freeze(row)]))
     this.#onChange = onChange
   }
 
   /** All rows in insertion order. Rows are immutable snapshots: never mutate them. */
   all(): T[] {
     return [...this.#rows.values()]
+  }
+
+  /** Row ids in insertion order. */
+  ids(): Id[] {
+    return [...this.#rows.keys()]
   }
 
   get(id: Id | string | undefined | null): T | undefined {
@@ -87,18 +131,21 @@ export class Collection<T extends BaseRecord> {
   insert(row: Omit<T, 'id'> & { id?: Id }): T {
     const id = row.id ?? this.nextId()
     if (this.#rows.has(id)) throw new Error(`${this.name}: duplicate id ${id}`)
-    const stored = { ...row, id } as T
+    const stored = freeze({ ...row, id } as T)
     this.#rows.set(id, stored)
-    this.#onChange()
+    this.#onChange([id], true)
     return stored
   }
 
   insertMany(rows: readonly T[]): T[] {
     for (const row of rows) {
       if (this.#rows.has(row.id)) throw new Error(`${this.name}: duplicate id ${row.id}`)
-      this.#rows.set(row.id, row)
+      this.#rows.set(row.id, freeze(row))
     }
-    this.#onChange()
+    this.#onChange(
+      rows.map((row) => row.id),
+      true,
+    )
     return [...rows]
   }
 
@@ -107,49 +154,60 @@ export class Collection<T extends BaseRecord> {
     const current = this.#rows.get(Number(id))
     if (!current) return undefined
     const next = typeof patch === 'function' ? patch(current) : { ...current, ...patch }
-    const stored = { ...next, id: current.id }
+    const stored = freeze({ ...next, id: current.id })
     this.#rows.set(current.id, stored)
-    this.#onChange()
+    this.#onChange([current.id], false)
     return stored
   }
 
   upsert(row: T): T {
-    this.#rows.set(row.id, row)
-    this.#onChange()
+    const existed = this.#rows.has(row.id)
+    this.#rows.set(row.id, freeze(row))
+    this.#onChange([row.id], !existed)
     return row
   }
 
   remove(id: Id): boolean {
     const removed = this.#rows.delete(Number(id))
-    if (removed) this.#onChange()
+    if (removed) this.#onChange([Number(id)], true)
     return removed
   }
 
   removeWhere(predicate: (row: T) => boolean): number {
-    let removed = 0
+    const removed: Id[] = []
     for (const [id, row] of this.#rows) {
       if (predicate(row)) {
         this.#rows.delete(id)
-        removed++
+        removed.push(id)
       }
     }
-    if (removed > 0) this.#onChange()
-    return removed
+    if (removed.length > 0) this.#onChange(removed, true)
+    return removed.length
   }
 
   clear(): void {
     this.#rows.clear()
-    this.#onChange()
+    this.#onChange('all', true)
   }
 }
 
 // ---- fixture & seeds ---------------------------------------------------------------------
 
+/** Fixture identity and anchor (`seed.json` → `meta`). */
+export interface FixtureMeta {
+  version: number
+  generatedAt: string
+  anchorDate: string
+}
+
 /** The parts of `seed.json` the loader needs (full type: src/mocks/fixtures/types.ts). */
 export interface FixtureLike {
-  meta: { version: number; generatedAt: string; anchorDate: string }
+  meta: FixtureMeta
   tables: Record<string, readonly unknown[] | undefined>
 }
+
+/** The fixture without its tables (meta, enums, config), persisted with the database. */
+export type FixtureHead = { meta: FixtureMeta } & Record<string, unknown>
 
 export interface SeedContext {
   db: DemoDatabase
@@ -172,7 +230,21 @@ export interface SeedDefinition {
 }
 
 const DEMO_SEED = 20_261_013
-export const DB_STORAGE_KEY = 'hangar.demo-db.v3'
+
+type FakerModule = Pick<typeof FakerLib, 'Faker' | 'en' | 'base'>
+let fakerModule: FakerModule | null = null
+
+/**
+ * Faker (~400 kB) is only needed to (re)seed, so the browser loads it on demand; tests provide
+ * it statically (`src/mocks/node.ts`).
+ */
+export function provideSeedFaker(module: FakerModule): void {
+  fakerModule = module
+}
+
+export async function loadSeedFaker(): Promise<void> {
+  fakerModule ??= await import('@faker-js/faker')
+}
 
 function hashString(value: string): number {
   let hash = 2_166_136_261
@@ -184,6 +256,8 @@ function hashString(value: string): number {
 }
 
 export function createSeedFaker(module: string, today: string): Faker {
+  if (!fakerModule) throw new Error('Seeding needs faker: await loadSeedFaker() first.')
+  const { Faker, en, base } = fakerModule
   const faker = new Faker({ locale: [en, base] })
   faker.seed(DEMO_SEED + hashString(module))
   faker.setDefaultRefDate(new Date(`${today}T08:00:00Z`))
@@ -196,9 +270,10 @@ function sortSeeds(seeds: readonly SeedDefinition[]): SeedDefinition[] {
   )
 }
 
-function manifestOf(fixture: FixtureLike, seeds: readonly SeedDefinition[]): string {
+/** Identity of a demo dataset: the fixture plus every slice seed version. */
+export function manifestOf(meta: FixtureMeta, seeds: readonly SeedDefinition[]): string {
   return [
-    `fixture@${fixture.meta.version}:${fixture.meta.generatedAt}`,
+    `fixture@${meta.version}:${meta.generatedAt}`,
     ...sortSeeds(seeds).map((seed) => `${seed.module}@${seed.version}`),
   ].join(',')
 }
@@ -236,36 +311,9 @@ export function weekShiftDays(anchorDate: string, today: string): number {
 
 type Snapshot = Record<string, BaseRecord[]>
 
-export interface PersistedDatabase {
-  manifest: string
-  today: string
-  shiftDays: number
-  savedAt: string
-  tables: Snapshot
-}
-
-/**
- * Where the demo database is persisted. `read` is synchronous (the browser preloads the value
- * from IndexedDB before `init`); `write` may be async and is debounced by the database.
- */
-export interface DemoStorage {
-  read(): PersistedDatabase | undefined
-  write(payload: PersistedDatabase): void | Promise<void>
-}
-
-/** A `DemoStorage` over a Web Storage object (tests, small datasets). */
-export function webStorage(storage: Storage, key = DB_STORAGE_KEY): DemoStorage {
-  return {
-    read: () => {
-      const raw = storage.getItem(key)
-      return raw ? (JSON.parse(raw) as PersistedDatabase) : undefined
-    },
-    write: (payload) => storage.setItem(key, JSON.stringify(payload)),
-  }
-}
-
-export interface InitOptions {
-  fixture: FixtureLike
+export interface OpenOptions {
+  /** Identity of the fixture the stored database must have been seeded from. */
+  fixtureMeta: FixtureMeta
   seeds?: readonly SeedDefinition[]
   /** Where to persist; `null`/omitted keeps everything in memory (tests). */
   storage?: DemoStorage | null
@@ -273,19 +321,44 @@ export interface InitOptions {
   today?: string
 }
 
+export interface InitOptions extends Omit<OpenOptions, 'fixtureMeta'> {
+  fixture: FixtureLike
+}
+
+/** What the last saves wrote (debugging and the perf notes in CONVENTIONS.md §10). */
+export interface PersistStats {
+  saves: number
+  lastFull: boolean
+  /** `table` or `table/bucket` per record written by the last save (ids lists as `table#ids`). */
+  lastRecords: string[]
+  lastRows: number
+}
+
+interface DirtyTable {
+  membership: boolean
+  ids: Set<Id> | 'all'
+}
+
 export class DemoDatabase {
   #collections = new Map<string, Collection<BaseRecord>>()
+  #fixtureMeta: FixtureMeta | null = null
   #fixture: FixtureLike | null = null
+  #head: FixtureHead | null = null
   #seeds: SeedDefinition[] = []
   #storage: DemoStorage | null = null
   #today = businessToday()
   #shiftDays = 0
+  #epoch = ''
+  #dirty = new Map<string, DirtyTable>()
+  #fullPending = false
   #saveTimer: ReturnType<typeof setTimeout> | undefined
+  #lastWrite: Promise<void> = Promise.resolve()
   #persistFailed = false
-  #seeded: { key: string; data: Snapshot } | undefined
+  #seeded: { key: string; shiftDays: number; data: Snapshot } | undefined
+  #stats: PersistStats = { saves: 0, lastFull: false, lastRecords: [], lastRows: 0 }
 
   get initialized(): boolean {
-    return this.#fixture !== null
+    return this.#fixtureMeta !== null
   }
 
   /** Business date the data was shifted to. */
@@ -298,6 +371,15 @@ export class DemoDatabase {
     return this.#shiftDays
   }
 
+  /** The fixture without its tables: from the loaded fixture or the stored database. */
+  get fixtureHead(): FixtureHead | null {
+    return this.#head
+  }
+
+  get persistStats(): PersistStats {
+    return { ...this.#stats, lastRecords: [...this.#stats.lastRecords] }
+  }
+
   collection<K extends CollectionName>(name: K): Collection<RecordOf<K>> {
     return this.table<RecordOf<K>>(name)
   }
@@ -307,7 +389,7 @@ export class DemoDatabase {
     this.#assertInitialized()
     let collection = this.#collections.get(name)
     if (!collection) {
-      collection = new Collection<BaseRecord>(name, [], () => this.#scheduleSave())
+      collection = new Collection<BaseRecord>(name, [], this.#listener(name))
       this.#collections.set(name, collection)
     }
     return collection as unknown as Collection<T>
@@ -317,32 +399,56 @@ export class DemoDatabase {
     return [...this.#collections.keys()]
   }
 
-  /** Load from storage when fixture + seed manifest match, otherwise (re)seed. */
-  init({ fixture, seeds = [], storage, today }: InitOptions): { seeded: boolean } {
-    this.#fixture = fixture
+  /**
+   * Restore the stored database when it was seeded from this fixture and these seed versions.
+   * Needs neither the fixture's tables nor faker. Returns false when the caller must `seed()`.
+   */
+  open({ fixtureMeta, seeds = [], storage, today }: OpenOptions): boolean {
+    this.#fixtureMeta = fixtureMeta
     this.#seeds = sortSeeds(seeds)
     this.#storage = storage ?? null
     this.#today = today ?? businessToday()
+    this.#clearPending()
 
     const persisted = this.#readPersisted()
-    if (persisted?.manifest === manifestOf(fixture, this.#seeds)) {
-      this.#today = persisted.today
-      this.#shiftDays = persisted.shiftDays
-      this.#load(persisted.tables)
+    if (persisted?.manifest !== manifestOf(fixtureMeta, this.#seeds)) return false
+    this.#today = persisted.today
+    this.#shiftDays = persisted.shiftDays
+    this.#epoch = persisted.epoch
+    this.#head = persisted.head as FixtureHead
+    this.#load(persisted.tables)
+    return true
+  }
+
+  /** Load the fixture for today, run the slice seeds and write everything (after `open()`). */
+  seed(fixture: FixtureLike): void {
+    this.#attach(fixture)
+    this.#reseed()
+  }
+
+  /** `open()` the stored database, or `seed()` from the fixture when there is none (or stale). */
+  init({ fixture, ...options }: InitOptions): { seeded: boolean } {
+    if (this.open({ ...options, fixtureMeta: fixture.meta })) {
+      this.#fixture = fixture
       return { seeded: false }
     }
-    this.#reseed()
+    this.seed(fixture)
     return { seeded: true }
   }
 
-  /** Throw away all changes and reload the fixture for today ("Reset demo data"). */
-  reset(options: { today?: string } = {}): void {
+  /**
+   * Throw away all changes and reload the fixture for today ("Reset demo data"). A restored
+   * database has no fixture yet: pass it (and `await loadSeedFaker()` first).
+   */
+  reset(options: { today?: string; fixture?: FixtureLike } = {}): void {
     this.#assertInitialized()
+    if (options.fixture) this.#attach(options.fixture)
+    if (!this.#fixture) throw new Error('Reset needs the demo fixture: pass it to reset().')
     this.#today = options.today ?? businessToday()
     this.#reseed()
   }
 
-  /** Persist pending changes immediately (normally debounced). */
+  /** Start writing pending changes now (normally debounced); e.g. on `pagehide`. */
   flush(): void {
     if (this.#saveTimer !== undefined) {
       clearTimeout(this.#saveTimer)
@@ -352,44 +458,56 @@ export class DemoDatabase {
   }
 
   /**
-   * Write pending changes now and resolve once the storage has them. The browser mock awaits it
-   * before answering a mutating request, so a reload right after a response keeps the change.
-   * No-op (resolved) when nothing is pending.
+   * Write pending changes now and resolve once the storage has them (and every earlier save).
+   * The browser mock awaits it before answering a mutating request, so a reload right after a
+   * response keeps the change.
    */
   persist(): Promise<void> {
-    if (this.#saveTimer === undefined) return Promise.resolve()
-    clearTimeout(this.#saveTimer)
-    this.#saveTimer = undefined
-    return this.#save()
+    this.flush()
+    return this.#lastWrite
   }
 
+  /** Deep copy of every table (debugging). */
   snapshot(): Snapshot {
-    const data: Snapshot = {}
-    for (const [name, collection] of this.#collections) data[name] = collection.all()
-    return structuredClone(data)
+    return structuredClone(this.#rowsByTable())
   }
 
   #assertInitialized(): void {
-    if (!this.#fixture)
+    if (!this.#fixtureMeta)
       throw new Error('Demo database not initialised: call initDemoDb(...) first.')
   }
 
-  #load(data: Snapshot): void {
+  #attach(fixture: FixtureLike): void {
+    this.#fixture = fixture
+    this.#fixtureMeta = fixture.meta
+    const { tables: _tables, ...head } = fixture as FixtureLike & Record<string, unknown>
+    void _tables
+    this.#head = head
+  }
+
+  #rowsByTable(): Snapshot {
+    const data: Snapshot = {}
+    for (const [name, collection] of this.#collections) data[name] = collection.all()
+    return data
+  }
+
+  #load(data: Readonly<Record<string, readonly BaseRecord[]>>): void {
     this.#collections.clear()
     for (const [name, rows] of Object.entries(data)) {
-      this.#collections.set(
-        name,
-        new Collection<BaseRecord>(name, rows, () => this.#scheduleSave()),
-      )
+      this.#collections.set(name, new Collection<BaseRecord>(name, rows, this.#listener(name)))
     }
   }
 
   #reseed(): void {
     const fixture = this.#fixture
     if (!fixture) return
-    const cacheKey = `${manifestOf(fixture, this.#seeds)}|${this.#today}`
+    // Everything is rewritten below: no need to track the seeds' inserts row by row.
+    this.#fullPending = true
+    const cacheKey = `${manifestOf(fixture.meta, this.#seeds)}|${this.#today}`
     if (this.#seeded?.key === cacheKey) {
-      this.#load(structuredClone(this.#seeded.data))
+      // Rows are immutable, so the cached seed result is shared, not copied.
+      this.#shiftDays = this.#seeded.shiftDays
+      this.#load(this.#seeded.data)
     } else {
       this.#shiftDays = weekShiftDays(fixture.meta.anchorDate, this.#today)
       const tables: Snapshot = {}
@@ -405,8 +523,11 @@ export class DemoDatabase {
           fixture,
         })
       }
-      this.#seeded = { key: cacheKey, data: this.snapshot() }
+      this.#seeded = { key: cacheKey, shiftDays: this.#shiftDays, data: this.#rowsByTable() }
     }
+    this.#epoch = newEpoch()
+    this.#dirty.clear()
+    this.#fullPending = true
     this.flush()
   }
 
@@ -419,6 +540,30 @@ export class DemoDatabase {
     }
   }
 
+  #listener(table: string): ChangeListener {
+    return (ids, membership) => {
+      if (!this.#storage || this.#persistFailed) return
+      if (!this.#fullPending) {
+        let dirty = this.#dirty.get(table)
+        if (!dirty) {
+          dirty = { membership: false, ids: new Set() }
+          this.#dirty.set(table, dirty)
+        }
+        dirty.membership ||= membership
+        if (ids === 'all') dirty.ids = 'all'
+        else if (dirty.ids !== 'all') for (const id of ids) dirty.ids.add(id)
+      }
+      this.#scheduleSave()
+    }
+  }
+
+  #clearPending(): void {
+    if (this.#saveTimer !== undefined) clearTimeout(this.#saveTimer)
+    this.#saveTimer = undefined
+    this.#dirty.clear()
+    this.#fullPending = false
+  }
+
   #scheduleSave(): void {
     if (!this.#storage || this.#saveTimer !== undefined) return
     this.#saveTimer = setTimeout(() => {
@@ -427,28 +572,95 @@ export class DemoDatabase {
     }, 150)
   }
 
-  #save(): Promise<void> {
-    if (!this.#storage || this.#persistFailed || !this.#fixture) return Promise.resolve()
-    const payload: PersistedDatabase = {
-      manifest: manifestOf(this.#fixture, this.#seeds),
+  /** The pending changes as a save request; clears them. */
+  #takeSave(): SaveRequest {
+    const header = {
+      manifest: this.#fixtureMeta ? manifestOf(this.#fixtureMeta, this.#seeds) : '',
       today: this.#today,
       shiftDays: this.#shiftDays,
+      epoch: this.#epoch,
       savedAt: new Date().toISOString(),
-      tables: this.snapshot(),
     }
+    const fullSave = (): SaveRequest => {
+      const changes = new Map<string, TableChange>()
+      for (const [name, collection] of this.#collections) {
+        changes.set(name, tableChange(collection, 'all', true))
+      }
+      return { header, full: true, head: this.#head, changes, asFull: fullSave }
+    }
+    if (this.#fullPending) {
+      this.#dirty.clear()
+      this.#fullPending = false
+      return fullSave()
+    }
+    const changes = new Map<string, TableChange>()
+    for (const [name, dirty] of this.#dirty) {
+      const collection = this.#collections.get(name)
+      if (collection) changes.set(name, tableChange(collection, dirty.ids, dirty.membership))
+    }
+    this.#dirty.clear()
+    return { header, full: false, changes, asFull: fullSave }
+  }
+
+  #save(): Promise<void> {
+    if (!this.#storage || this.#persistFailed || !this.#fixtureMeta) return this.#lastWrite
+    if (!this.#fullPending && this.#dirty.size === 0) return this.#lastWrite
+    const request = this.#takeSave()
+    this.#recordStats(request)
     const fail = (error: unknown) => {
       // Quota exceeded or storage disabled: keep working in memory.
       this.#persistFailed = true
       console.warn('[demo] Could not persist demo data; changes are kept in memory only.', error)
     }
     try {
-      const pending = this.#storage.write(payload)
-      return pending ? pending.catch(fail) : Promise.resolve()
+      const pending = this.#storage.write(request)
+      // IndexedDB runs the transactions in order: the last one settling means all have.
+      if (pending) this.#lastWrite = pending.catch(fail)
     } catch (error) {
       fail(error)
-      return Promise.resolve()
+    }
+    return this.#lastWrite
+  }
+
+  #recordStats(request: SaveRequest): void {
+    const records: string[] = []
+    let rows = 0
+    for (const [table, change] of request.changes) {
+      if (change.ids) records.push(`${table}#ids`)
+      for (const [bucket, bucketRows] of change.buckets) {
+        records.push(`${table}/${bucket}`)
+        rows += bucketRows.length
+      }
+    }
+    this.#stats = {
+      saves: this.#stats.saves + 1,
+      lastFull: request.full,
+      lastRecords: records,
+      lastRows: rows,
     }
   }
+}
+
+/** Rows of the changed buckets of one table (all buckets for `'all'`), plus its ids if needed. */
+function tableChange(
+  collection: Collection<BaseRecord>,
+  ids: Set<Id> | 'all',
+  membership: boolean,
+): TableChange {
+  const wanted = ids === 'all' ? null : new Set([...ids].map(bucketOf))
+  const buckets = new Map<number, StoredRow[]>()
+  if (wanted) for (const bucket of wanted) buckets.set(bucket, [])
+  for (const row of collection.all()) {
+    const bucket = bucketOf(row.id)
+    if (wanted && !wanted.has(bucket)) continue
+    let list = buckets.get(bucket)
+    if (!list) {
+      list = []
+      buckets.set(bucket, list)
+    }
+    list.push(row)
+  }
+  return { ids: membership ? collection.ids() : undefined, buckets }
 }
 
 /** The singleton used by all mock handlers. */

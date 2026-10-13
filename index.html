@@ -32,7 +32,23 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Boot splash until React renders (demo mode starts the in-browser API first). -->
+      <div
+        role="status"
+        style="
+          display: grid;
+          place-items: center;
+          height: 100%;
+          color: var(--hg-fg-3, #8a939e);
+          font:
+            500 13px/20px system-ui,
+            sans-serif;
+        "
+      >
+        Loading Hangar…
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

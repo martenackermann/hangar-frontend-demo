@@ -3,18 +3,31 @@ import { ENUM_CATALOG } from '@/lib/enums/catalog'
 import type { SeedFixture } from '@/mocks/fixtures/types'
 
 /**
- * The loaded `seed.json` (SPEC_RESOLUTIONS #16). Browser: fetched next to the app
- * (`loadFixture()`); tests: read from disk by the Vitest setup.
+ * The demo dataset `seed.json` (SPEC_RESOLUTIONS #16). Browser: fetched lazily, only when the
+ * database must be (re)seeded (`loadFixture()`); a restored database brings the fixture's head
+ * (meta, enums, config) along (`setFixtureHead`). Tests: read from disk by the Vitest setup.
  */
-let current: SeedFixture | null = null
+export type FixtureHead = Omit<SeedFixture, 'tables'>
+
+let head: FixtureHead | null = null
+let full: SeedFixture | null = null
+let loading: Promise<SeedFixture> | null = null
 
 export function setFixture(fixture: SeedFixture): void {
-  current = fixture
+  full = fixture
+  const { tables: _tables, ...rest } = fixture
+  void _tables
+  head = rest
 }
 
-export function getFixture(): SeedFixture {
-  if (!current) throw new Error('Demo fixture not loaded.')
-  return current
+/** The fixture's meta, enums and config, restored with the demo database. */
+export function setFixtureHead(value: FixtureHead): void {
+  head = value
+}
+
+export function fixtureHead(): FixtureHead {
+  if (!head) throw new Error('Demo fixture not loaded.')
+  return head
 }
 
 /**
@@ -22,30 +35,69 @@ export function getFixture(): SeedFixture {
  * `enums` (the backend's own when imported with `pnpm seed:import`), else the static catalog.
  */
 export function servedEnums(): EnumsResponse {
-  return current?.enums ?? ENUM_CATALOG
+  return head?.enums ?? ENUM_CATALOG
 }
 
 /**
- * Fetch the fixture as a static asset (kept out of the JS bundle). A truncated body ("JSON at
- * position 2097135") or a dropped connection, both seen on a busy dev server, is retried once,
- * bypassing the HTTP cache.
+ * The cache the PWA worker serves the fixture from (`vite.config.ts` → `runtimeCaching`): the
+ * fixture is not precached (~5 MB, only needed to seed), but once loaded it stays available
+ * offline for "Reset demo data".
  */
-export async function loadFixture(): Promise<SeedFixture> {
+const FIXTURE_CACHE = 'hangar-seed'
+
+/**
+ * The whole fixture, fetched once as a static asset (kept out of the JS bundle). A truncated
+ * body ("JSON at position 2097135") or a dropped connection, both seen on a busy dev server, is
+ * retried once, bypassing the HTTP cache.
+ */
+export function loadFixture(): Promise<SeedFixture> {
+  if (full) return Promise.resolve(full)
+  loading ??= fetchWithRetry().then(
+    (fixture) => {
+      setFixture(fixture)
+      return fixture
+    },
+    (error: unknown) => {
+      loading = null
+      throw error
+    },
+  )
+  return loading
+}
+
+async function fetchWithRetry(): Promise<SeedFixture> {
   const { default: url } = await import('@/mocks/fixtures/seed.json?url')
-  let fixture: SeedFixture
   try {
-    fixture = await fetchFixture(url, 'default')
+    return await fetchFixture(url, 'default')
   } catch (error) {
     if (!(error instanceof SyntaxError || error instanceof TypeError)) throw error
     await new Promise((resolve) => setTimeout(resolve, 250))
-    fixture = await fetchFixture(url, 'reload')
+    return fetchFixture(url, 'reload')
   }
-  setFixture(fixture)
-  return fixture
 }
 
 async function fetchFixture(url: string, cache: RequestCache): Promise<SeedFixture> {
   const response = await fetch(url, { cache })
   if (!response.ok) throw new Error(`Could not load the demo dataset (${response.status}).`)
-  return (await response.json()) as SeedFixture
+  const copy = import.meta.env.PROD ? response.clone() : null
+  const fixture = (await response.json()) as SeedFixture
+  if (copy) void keepForOffline(url, copy)
+  return fixture
+}
+
+/**
+ * On the first visit the fixture is fetched before the PWA worker controls the page, so the
+ * worker never sees it: store it in the worker's runtime cache ourselves (unless the worker
+ * already did). Drops the fixtures of older builds from that cache.
+ */
+async function keepForOffline(url: string, response: Response): Promise<void> {
+  if (typeof caches === 'undefined') return
+  try {
+    const cache = await caches.open(FIXTURE_CACHE)
+    const href = new URL(url, window.location.href).href
+    for (const request of await cache.keys()) if (request.url !== href) await cache.delete(request)
+    if (!(await cache.match(href))) await cache.put(href, response)
+  } catch {
+    // Cache Storage unavailable (private mode): the fixture is fetched again when needed.
+  }
 }

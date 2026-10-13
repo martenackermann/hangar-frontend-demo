@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
@@ -33,6 +34,64 @@ function preloadFonts(): Plugin {
   }
 }
 
+const SEED_FILE = fileURLToPath(new URL('./src/mocks/fixtures/seed.json', import.meta.url))
+const SEED_META = 'virtual:hangar-seed-meta'
+
+/**
+ * `virtual:hangar-seed-meta`: the `meta` of seed.json as a tiny module (src/mocks/seed-meta.d.ts),
+ * so demo mode can check its stored database against the fixture without fetching the ~5 MB file.
+ */
+function seedMeta(): Plugin {
+  const resolved = `\0${SEED_META}`
+  return {
+    name: 'hangar:seed-meta',
+    resolveId: (id) => (id === SEED_META ? resolved : undefined),
+    load(id) {
+      if (id !== resolved) return undefined
+      this.addWatchFile(SEED_FILE)
+      const { meta } = JSON.parse(readFileSync(SEED_FILE, 'utf8')) as { meta: unknown }
+      return `export default ${JSON.stringify(meta)}`
+    },
+  }
+}
+
+/**
+ * Demo builds: main.tsx imports the mock layer (src/mocks/browser.ts) before the first render.
+ * Preload it with its chunks so it downloads in parallel with the entry instead of after it.
+ */
+function preloadDemoMocks(): Plugin {
+  return {
+    name: 'hangar:preload-demo-mocks',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        const bundle = ctx.bundle ?? {}
+        const entry = Object.values(bundle).find(
+          (output) =>
+            output.type === 'chunk' && output.facadeModuleId?.endsWith('/src/mocks/browser.ts'),
+        )
+        if (!entry) return []
+        const files = new Set<string>()
+        const visit = (file: string) => {
+          const output = bundle[file]
+          if (files.has(file) || output?.type !== 'chunk') return
+          files.add(file)
+          output.imports.forEach(visit)
+        }
+        visit(entry.fileName)
+        return [...files]
+          .filter((file) => !html.includes(`/${file}"`))
+          .map((file) => ({
+            tag: 'link',
+            attrs: { rel: 'modulepreload', crossorigin: '', href: `/${file}` },
+            injectTo: 'head' as const,
+          }))
+      },
+    },
+  }
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   const demoMode = env.VITE_DEMO_MODE === 'true'
@@ -45,6 +104,8 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       preloadFonts(),
+      seedMeta(),
+      ...(demoMode ? [preloadDemoMocks()] : []),
       VitePWA({
         registerType: 'autoUpdate',
         injectRegister: 'auto',
@@ -76,10 +137,31 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          // json: the demo fixture (seed.json) so demo mode works offline after the first visit.
-          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,wasm,json}'],
+          // Not precached (runtime-cached below instead): the demo fixture seed.json (~5 MB, only
+          // needed to seed the in-browser database, which lives in IndexedDB) and the zxing WASM
+          // (~1 MB, only for the camera scanner on browsers without BarcodeDetector).
+          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
           globIgnores: ['mockServiceWorker.js', 'msw-bridge.js'],
-          maximumFileSizeToCacheInBytes: 8 * 1024 * 1024, // seed.json is ~3.5 MB
+          maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // largest: the demo mock layer chunk
+          runtimeCaching: [
+            {
+              // Hashed name: a cached copy is always the right one. src/mocks/core/fixture.ts also
+              // stores it here on the first visit (before this worker controls the page), so
+              // "Reset demo data" works offline.
+              urlPattern: /\/assets\/seed-[\w-]+\.json$/,
+              handler: 'CacheFirst',
+              options: { cacheName: 'hangar-seed', cacheableResponse: { statuses: [200] } },
+            },
+            {
+              urlPattern: /\/assets\/zxing_reader-[\w-]+\.wasm$/,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'hangar-wasm',
+                cacheableResponse: { statuses: [200] },
+                expiration: { maxEntries: 2 },
+              },
+            },
+          ],
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api\//, /^\/mockServiceWorker\.js$/, /^\/msw-bridge\.js$/],
           // Demo builds: only one service worker can control the scope, so the MSW worker runs
