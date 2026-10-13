@@ -16,7 +16,7 @@ export function HubSelect({
     <Select
       label="Hub"
       prefix="Hub"
-      value={value === undefined ? undefined : String(value)}
+      value={value === undefined ? '' : String(value)}
       onValueChange={(next) => onChange(Number(next))}
       options={hubs.map((hub) => ({ value: String(hub.id), label: hub.name }))}
       className={className}

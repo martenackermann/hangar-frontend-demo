@@ -4,6 +4,17 @@ import { expect, persona, signIn, test } from './fixtures'
  * H3 · Personalization (SCREENS.md §5.2): Dana claims the first unclaimed request, assigns
  * every new device by scanning the FIFO suggestion and finishes; the viewer sees it read-only.
  */
+
+// Headless Chromium on CI boxes without an audio device can crash later pages once the scan
+// stations have played their WebAudio cues, so the specs run with sound off (F2 in the app).
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    const key = 'hangar.prefs.v1'
+    const stored = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, unknown>
+    localStorage.setItem(key, JSON.stringify({ ...stored, sound: false }))
+  })
+})
+
 test('dispatcher claims, assigns by scan and finishes personalization', async ({ page }) => {
   await signIn(page, persona('dana'))
   await page.goto('/warehouse/personalization')

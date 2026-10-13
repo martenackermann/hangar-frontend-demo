@@ -5,6 +5,16 @@ import { expect, persona, signIn, test } from './fixtures'
  * H3 · Installation places (SCREENS.md §5.1): Theo shelves a goods-in device by scanning its
  * serial and a place (two values → one request), sees the verdict and undoes it.
  */
+
+// Headless Chromium on CI boxes without an audio device can crash later pages once the scan
+// stations have played their WebAudio cues, so the specs run with sound off (F2 in the app).
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    const key = 'hangar.prefs.v1'
+    const stored = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, unknown>
+    localStorage.setItem(key, JSON.stringify({ ...stored, sound: false }))
+  })
+})
 interface Fixture {
   tables: {
     stock_locations: { id: number; code: string }[]

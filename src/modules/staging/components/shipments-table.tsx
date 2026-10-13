@@ -53,7 +53,7 @@ export function ShipmentsTable({
   if (shipments.length === 0) return <>{empty}</>
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm" aria-label="Shipments">
+      <table className="w-full text-sm [&_td]:pr-3 [&_th]:pr-3" aria-label="Shipments">
         <thead className="text-left text-xs text-fg-3">
           <tr>
             <th className="px-3 py-1.5 font-medium">Created</th>
