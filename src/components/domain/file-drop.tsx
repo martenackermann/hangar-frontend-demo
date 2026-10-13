@@ -32,6 +32,7 @@ export function FileDrop({
   className?: string
 }) {
   const inputId = useId()
+  const errorId = `${inputId}-error`
   const inputRef = useRef<HTMLInputElement>(null)
   const [over, setOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -76,6 +77,8 @@ export function FileDrop({
           type="file"
           accept={accept}
           disabled={disabled}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           className="sr-only"
           onChange={(event) => {
             take(event.target.files?.[0])
@@ -83,7 +86,11 @@ export function FileDrop({
           }}
         />
       </label>
-      {error && <p className="text-xs text-tone-critical-fg">{error}</p>}
+      {error && (
+        <p id={errorId} role="alert" className="text-xs text-tone-critical-fg">
+          {error}
+        </p>
+      )}
       {sample && (
         <Button
           variant="link"
@@ -101,7 +108,9 @@ export function FileDrop({
 
 /**
  * ImportProgress (DESIGN.md §10): determinate meter + counts (created · updated · unchanged ·
- * skipped · errors), elapsed time; announced politely. The job keeps running server-side.
+ * skipped · errors), elapsed time. The job keeps running server-side. Screen readers hear a
+ * polite update every 10 % and on completion (DESIGN.md §14), not every counter tick; pass a
+ * new `status` (e.g. "Finished") to announce a state change while the component stays mounted.
  */
 export function ImportProgress({
   counts,
@@ -116,6 +125,15 @@ export function ImportProgress({
   status?: ReactNode
 }) {
   const total = counts.total ?? 0
+  // Changes only when the 10 % step or the status changes, so the live region stays quiet
+  // in between (the visible counters update on every poll).
+  const step = percent === null ? null : Math.min(10, Math.floor(Math.max(0, percent) / 10))
+  const announcement =
+    step === 10
+      ? `${typeof status === 'string' ? status : 'Import'}: 100 %, ${formatNumber(total || counts.processed)} rows processed.`
+      : step === null
+        ? `${typeof status === 'string' ? status : 'Importing'}.`
+        : `${typeof status === 'string' ? status : 'Importing'}: ${step * 10} %.`
   const items: [string, number, string][] = [
     ['created', counts.created, 'text-tone-done-fg'],
     ['updated', counts.updated, 'text-tone-outreach-fg'],
@@ -125,7 +143,10 @@ export function ImportProgress({
     ['warnings', counts.warnings, counts.warnings ? 'text-tone-caution-fg' : 'text-fg-2'],
   ]
   return (
-    <div className="grid gap-2" aria-live="polite">
+    <div className="grid gap-2">
+      <span role="status" className="sr-only">
+        {announcement}
+      </span>
       <div className="flex items-baseline justify-between gap-2 text-sm">
         <span className="font-medium">
           {status ?? 'Importing'} {formatNumber(counts.processed)}

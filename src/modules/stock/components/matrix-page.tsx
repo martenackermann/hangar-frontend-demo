@@ -126,8 +126,8 @@ function BufferInput({
         else if (event.key === 'ArrowLeft' && event.altKey) move(event, 0, -1)
       }}
       className={cn(
-        'h-7 w-11 rounded-xs border border-line bg-transparent px-1.5 text-right font-mono text-sm outline-none',
-        'hover:border-line-strong focus:border-focus focus:bg-sunken focus:shadow-[0_0_0_1px_var(--hg-focus)]',
+        'h-7 w-11 rounded-xs border border-line-strong bg-transparent px-1.5 text-right font-mono text-sm outline-none',
+        'hover:border-fg-3 focus:border-focus focus:bg-sunken focus:shadow-[0_0_0_1px_var(--hg-focus)]',
         mutation.isError && 'border-tone-critical',
       )}
     />
@@ -376,18 +376,12 @@ export function MatrixPage({
             </thead>
             <tbody>
               {rows.map((row, rowIndex) => {
-                const shortfall = row.cells.some((c) => c.demand > c.stock)
                 return (
                   <tr
                     key={row.article.id}
                     className={cn('group', !row.article.isActive && 'text-fg-3')}
                   >
-                    <td
-                      className={cn(
-                        'sticky left-0 z-10 w-72 max-w-72 border-r border-b border-line-subtle bg-surface px-3 py-1.5 group-hover:bg-hover',
-                        shortfall && 'shadow-[inset_3px_0_0_var(--hg-tone-caution)]',
-                      )}
-                    >
+                    <td className="sticky left-0 z-10 w-72 max-w-72 border-r border-b border-line-subtle bg-surface px-3 py-1.5 group-hover:bg-hover">
                       <div className="flex min-w-0 items-baseline gap-2">
                         <span className="hg-mono shrink-0 text-xs text-fg-3">
                           {row.article.number}

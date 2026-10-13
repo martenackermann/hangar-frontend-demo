@@ -35,6 +35,23 @@ const HEAT_BG: Record<string, string> = {
   surplus: 'bg-heat-surplus',
 }
 
+const HEAT_WORDS: Record<string, string> = {
+  '1': 'shortage under 25 %',
+  '2': 'shortage 25–50 %',
+  '3': 'shortage 50–75 %',
+  '4': 'critical shortage, 75 % or more',
+  surplus: 'surplus, above twice demand plus buffer',
+}
+
+/**
+ * Words for the heat step, for screen readers ("shortage 25–50 %"); `null` when covered.
+ * Use it in an accessible name that replaces the cell's content (e.g. a wrapping button's
+ * `aria-label`).
+ */
+export function heatLabel(cell: Pick<StockCell, 'demand' | 'buffer' | 'stock'>): string | null {
+  return HEAT_WORDS[String(heatLevel(cell))] ?? null
+}
+
 export const HEAT_LEGEND: { level: HeatLevel; label: string }[] = [
   { level: 0, label: 'Covered' },
   { level: 1, label: '< 25 % short' },
@@ -47,7 +64,9 @@ export const HEAT_LEGEND: { level: HeatLevel; label: string }[] = [
 /**
  * One cell of the stock matrix: stock (mono 14/600, top-left) · "demand 42 · buffer 5" ·
  * order suggestion chip `+18` (top-right) when > 0. Background = shortage ramp; level 4 adds
- * an alert icon. Text stays `--hg-fg` (≥ 7 : 1 on every step). Wrap in a button/popover to edit.
+ * an alert icon. Text stays `--hg-fg` (≥ 7 : 1 on every step). The heat step is also written
+ * out for screen readers ("shortage 25–50 %"), so it is never colour-only. Wrap in a
+ * button/popover to edit (a wrapper with its own `aria-label` should include `heatLabel(cell)`).
  */
 export function StockHeatCell({
   cell,
@@ -61,6 +80,7 @@ export function StockHeatCell({
 }) {
   const level = heatLevel(cell)
   const order = orderQuantity(cell)
+  const words = heatLabel(cell)
   return (
     <div
       className={cn(
@@ -71,8 +91,9 @@ export function StockHeatCell({
     >
       <div className="flex items-start justify-between gap-2">
         <span className="flex items-center gap-1 font-mono text-md font-semibold">
-          {level === 4 && <Icon icon={TriangleAlert} size={12} aria-label="Critical shortage" />}
+          {level === 4 && <Icon icon={TriangleAlert} size={12} />}
           {cell.stock}
+          {words && <span className="sr-only">, {words}</span>}
         </span>
         {order > 0 && (
           <span
