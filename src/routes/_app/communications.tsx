@@ -1,24 +1,27 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { RoutePlaceholder } from '@/components/app/route-placeholder'
+import { createFileRoute, stripSearchParams } from '@tanstack/react-router'
 import { requirePermission } from '@/lib/auth/guards'
+import { listSearchDefaults } from '@/lib/search/params'
+import { CommsPage } from '@/modules/requests/components/comms/comms-page'
+import { commsSearchSchema, type CommsSearch } from '@/modules/requests/search'
 
-/**
- * Communications (SCREENS.md). Owner: H1 (Requests & Comms).
- * PLACEHOLDER created by the foundation: the owning slice replaces this file
- * (keep the path, the permission guard and `staticData.title`).
- */
+/** Communications (SCREENS.md §4.3). Owner: H1 (Requests & Comms). */
 export const Route = createFileRoute('/_app/communications')({
+  validateSearch: commsSearchSchema,
+  search: { middlewares: [stripSearchParams(listSearchDefaults)] },
   beforeLoad: requirePermission('comms.read'),
   staticData: { title: 'Communications' },
-  component: Placeholder,
+  component: CommunicationsRoute,
 })
 
-function Placeholder() {
+function CommunicationsRoute() {
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
   return (
-    <RoutePlaceholder
-      title="Communications"
-      owner="H1"
-      purpose="Audit every mail, run or preview the daily dispatch, browse templates."
+    <CommsPage
+      search={search}
+      onSearch={(patch, replace) =>
+        void navigate({ search: ((prev: CommsSearch) => ({ ...prev, ...patch })) as never, replace })
+      }
     />
   )
 }

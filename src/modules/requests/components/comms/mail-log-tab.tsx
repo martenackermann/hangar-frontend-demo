@@ -9,7 +9,6 @@ import { StatusBadge } from '@/components/domain/status'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/feedback'
 import { Icon } from '@/components/ui/icon'
-import { Tooltip } from '@/components/ui/tooltip'
 import type { EntityRef, MailLogEntry } from '@/lib/api/types'
 import { enumLabel, useEnums } from '@/lib/enums'
 import { formatDateTime, formatTime } from '@/lib/format'
@@ -152,11 +151,9 @@ export function MailLogTab({
         width: 100,
         cell: (mail) =>
           mail.error ? (
-            <Tooltip content={mail.error}>
-              <span tabIndex={0}>
-                <StatusBadge entity="mailStatus" state={mail.status} size="sm" />
-              </span>
-            </Tooltip>
+            <span title={mail.error}>
+              <StatusBadge entity="mailStatus" state={mail.status} size="sm" />
+            </span>
           ) : (
             <StatusBadge entity="mailStatus" state={mail.status} size="sm" />
           ),
