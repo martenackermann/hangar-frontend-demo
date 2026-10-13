@@ -67,13 +67,22 @@ export async function signIn(page: Page, who: PersonaCase): Promise<void> {
   await expect(page.locator('main#main')).toBeVisible()
 }
 
+/**
+ * Console noise that is not an app error: Playwright's trace recorder tries to inject into the
+ * mail preview's sandboxed `iframe srcdoc` (API.md §4.8) and Chrome logs this. Real users never
+ * see it (no scripts run in the frame).
+ */
+const IGNORED_CONSOLE = ["Blocked script execution in 'about:srcdoc'"]
+
 /** Fails the test on console errors and uncaught exceptions. */
 export const test = base.extend<{ consoleErrors: string[] }>({
   consoleErrors: [
     async ({ page }, use) => {
       const errors: string[] = []
       page.on('console', (message) => {
-        if (message.type() === 'error') errors.push(message.text())
+        const text = message.text()
+        if (message.type() === 'error' && !IGNORED_CONSOLE.some((noise) => text.includes(noise)))
+          errors.push(text)
       })
       page.on('pageerror', (error) => errors.push(error.message))
       await use(errors)

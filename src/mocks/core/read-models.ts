@@ -412,7 +412,8 @@ export function bookingLink(sr: ServiceRequestRow): string | null {
   if (sr.isCampus || !sr.regionId) return null
   const row = db.collection('regions').get(sr.regionId)
   if (!row?.bookingDestinationId || !row.bookingServiceId) return null
-  return `https://booking.example.com/${row.bookingDestinationId}?service=${row.bookingServiceId}&ref=${sr.number}`
+  // same format as the backend's fake booking gateway (`build_booking_link`)
+  return `https://booking.example.com/book/${row.bookingDestinationId}/${row.bookingServiceId}?ref=${sr.number}`
 }
 
 export function srDetail(sr: ServiceRequestRow, actor: MockActor | null): ServiceRequestDetail {

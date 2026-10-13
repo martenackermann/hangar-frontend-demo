@@ -2,7 +2,7 @@ import { expect, persona, PERSONAS, signIn, test } from './fixtures'
 
 /**
  * Foundation smoke (demo mode, MSW mock API): personas, permission-filtered navigation,
- * ⌘K, theme/density, every placeholder route, 403/404.
+ * ⌘K, theme/density, every screen inside the shell, 403/404.
  */
 
 for (const who of PERSONAS) {
@@ -27,11 +27,13 @@ test('deep links survive the login round trip', async ({ page }) => {
   await expect(page).toHaveURL(/\/login\?redirect=/)
   await page.getByRole('button', { name: 'Sign in as Dana Dispatcher, Dispatcher' }).click()
   await expect(page).toHaveURL(/\/service-requests\?status=invited,escalated&page=2$/)
-  await expect(page.getByTestId('route-placeholder')).toBeVisible()
+  const heading = page.getByRole('heading', { level: 1, name: 'Service requests' })
+  await expect(heading).toBeVisible()
 
   // the session survives a reload
   await page.reload()
-  await expect(page.getByTestId('route-placeholder')).toBeVisible()
+  await expect(heading).toBeVisible()
+  await expect(page).toHaveURL(/status=invited,escalated/)
 })
 
 test('⌘K opens the command palette and jumps to a screen', async ({ page }) => {
@@ -97,12 +99,11 @@ const ROUTES: { path: string; title: RegExp }[] = [
   { path: '/admin/dispatch-settings', title: /dispatch settings/i },
 ]
 
-test('every placeholder route renders inside the shell', async ({ page }) => {
+test('every screen renders inside the shell', async ({ page }) => {
   test.slow()
   await signIn(page, persona('ada'))
   for (const route of ROUTES) {
     await page.goto(route.path)
-    // routes a slice has replaced keep their title; only the shell and the h1 are asserted
     await expect(page.getByRole('heading', { level: 1 }), route.path).toHaveText(route.title)
     await expect(page).toHaveTitle(/Hangar/)
   }

@@ -34,26 +34,15 @@ import { createQueryKeys } from '@/lib/query/keys'
 export const pipelineKeys = createQueryKeys('pipeline')
 export const commsKeys = createQueryKeys('comms')
 
-// ---- response extensions (additive fields of the H1 backend) -----------------------------------
+// ---- response extensions ------------------------------------------------------------------------
+// The H1 additive fields now live in the shared types (`@/lib/api/types`); these aliases keep the
+// module's existing imports working.
 
-export interface AgingSplit {
-  onTime: number
-  aging: number
-  overdue: number
-}
-
-/** `/pipeline/summary` + per-stage aging/flow, 12-day trends and lead time (H1 additive). */
-export interface PipelineSummaryExt extends Omit<PipelineSummary, 'stages' | 'totals'> {
-  stages: (PipelineSummary['stages'][number] & { enteredLast24h: number; aging: AgingSplit })[]
-  totals: PipelineSummary['totals'] & { leadTimeDays: number | null }
-  trends: { days: string[]; open: number[]; imported: number[]; completed: number[] } | null
-}
-
-/** Template info + the entity type a preview can be rendered with (H1 additive). */
-export interface NotificationTemplateInfoExt extends Omit<NotificationTemplateInfo, 'owner'> {
-  owner: NotificationTemplateInfo['owner'] | 'core'
-  entityType?: 'service_request' | 'lease_return' | null
-}
+export type { AgingSplit } from '@/lib/api/types'
+/** `/pipeline/summary` incl. per-stage aging/flow, 12-day trends and lead time. */
+export type PipelineSummaryExt = PipelineSummary
+/** Template info incl. the entity type a preview can be rendered with. */
+export type NotificationTemplateInfoExt = NotificationTemplateInfo
 
 // ---- helpers -----------------------------------------------------------------------------------
 

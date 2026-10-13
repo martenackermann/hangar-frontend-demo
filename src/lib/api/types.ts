@@ -1092,6 +1092,13 @@ export interface ContactPatch {
 
 // ---- §4.7 GET /pipeline/summary ----
 
+/** Requests of a stage by age against the stage SLA (H1 additive). */
+export interface AgingSplit {
+  onTime: number
+  aging: number
+  overdue: number
+}
+
 export interface PipelineSummary {
   generatedAt: ISODateTime
   /** All 8 stages, statuses in enum order; `deployed` and `closed` count only the last 14 days. */
@@ -1107,6 +1114,10 @@ export interface PipelineSummary {
       oldestStatusChangedAt: ISODateTime | null
       attentionCount: number
     }[]
+    /** H1 additive: requests that entered the stage in the last 24 h. */
+    enteredLast24h: number
+    /** H1 additive: on time / aging / overdue split. */
+    aging: AgingSplit
   }[]
   totals: {
     open: number
@@ -1115,7 +1126,11 @@ export interface PipelineSummary {
     completedLast7Days: number
     cancelledLast7Days: number
     appointmentsToday: number
+    /** H1 additive: median import → completion lead time. */
+    leadTimeDays: number | null
   }
+  /** H1 additive: 12-day trends for the KPI sparklines. */
+  trends: { days: string[]; open: number[]; imported: number[]; completed: number[] } | null
 }
 
 // ---- §4.8 Communications ----
@@ -1206,7 +1221,9 @@ export interface DispatchRun {
 export interface NotificationTemplateInfo {
   id: string
   name: string
-  owner: 'h1' | 'h2' | 'h3' | 'h4' | 'h5'
+  owner: 'core' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5'
+  /** H1 additive: the entity a preview can be rendered with. */
+  entityType?: 'service_request' | 'lease_return' | null
   description: string
   trigger: string
   recipients: string

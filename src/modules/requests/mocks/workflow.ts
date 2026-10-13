@@ -179,11 +179,11 @@ registerEffect<LeaseReturnRow>(LR, 'close', ({ payload, comment, update }) => {
   update({ closeReason: (fromPayload ?? comment ?? 'Closed manually').slice(0, 200) })
 })
 
-/** Runs after the core effect (which sets `hardwareUnavailableNotifiedAt` unconditionally). */
+/** The hold mail goes out once per request; `hardwareUnavailableNotifiedAt` records it. */
 registerEffect<ServiceRequestRow>(SR, 'mark_hardware_unavailable', (ctx) => {
   if (ctx.row.hardwareUnavailableNotifiedAt !== null) return
   const sent = settings().hardwareUnavailableMailEnabled && srMail(ctx, 'sr.hardware_unavailable')
-  if (!sent) ctx.update({ hardwareUnavailableNotifiedAt: null })
+  if (sent) ctx.update({ hardwareUnavailableNotifiedAt: ctx.now })
 })
 
 onTransition<LeaseReturnRow>(LR, (ctx) => {

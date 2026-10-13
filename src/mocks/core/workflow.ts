@@ -318,14 +318,10 @@ for (const action of [
     update({ communicationDate: today }),
   )
 }
-registerEffect<ServiceRequestRow>(
-  SR,
-  'mark_hardware_unavailable',
-  ({ update, updated, trigger, now }) =>
-    update({
-      holdSource: trigger === 'import' ? 'import' : 'manual',
-      hardwareUnavailableNotifiedAt: updated.hardwareUnavailableNotifiedAt ?? now,
-    }),
+// `hardwareUnavailableNotifiedAt` is written by the mail subscriber (H1) once the mail is sent,
+// as in the backend; core only records where the hold came from (#37).
+registerEffect<ServiceRequestRow>(SR, 'mark_hardware_unavailable', ({ update, trigger }) =>
+  update({ holdSource: trigger === 'import' ? 'import' : 'manual' }),
 )
 registerEffect<ServiceRequestRow>(SR, 'release_hardware_hold', ({ update, today }) =>
   update({ communicationDate: null, communicationResumeDate: today, holdSource: null }),
