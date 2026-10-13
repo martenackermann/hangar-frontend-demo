@@ -1,24 +1,39 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { RoutePlaceholder } from '@/components/app/route-placeholder'
+import { createFileRoute, stripSearchParams } from '@tanstack/react-router'
 import { requirePermission } from '@/lib/auth/guards'
+import {
+  boolParam,
+  dateParam,
+  idListParam,
+  listParam,
+  listSearchDefaults,
+  listSearchSchema,
+} from '@/lib/search/params'
+import { CallOffListPage } from '@/modules/stock/components/calloff-list-page'
 
-/**
- * Call-off orders (SCREENS.md). Owner: H5 (Stock, Inventory & Dashboard).
- * PLACEHOLDER created by the foundation: the owning slice replaces this file
- * (keep the path, the permission guard and `staticData.title`).
- */
-export const Route = createFileRoute('/_app/stock/call-off-orders/')({
-  beforeLoad: requirePermission('stock.read'),
-  staticData: { title: 'Call-off orders' },
-  component: Placeholder,
+/** Call-off orders (SCREENS.md §7.2). Owner: H5. `?new=true` opens "New call-off order". */
+const searchSchema = listSearchSchema.extend({
+  siteId: idListParam(),
+  status: listParam(['draft', 'sent', 'cancelled']),
+  from: dateParam(),
+  to: dateParam(),
+  new: boolParam(),
 })
 
-function Placeholder() {
+export const Route = createFileRoute('/_app/stock/call-off-orders/')({
+  validateSearch: searchSchema,
+  search: { middlewares: [stripSearchParams(listSearchDefaults)] },
+  beforeLoad: requirePermission('stock.read'),
+  staticData: { title: 'Call-off orders' },
+  component: CallOffOrdersRoute,
+})
+
+function CallOffOrdersRoute() {
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
   return (
-    <RoutePlaceholder
-      title="Call-off orders"
-      owner="H5"
-      purpose="Replenishment orders per hub to Initech Logistics."
+    <CallOffListPage
+      search={search}
+      onSearchChange={(patch) => void navigate({ search: (prev) => ({ ...prev, ...patch }) })}
     />
   )
 }
