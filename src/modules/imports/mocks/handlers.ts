@@ -1,9 +1,12 @@
 import type { RequestHandler } from 'msw'
+import { importHandlers } from './import-handlers'
+import { masterHandlers } from './master-handlers'
+import './tables'
+import { userHandlers } from './user-handlers'
 
 /**
- * Mock endpoints of H2 Import & Master data (API.md), collected by src/mocks/handlers.ts and placed
- * before the core handlers. Build them with `apiPath`, `authed`, `listResponse`, `problems.*`,
- * the core read models (`srListItem`, `srDetail`, …) and `applyAction` — see CONVENTIONS.md
- * "Mock API".
+ * Mock endpoints of H2 Import & Master data (API.md §5), placed before the core handlers:
+ * imports (a port of the backend import engine in `./engine`, run inside a mock background
+ * job), articles, regions + rules, the VIP list and user administration.
  */
-export const handlers: RequestHandler[] = []
+export const handlers: RequestHandler[] = [...importHandlers, ...masterHandlers, ...userHandlers]
