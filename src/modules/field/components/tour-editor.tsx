@@ -149,7 +149,6 @@ function EditorForm({
     description: 'Save tour',
     group: 'Tour planner',
   })
-  useShortcut('escape', onClose, { description: 'Close panel', group: 'Tour planner' })
 
   const onRowKey = (event: KeyboardEvent, index: number) => {
     if (!event.altKey) return

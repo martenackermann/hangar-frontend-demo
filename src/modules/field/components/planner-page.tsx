@@ -13,6 +13,7 @@ import { Page, PageHeader, Toolbar } from '@/components/ui/page'
 import { Select } from '@/components/ui/select'
 import type { ID } from '@/lib/api/types'
 import { useRegions } from '@/lib/api/core'
+import { useShortcut } from '@/lib/shortcuts'
 import { addDays, businessToday, formatDate, formatRelative } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { fieldQueries } from '@/modules/field/api'
@@ -71,6 +72,11 @@ export function PlannerPage({
   const setWeek = (next: string) => onSearch({ week: next === thisWeek ? undefined : next })
   const openCell = (calendarId: ID, date: string) => onSearch({ calendarId, date, panel: 'tour' })
   const closePanel = () => onSearch({ panel: undefined, calendarId: undefined, date: undefined })
+  useShortcut('escape', closePanel, {
+    enabled: Boolean(panel),
+    description: 'Close panel',
+    group: 'Tour planner',
+  })
 
   return (
     <Page>
