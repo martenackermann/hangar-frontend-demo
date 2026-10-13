@@ -9,6 +9,10 @@ let context: AudioContext | null = null
 
 function audio(): AudioContext | null {
   if (typeof window === 'undefined' || typeof window.AudioContext === 'undefined') return null
+  // Headless Chromium crashes pages ("Page crashed") once scan stations have played WebAudio
+  // cues, so browser automation (Playwright e2e, screenshots) runs silent. The verdict banner
+  // and vibration are unchanged.
+  if (navigator.webdriver) return null
   context ??= new window.AudioContext()
   if (context.state === 'suspended') void context.resume()
   return context

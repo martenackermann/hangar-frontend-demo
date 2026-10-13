@@ -28,6 +28,7 @@ import type {
 } from '@/lib/api/types'
 import { trackJob } from '@/lib/jobs'
 import { createQueryKeys } from '@/lib/query/keys'
+import { PERSIST_MAX_AGE } from '@/lib/query/persist'
 
 /**
  * Public surface of the `field` module (H4 Field service, API.md §7): query keys, query
@@ -124,16 +125,21 @@ export const fieldQueries = {
           query: { calendarId, date },
         }),
     }),
+  // My tour and its stops keep an offline copy (SCREENS.md §6.2, `@/lib/query/persist`).
   myTours: (date: ISODate) =>
     queryOptions({
       queryKey: myTourKeys.list({ date }),
       queryFn: ({ signal }) => api.get<List<TourDetail>>('/my/tours', { signal, query: { date } }),
+      meta: { persist: true },
+      gcTime: PERSIST_MAX_AGE,
     }),
   deployment: (tourId: ID, stopId: ID) =>
     queryOptions({
       queryKey: deploymentKeys.detail(`${tourId}:${stopId}`),
       queryFn: ({ signal }) =>
         api.get<DeploymentView>(`/tours/${tourId}/stops/${stopId}/deployment`, { signal }),
+      meta: { persist: true },
+      gcTime: PERSIST_MAX_AGE,
     }),
 }
 

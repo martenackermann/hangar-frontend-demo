@@ -50,6 +50,8 @@ export type ProblemCode =
   // 404
   | 'not_found'
   | 'unknown_action'
+  // 405
+  | 'method_not_allowed'
   // 409
   | 'transition_not_allowed'
   | 'guard_failed'
@@ -68,7 +70,11 @@ export type ProblemCode =
   | 'validation_error'
   | 'missing_columns'
   | 'type_not_detected'
+  | 'slot_not_assignable'
+  // 500
+  | 'internal_error'
   // 502
+  | 'bad_gateway'
   | 'carrier_error'
   | 'booking_error'
   // 503
@@ -1526,9 +1532,13 @@ export interface SoftwareChecklist {
 export interface AssignmentScanBody {
   serial: string
 }
-/** `PATCH /service-requests/{id}/staging` request body. */
+/**
+ * `PATCH /service-requests/{id}/staging` request body. Omitted fields stay unchanged;
+ * `addedSoftware` (H3) saves the extra software in the same call, until `personalization_done`.
+ */
 export interface StagingPatch {
-  osReinstall: OsReinstallTiming | null
+  osReinstall?: OsReinstallTiming | null
+  addedSoftware?: string[]
   version?: number
 }
 /** `PUT /service-requests/{id}/software-checklist` request body. */

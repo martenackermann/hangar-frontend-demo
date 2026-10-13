@@ -214,14 +214,9 @@ export const seed: SeedDefinition = {
   version: 1,
   order: 20,
   run: ({ db, today, fixture }) => {
-    const exportedJobs = fixture.tables.import_jobs as ImportJobRow[] | undefined
-    if (exportedJobs?.length) {
-      db.collection('import_jobs').insertMany(exportedJobs)
-      db.collection('import_job_errors').insertMany(
-        (fixture.tables.import_job_errors as ImportJobErrorRow[] | undefined) ?? [],
-      )
-      return
-    }
+    // The backend export brought them: the loader has already inserted (and date-shifted)
+    // every fixture table, import_jobs and import_job_errors included.
+    if ((fixture.tables.import_jobs?.length ?? 0) > 0) return
     const dana = db.collection('users').find((u) => u.email === DANA_EMAIL)
     const goodsIn = (code: string) =>
       db.collection('stock_locations').find((l) => l.code === code)?.id

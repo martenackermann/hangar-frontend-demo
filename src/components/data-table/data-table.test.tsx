@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/utils'
 import { DataTable, type DataColumn } from './data-table'
@@ -110,6 +111,39 @@ describe('DataTable', () => {
     ;(document.activeElement as HTMLElement | null)?.blur()
     await userEvent.keyboard('{Enter}')
     expect(onOpen).toHaveBeenCalledWith(rows[0])
+  })
+
+  it('opens a row on click but ignores clicks that bubble from a portal', async () => {
+    const onOpen = vi.fn()
+    const withMenu: DataColumn<Row>[] = [
+      ...columns,
+      {
+        id: 'menu',
+        header: 'Menu',
+        // a menu rendered in a portal, like the kit's DropdownMenuContent
+        cell: (r) =>
+          createPortal(
+            <div role="menuitem" tabIndex={-1}>
+              Edit {r.number}
+            </div>,
+            document.body,
+          ),
+      },
+    ]
+    renderWithProviders(
+      <DataTable
+        label="Rows"
+        columns={withMenu}
+        rows={rows}
+        getRowId={(r) => String(r.id)}
+        onOpen={onOpen}
+        empty={<p>None</p>}
+      />,
+    )
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Edit SR0012002' }))
+    expect(onOpen).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByText('Noah Hale'))
+    expect(onOpen).toHaveBeenCalledWith(rows[1])
   })
 
   it('shows the empty state', () => {

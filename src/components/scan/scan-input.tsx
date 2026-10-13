@@ -117,16 +117,17 @@ export const ScanInput = forwardRef<ScanInputHandle, ScanInputProps>(function Sc
   const height = compact ? 'h-14' : 'h-scan max-md:h-[72px]'
 
   return (
-    <div className={cn('grid gap-2', className)}>
-      <div className="flex items-center justify-between gap-3">
-        <label htmlFor={id} className="text-md font-semibold">
+    <div className={cn('grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2', className)}>
+      {/* Wraps on phones (390 px) instead of widening the page. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <label htmlFor={id} className="min-w-0 text-md font-semibold">
           {label}
         </label>
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex min-w-0 items-center gap-2 text-xs">
           {focusLock && (
             <span
               className={cn(
-                'inline-flex items-center gap-1.5',
+                'inline-flex min-w-0 items-center gap-1.5',
                 isLocked && focused ? 'text-accent-text' : 'text-fg-3',
               )}
             >

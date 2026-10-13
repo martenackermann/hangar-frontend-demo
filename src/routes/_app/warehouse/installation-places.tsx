@@ -160,8 +160,6 @@ function InstallationPlacesPage() {
             <ScanInput
               ref={inputRef}
               label="Scan serial or place"
-              // the kit's lock hint does not wrap on phones: keep it from widening the page
-              className="min-w-0 grid-cols-[minmax(0,1fr)] overflow-hidden"
               onSubmit={onValue}
               disabled={!online || siteId === undefined}
               disabledReason="Offline — scanning needs a connection."

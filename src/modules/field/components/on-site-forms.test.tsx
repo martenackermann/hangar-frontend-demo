@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { api } from '@/lib/api/client'
 import type { DeploymentView, List, TourDetail } from '@/lib/api/types'
 import { businessToday } from '@/lib/format'
@@ -8,17 +8,7 @@ import { anchorDay } from '@/modules/field/lib/time'
 import { PERSONA_EMAILS, renderWithProviders, signInAs } from '@/test/utils'
 import { CompleteForm, DeviationActionForm } from './on-site-forms'
 
-// jsdom has no ResizeObserver (Radix checkbox / switch measure themselves).
-beforeEach(() => {
-  vi.stubGlobal(
-    'ResizeObserver',
-    class {
-      observe = vi.fn()
-      unobserve = vi.fn()
-      disconnect = vi.fn()
-    },
-  )
-})
+// ResizeObserver (Radix checkbox / switch) is stubbed globally in src/test/setup.ts.
 
 async function firstStopView(): Promise<DeploymentView> {
   await signInAs(PERSONA_EMAILS.technician)

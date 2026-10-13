@@ -62,6 +62,12 @@ export interface ScanStationProps<T> {
   emptyList?: ReactNode
   /** Show the camera button (default: always; it is the primary input on phones). */
   camera?: boolean
+  /**
+   * Controlled camera sheet, e.g. for a phone bottom dock's "Camera scan" button. Leave it
+   * undefined to let the station's own Camera button (and F3) manage it.
+   */
+  cameraOpen?: boolean
+  onCameraOpenChange?: (open: boolean) => void
   placeholder?: string
   className?: string
 }
@@ -88,13 +94,20 @@ export function ScanStation<T = unknown>({
   listTitle,
   emptyList,
   camera = true,
+  cameraOpen: cameraOpenProp,
+  onCameraOpenChange,
   placeholder,
   className,
 }: ScanStationProps<T>) {
   const online = useOnline()
   const sound = usePrefs((prefs) => prefs.sound)
   const inputRef = useRef<ScanInputHandle>(null)
-  const [cameraOpen, setCameraOpen] = useState(false)
+  const [cameraOpenState, setCameraOpenState] = useState(false)
+  const cameraOpen = cameraOpenProp ?? cameraOpenState
+  const setCameraOpen = (open: boolean) => {
+    if (cameraOpenProp === undefined) setCameraOpenState(open)
+    onCameraOpenChange?.(open)
+  }
   const session = useScanSession<T>({ submit, onResult, onUndone, initialEntries })
 
   useShortcut('mod+z', () => session.undoLast(), {
@@ -127,13 +140,7 @@ export function ScanStation<T = unknown>({
         onClick={() => setPrefs({ sound: !sound })}
       />
       {camera && (
-        <Button
-          size="sm"
-          icon={Camera}
-          onClick={() => setCameraOpen(true)}
-          shortcut="f3"
-          className="max-md:hidden"
-        >
+        <Button size="sm" icon={Camera} onClick={() => setCameraOpen(true)} shortcut="f3">
           Camera
         </Button>
       )}
