@@ -13,7 +13,12 @@ import { notify } from '@/components/ui/toast'
 import { useAppConfig } from '@/lib/api/core'
 import { downloadGet, openDownload } from '@/lib/api/downloads'
 import { isApiError } from '@/lib/api/errors'
-import type { DeactivationBatch, DeactivationReason, DeactivationResult, Tone } from '@/lib/api/types'
+import type {
+  DeactivationBatch,
+  DeactivationReason,
+  DeactivationResult,
+  Tone,
+} from '@/lib/api/types'
 import { useEnums } from '@/lib/enums'
 import { formatBytes, formatDateTime, formatNumber } from '@/lib/format'
 import { stockQueries, useDeactivationUpload } from '../api'
@@ -23,7 +28,10 @@ export interface DeactivationSearch {
   page: number
 }
 
-const OUTCOME: Record<DeactivationResult['sample'][number]['outcome'], { label: string; tone: Tone }> = {
+const OUTCOME: Record<
+  DeactivationResult['sample'][number]['outcome'],
+  { label: string; tone: Tone }
+> = {
   deactivated: { label: 'Deactivated', tone: 'done' },
   already_deactivated: { label: 'Already deactivated', tone: 'intake' },
   rejected: { label: 'Rejected', tone: 'caution' },
@@ -41,19 +49,28 @@ function Count({ label, value, tone }: { label: string; value: number; tone?: st
 
 function ResultPanel({ result, onClose }: { result: DeactivationResult; onClose: () => void }) {
   const enums = useEnums()
-  const reason = enums.deactivationReason.find((r) => r.value === result.reason)?.label ?? result.reason
+  const reason =
+    enums.deactivationReason.find((r) => r.value === result.reason)?.label ?? result.reason
   return (
     <Panel
       title={`Result · ${result.originalFilename}`}
       actions={
         <>
           {result.notFoundReport && (
-            <Button size="sm" icon={Download} onClick={() => result.notFoundReport && void openDownload(result.notFoundReport)}>
+            <Button
+              size="sm"
+              icon={Download}
+              onClick={() => result.notFoundReport && void openDownload(result.notFoundReport)}
+            >
               Not found CSV
             </Button>
           )}
           {result.rejectedReport && (
-            <Button size="sm" icon={Download} onClick={() => result.rejectedReport && void openDownload(result.rejectedReport)}>
+            <Button
+              size="sm"
+              icon={Download}
+              onClick={() => result.rejectedReport && void openDownload(result.rejectedReport)}
+            >
               Rejected CSV
             </Button>
           )}
@@ -62,14 +79,22 @@ function ResultPanel({ result, onClose }: { result: DeactivationResult; onClose:
       }
     >
       <p className="mb-3 text-sm text-fg-2">
-        {reason} · {formatNumber(result.totalRows)} serials · uploaded {formatDateTime(result.createdAt)} by{' '}
-        {result.createdBy.displayName}
+        {reason} · {formatNumber(result.totalRows)} serials · uploaded{' '}
+        {formatDateTime(result.createdAt)} by {result.createdBy.displayName}
       </p>
       <div className="-mx-4 mb-3 grid grid-cols-5 divide-x divide-line border-y border-line max-md:grid-cols-2">
         <Count label="Deactivated" value={result.deactivatedCount} tone="text-tone-done-fg" />
         <Count label="Already deactivated" value={result.alreadyDeactivatedCount} />
-        <Count label="Rejected" value={result.rejectedCount} tone={result.rejectedCount ? 'text-tone-caution-fg' : ''} />
-        <Count label="Not found" value={result.notFoundCount} tone={result.notFoundCount ? 'text-tone-critical-fg' : ''} />
+        <Count
+          label="Rejected"
+          value={result.rejectedCount}
+          tone={result.rejectedCount ? 'text-tone-caution-fg' : ''}
+        />
+        <Count
+          label="Not found"
+          value={result.notFoundCount}
+          tone={result.notFoundCount ? 'text-tone-critical-fg' : ''}
+        />
         <Count label="Lease returns closed" value={result.closedLeaseReturns} />
       </div>
       <h3 className="mb-1 text-xs font-semibold text-fg-2">First {result.sample.length} rows</h3>
@@ -84,10 +109,15 @@ function ResultPanel({ result, onClose }: { result: DeactivationResult; onClose:
           </thead>
           <tbody>
             {result.sample.map((row) => (
-              <tr key={row.serialNumber} className="h-row border-b border-line-subtle last:border-0">
+              <tr
+                key={row.serialNumber}
+                className="h-row border-b border-line-subtle last:border-0"
+              >
                 <td className="hg-mono pr-3">{row.serialNumber}</td>
                 <td className="pr-3">
-                  <ToneBadge tone={OUTCOME[row.outcome].tone}>{OUTCOME[row.outcome].label}</ToneBadge>
+                  <ToneBadge tone={OUTCOME[row.outcome].tone}>
+                    {OUTCOME[row.outcome].label}
+                  </ToneBadge>
                 </td>
                 <td className="text-fg-2">{row.detail}</td>
               </tr>
@@ -114,7 +144,10 @@ export function DeactivationPage({
   const [confirm, setConfirm] = useState(false)
   const [error, setError] = useState<{ title: string; detail?: string } | null>(null)
   const history = useQuery(stockQueries.deactivations(search.page))
-  const result = useQuery({ ...stockQueries.deactivation(search.batch ?? 0), enabled: Boolean(search.batch) })
+  const result = useQuery({
+    ...stockQueries.deactivation(search.batch ?? 0),
+    enabled: Boolean(search.batch),
+  })
   const reasonLabel = enums.deactivationReason.find((r) => r.value === reason)?.label ?? reason
   const maxRows = config?.limits.deactivationMaxRows ?? 10_000
 
@@ -133,25 +166,59 @@ export function DeactivationPage({
       setConfirm(false)
       setError(
         isApiError(err)
-          ? { title: err.title, detail: err.detail ?? Object.values(err.fieldErrors).flat().join(' ') }
+          ? {
+              title: err.title,
+              detail: err.detail ?? Object.values(err.fieldErrors).flat().join(' '),
+            }
           : { title: 'The upload failed.' },
       )
     }
   }
 
   const columns: DataColumn<DeactivationBatch>[] = [
-    { id: 'date', header: 'Date', cell: (row) => formatDateTime(row.createdAt), width: 170, locked: true },
+    {
+      id: 'date',
+      header: 'Date',
+      cell: (row) => formatDateTime(row.createdAt),
+      width: 170,
+      locked: true,
+    },
     {
       id: 'reason',
       header: 'Reason',
-      cell: (row) => enums.deactivationReason.find((r) => r.value === row.reason)?.label ?? row.reason,
+      cell: (row) =>
+        enums.deactivationReason.find((r) => r.value === row.reason)?.label ?? row.reason,
       width: 160,
     },
     { id: 'file', header: 'File', cell: (row) => row.originalFilename, width: 230 },
-    { id: 'total', header: 'Total', cell: (row) => formatNumber(row.totalRows), align: 'end', width: 80 },
-    { id: 'deactivated', header: 'Deactivated', cell: (row) => formatNumber(row.deactivatedCount), align: 'end', width: 110 },
-    { id: 'rejected', header: 'Rejected', cell: (row) => formatNumber(row.rejectedCount), align: 'end', width: 90 },
-    { id: 'notFound', header: 'Not found', cell: (row) => formatNumber(row.notFoundCount), align: 'end', width: 90 },
+    {
+      id: 'total',
+      header: 'Total',
+      cell: (row) => formatNumber(row.totalRows),
+      align: 'end',
+      width: 80,
+    },
+    {
+      id: 'deactivated',
+      header: 'Deactivated',
+      cell: (row) => formatNumber(row.deactivatedCount),
+      align: 'end',
+      width: 110,
+    },
+    {
+      id: 'rejected',
+      header: 'Rejected',
+      cell: (row) => formatNumber(row.rejectedCount),
+      align: 'end',
+      width: 90,
+    },
+    {
+      id: 'notFound',
+      header: 'Not found',
+      cell: (row) => formatNumber(row.notFoundCount),
+      align: 'end',
+      width: 90,
+    },
     { id: 'by', header: 'By', cell: (row) => row.createdBy.displayName, width: 160 },
   ]
 
@@ -162,14 +229,21 @@ export function DeactivationPage({
         <Panel title="Upload">
           <div className="grid grid-cols-[minmax(0,280px)_minmax(0,1fr)] gap-4 max-md:grid-cols-1">
             <div className="grid content-start gap-3">
-              <Field label="Reason" required help="Sets the deactivated status of every device in the file.">
+              <Field
+                label="Reason"
+                required
+                help="Sets the deactivated status of every device in the file."
+              >
                 {({ id }) => (
                   <Select<DeactivationReason>
                     id={id}
                     label="Reason"
                     value={reason}
                     onValueChange={setReason}
-                    options={enums.deactivationReason.map((r) => ({ value: r.value as DeactivationReason, label: r.label }))}
+                    options={enums.deactivationReason.map((r) => ({
+                      value: r.value as DeactivationReason,
+                      label: r.label,
+                    }))}
                   />
                 )}
               </Field>
@@ -180,7 +254,13 @@ export function DeactivationPage({
                   <span className="text-fg-3"> · {formatBytes(file.size)}</span>
                 </p>
               )}
-              <Button variant="primary" icon={CircleSlash} disabled={!file} loading={upload.isPending} onClick={() => setConfirm(true)}>
+              <Button
+                variant="primary"
+                icon={CircleSlash}
+                disabled={!file}
+                loading={upload.isPending}
+                onClick={() => setConfirm(true)}
+              >
                 Deactivate
               </Button>
             </div>
@@ -193,11 +273,15 @@ export function DeactivationPage({
               maxBytes={config?.limits.importMaxBytes}
               label={
                 <>
-                  CSV or XLSX with a <code className="hg-mono">serial_number</code> column, up to {formatNumber(maxRows)} rows
+                  CSV or XLSX with a <code className="hg-mono">serial_number</code> column, up to{' '}
+                  {formatNumber(maxRows)} rows
                 </>
               }
               hint="Optional asset_tag column. Devices in a request workflow are rejected, not deactivated."
-              sample={{ label: 'Download sample file', onClick: () => void downloadGet('/deactivations/sample') }}
+              sample={{
+                label: 'Download sample file',
+                onClick: () => void downloadGet('/deactivations/sample'),
+              }}
             />
           </div>
           {error && (
@@ -208,7 +292,10 @@ export function DeactivationPage({
         </Panel>
         {search.batch &&
           (result.data ? (
-            <ResultPanel result={result.data} onClose={() => onSearchChange({ batch: undefined })} />
+            <ResultPanel
+              result={result.data}
+              onClose={() => onSearchChange({ batch: undefined })}
+            />
           ) : result.isError ? (
             <Banner tone="critical" icon={OctagonX} title="This upload could not be loaded." />
           ) : (
