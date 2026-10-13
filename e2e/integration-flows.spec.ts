@@ -468,7 +468,14 @@ test.describe('cross-slice flows', () => {
     await expect(table.getByRole('row').nth(1)).toContainText('Imported')
     // one service worker controls the page (PWA worker in builds, MSW's in dev) and the API still
     // answers from the in-browser database
-    const worker = await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL ?? null)
+    const worker: string | null = await page.evaluate(() => {
+      const nav = (
+        globalThis as unknown as {
+          navigator: { serviceWorker?: { controller: { scriptURL: string } | null } }
+        }
+      ).navigator
+      return nav.serviceWorker?.controller?.scriptURL ?? null
+    })
     expect(worker).toMatch(/\/(sw|mockServiceWorker)\.js$/)
 
     // a change survives a reload; "Reset demo data" brings the fixture back
