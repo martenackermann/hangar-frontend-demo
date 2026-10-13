@@ -182,9 +182,7 @@ function ParcelShippingPage() {
                     </Link>
                   </Button>
                   {otherHub && (
-                    <Button
-                      onClick={() => patch({ siteId: otherHub.hub.id, selected: undefined })}
-                    >
+                    <Button onClick={() => patch({ siteId: otherHub.hub.id, selected: undefined })}>
                       Show {otherHub.hub.name}
                     </Button>
                   )}
