@@ -7,6 +7,7 @@ import {
   CircleHelp,
   Copy,
   Download,
+  ListChecks,
   Lock,
   MapPin,
   MapPinOff,
@@ -16,8 +17,9 @@ import {
 import { useState, type ReactNode } from 'react'
 import { DataTable, type DataColumn } from '@/components/data-table/data-table'
 import { StatusBadge } from '@/components/domain/status'
-import { ScanStation } from '@/components/scan/scan-station'
+import { sessionBarButton, SoundCueLegend } from '@/components/scan/scan-layout'
 import type { ScanEntry } from '@/components/scan/scan-list'
+import { ScanStation, type ScanSessionInfo } from '@/components/scan/scan-station'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -153,24 +155,36 @@ function scanDetails(result: ScanResult<InventoryScan>) {
   return null
 }
 
+/**
+ * KPI tile of the aside. Quiet by default (flow whispers); a caution/critical tally gets its tone
+ * wash and ink only while it is above zero (exceptions shout).
+ */
 function Tally({
   icon,
   tone,
   label,
   value,
+  emphasis = false,
 }: {
   icon: typeof CircleCheck
-  tone: string
+  tone: 'done' | 'caution' | 'critical' | 'outreach'
   label: string
   value: number
+  emphasis?: boolean
 }) {
+  const loud = emphasis && value > 0
   return (
-    <div className="grid gap-0.5 px-4 py-3">
+    <div className={cn(`hg-tone-${tone} grid gap-0.5 px-4 py-3`, loud && 'bg-(--t-wash)')}>
       <span className="flex items-center gap-1.5 text-xs text-fg-2">
-        <Icon icon={icon} size={14} className={tone} />
+        <Icon icon={icon} size={14} className="text-(--t)" />
         {label}
       </span>
-      <span className="text-2xl font-semibold [font-variant-numeric:proportional-nums]">
+      <span
+        className={cn(
+          'text-2xl font-semibold [font-variant-numeric:proportional-nums]',
+          loud && 'text-(--t-fg)',
+        )}
+      >
         {formatNumber(value)}
       </span>
     </div>
@@ -189,7 +203,7 @@ function StationAside({ detail, duplicates }: { detail: InventoryDetail; duplica
             <span className="text-[44px] leading-none font-semibold">{formatNumber(scanned)}</span>
             <span className="text-fg-3"> / {formatNumber(detail.progress.expected)}</span>
           </span>
-          <span className="font-mono text-lg">{detail.progress.percent} %</span>
+          <span className="font-mono text-lg">{detail.progress.percent}%</span>
         </div>
         <ProgressMeter
           size="station"
@@ -208,31 +222,22 @@ function StationAside({ detail, duplicates }: { detail: InventoryDetail; duplica
         <span className="text-xs text-fg-3">{formatNumber(s.missing)} not yet scanned</span>
       </div>
       <div className="grid grid-cols-2 divide-x divide-line border-b border-line">
-        <Tally icon={CircleCheck} tone="text-tone-done" label="Matched" value={s.matched} />
+        <Tally icon={CircleCheck} tone="done" label="Matched" value={s.matched} />
         <Tally
           icon={MapPinOff}
-          tone="text-tone-caution"
+          tone="caution"
           label="Wrong location"
           value={s.wrongLocation}
+          emphasis
         />
       </div>
       <div className="grid grid-cols-2 divide-x divide-line border-b border-line">
-        <Tally
-          icon={CircleHelp}
-          tone="text-tone-caution"
-          label="Unknown serial"
-          value={s.unknown}
-        />
-        <Tally
-          icon={Copy}
-          tone="text-tone-outreach"
-          label="Duplicates (this session)"
-          value={duplicates}
-        />
+        <Tally icon={CircleHelp} tone="caution" label="Unknown serial" value={s.unknown} emphasis />
+        <Tally icon={Copy} tone="caution" label="Duplicates" value={duplicates} />
       </div>
       <div className="grid gap-1 p-4">
         <h3 className="text-xs font-semibold text-fg-2">Latest scans, all counters</h3>
-        <ul className="grid gap-1 text-sm" aria-live="polite">
+        <ul className="grid gap-1 text-sm">
           {detail.recentScans.slice(0, 6).map((scan) => (
             <li key={scan.id} className="flex items-center gap-2">
               <span className="font-mono text-xs text-fg-3">{formatTime(scan.scannedAt)}</span>
@@ -247,12 +252,7 @@ function StationAside({ detail, duplicates }: { detail: InventoryDetail; duplica
           )}
         </ul>
       </div>
-      <div className="grid gap-1 border-t border-line p-4 text-xs text-fg-2">
-        <h3 className="font-semibold">Sound cues</h3>
-        <span>OK · one short high beep</span>
-        <span>Wrong location, unknown, duplicate · two falling tones</span>
-        <span>Error · long low buzz</span>
-      </div>
+      <SoundCueLegend className="border-t border-line" />
     </div>
   )
 }
@@ -371,6 +371,10 @@ function StationScanner({
   onResult,
   onUndone,
   aside,
+  zoneSelect,
+  session,
+  finish,
+  footer,
 }: {
   detail: InventoryDetail
   zoneId: number | undefined
@@ -379,6 +383,10 @@ function StationScanner({
   onResult: (result: ScanResult<InventoryScan>) => void
   onUndone: () => void
   aside: ReactNode
+  zoneSelect: ReactNode
+  session: ScanSessionInfo
+  finish: ReactNode
+  footer: ReactNode
 }) {
   // own recent scans reload into the running list; everybody's appear in the aside
   const [initialEntries] = useState(() =>
@@ -388,7 +396,6 @@ function StationScanner({
       canManage,
     ),
   )
-  const zone = detail.zones.find((z) => z.id === zoneId)
   return (
     <ScanStation<InventoryScan>
       label="Scan serial or asset tag"
@@ -403,13 +410,18 @@ function StationScanner({
       emptyList="Scan the first serial to start counting."
       context={
         <>
-          <span>Scan serial or asset tag</span>
-          <FlagBadge icon={MapPin}>{detail.site.name}</FlagBadge>
-          <FlagBadge icon={MapPin}>{zone ? `Counting at ${zone.name}` : 'Any zone'}</FlagBadge>
+          <span className="inline-flex items-center gap-1.5">
+            <Icon icon={MapPin} size={14} className="text-fg-3" />
+            Counting at <b className="font-semibold text-fg">{detail.site.name}</b>
+          </span>
+          {zoneSelect}
         </>
       }
       aside={aside}
-      className="h-full"
+      session={session}
+      dock={{ finish }}
+      footer={footer}
+      className="border-b border-line xl:h-full xl:min-h-[560px]"
     />
   )
 }
@@ -526,6 +538,189 @@ export function InventoryStationPage({
     })
   }
 
+  const canClose = detail.availableActions.includes('close')
+  const canCancel = detail.availableActions.includes('cancel')
+  const percent = `${detail.progress.percent}%`
+
+  const reconciliationSection = (
+    <section
+      className="grid shrink-0 grid-cols-[minmax(0,1fr)] gap-2 px-4 py-4 max-md:px-3"
+      aria-label="Reconciliation"
+    >
+      <div className="flex flex-wrap items-center gap-x-2">
+        <h2 className="text-sm font-semibold">Reconciliation</h2>
+        <span className="text-xs text-fg-3">
+          {open ? 'live — the expected set updates with every movement' : 'frozen at close'}
+        </span>
+      </div>
+      <Tabs
+        value={category}
+        onValueChange={(value) =>
+          onSearchChange({ category: value as ReconciliationCategory, page: 1 })
+        }
+      >
+        <TabsList>
+          {CATEGORIES.map((c) => (
+            <TabsTrigger
+              key={c.value}
+              value={c.value}
+              count={formatNumber(counts[c.value])}
+              alert={c.value === 'missing' && counts.missing > 0 && !open}
+            >
+              {c.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+      <div
+        className={cn(
+          'flex h-[520px] flex-col rounded-sm border border-line',
+          reconciliation.isPlaceholderData && 'opacity-60',
+        )}
+      >
+        <DataTable
+          label={`Reconciliation · ${CATEGORIES.find((c) => c.value === category)?.label}`}
+          keyboard={false}
+          columns={reconciliationColumns}
+          rows={reconciliation.data?.data ?? []}
+          getRowId={(row) => `${row.category}-${row.serialNumber}`}
+          total={reconciliation.data?.meta.total}
+          loading={reconciliation.isPending}
+          error={reconciliation.error}
+          onRetry={() => void reconciliation.refetch()}
+          pagination={{
+            page: search.page,
+            perPage: 50,
+            total: reconciliation.data?.meta.total ?? 0,
+            onPageChange: (page) => onSearchChange({ page }),
+          }}
+          empty={
+            <EmptyState
+              icon={CircleCheck}
+              title={`Nothing in ${CATEGORIES.find((c) => c.value === category)?.label.toLowerCase()}.`}
+            >
+              {category === 'matched'
+                ? 'Scan the first serial to start counting.'
+                : 'Every expected device is accounted for here.'}
+            </EmptyState>
+          }
+        />
+      </div>
+    </section>
+  )
+
+  const dialogs = (
+    <>
+      {closing && <CloseDialog detail={detail} open onOpenChange={setClosing} />}
+      <ConfirmDialog
+        open={cancelling}
+        onOpenChange={setCancelling}
+        title={`Cancel inventory ${detail.site.name}?`}
+        description="Scans are kept for audit; no corrections are applied and no reports are sent."
+        confirmLabel="Cancel inventory"
+        cancelLabel="Keep counting"
+        destructive
+        comment={{ label: 'Reason (optional)' }}
+        pending={cancel.isPending}
+        onConfirm={async (comment) => {
+          try {
+            await cancel.mutateAsync({ action: 'cancel', body: comment ? { comment } : {} })
+            setCancelling(false)
+            notify.success(`Inventory ${detail.site.name} cancelled`)
+          } catch (error) {
+            notify.error(isApiError(error) ? error.title : 'Not cancelled', {
+              description: isApiError(error) ? error.detail : undefined,
+            })
+          }
+        }}
+      />
+    </>
+  )
+
+  if (open && canScan) {
+    // Scan mode (DESIGN.md §9.3): graphite session bar, station, reconciliation below, phone dock.
+    return (
+      <Page>
+        <StationScanner
+          detail={detail}
+          zoneId={search.zone}
+          meId={me?.id}
+          canManage={canManage}
+          onResult={(result) => {
+            if (result.code === 'duplicate') setDuplicates((n) => n + 1)
+            refresh()
+          }}
+          onUndone={refresh}
+          aside={<StationAside detail={detail} duplicates={duplicates} />}
+          zoneSelect={
+            <Select
+              label="Zone"
+              prefix="Zone"
+              value={search.zone ? String(search.zone) : 'any'}
+              onValueChange={(value) =>
+                onSearchChange({ zone: value === 'any' ? undefined : Number(value) })
+              }
+              options={[
+                { value: 'any', label: 'Any zone' },
+                ...detail.zones.map((z) => ({ value: String(z.id), label: z.name })),
+              ]}
+              className="pointer-coarse:h-11"
+            />
+          }
+          session={{
+            title: `Inventory · ${detail.site.name}`,
+            meta: `#${detail.id} · started ${formatDateTime(detail.openedAt)} by ${detail.openedBy.displayName}`,
+            progress: percent,
+            actions: (
+              <>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className={cn(sessionBarButton, 'border-transparent max-lg:hidden')}
+                >
+                  <Link to="/stock/inventory">All inventories</Link>
+                </Button>
+                {canCancel && (
+                  <Button
+                    icon={XCircle}
+                    onClick={() => setCancelling(true)}
+                    className={cn(sessionBarButton, 'max-md:size-11 max-md:px-0')}
+                  >
+                    <span className="max-md:sr-only">Cancel inventory</span>
+                  </Button>
+                )}
+                {canClose && (
+                  <Button
+                    variant="primary"
+                    icon={ListChecks}
+                    onClick={() => setClosing(true)}
+                    className="max-md:hidden"
+                  >
+                    Finish &amp; verify
+                  </Button>
+                )}
+              </>
+            ),
+          }}
+          finish={
+            canClose ? (
+              <Button
+                size="touch"
+                icon={ListChecks}
+                onClick={() => setClosing(true)}
+                className="w-full px-2"
+              >
+                Finish
+              </Button>
+            ) : null
+          }
+          footer={reconciliationSection}
+        />
+        {dialogs}
+      </Page>
+    )
+  }
+
   return (
     <Page className="overflow-y-auto">
       <PageHeader
@@ -548,14 +743,14 @@ export function InventoryStationPage({
             <Button asChild variant="ghost" icon={ArrowLeft} className="max-md:hidden">
               <Link to="/stock/inventory">All inventories</Link>
             </Button>
-            {detail.availableActions.includes('cancel') && (
+            {canCancel && (
               <Button icon={XCircle} onClick={() => setCancelling(true)}>
                 Cancel inventory
               </Button>
             )}
-            {detail.availableActions.includes('close') && (
-              <Button variant="primary" icon={Lock} onClick={() => setClosing(true)}>
-                Close inventory
+            {canClose && (
+              <Button variant="primary" icon={ListChecks} onClick={() => setClosing(true)}>
+                Finish &amp; verify
               </Button>
             )}
           </>
@@ -565,24 +760,10 @@ export function InventoryStationPage({
         end={
           <span className="text-sm text-fg-2">
             {formatNumber(detail.progress.scanned)} of {formatNumber(detail.progress.expected)}{' '}
-            expected ({detail.progress.percent} %)
+            expected ({percent})
           </span>
         }
       >
-        {open && canScan && (
-          <Select
-            label="Zone"
-            prefix="Zone"
-            value={search.zone ? String(search.zone) : 'any'}
-            onValueChange={(value) =>
-              onSearchChange({ zone: value === 'any' ? undefined : Number(value) })
-            }
-            options={[
-              { value: 'any', label: 'Any zone' },
-              ...detail.zones.map((z) => ({ value: String(z.id), label: z.name })),
-            ]}
-          />
-        )}
         <span className="flex flex-wrap gap-3 text-sm">
           <span className="inline-flex items-center gap-1">
             <Icon icon={CircleCheck} size={14} className="text-tone-done" />{' '}
@@ -635,117 +816,16 @@ export function InventoryStationPage({
         </div>
       )}
 
-      {open && canScan ? (
-        <div className="h-[600px] min-h-0 shrink-0 border-b border-line max-xl:h-auto">
-          <StationScanner
-            detail={detail}
-            zoneId={search.zone}
-            meId={me?.id}
-            canManage={canManage}
-            onResult={(result) => {
-              if (result.code === 'duplicate') setDuplicates((n) => n + 1)
-              refresh()
-            }}
-            onUndone={refresh}
-            aside={<StationAside detail={detail} duplicates={duplicates} />}
-          />
-        </div>
-      ) : open ? (
+      {open && (
         <div className="px-4 pt-4">
           <Banner tone="outreach" icon={ScanLine} title="Counting in progress">
             Technicians and dispatchers scan at this station; you see the live reconciliation below.
           </Banner>
         </div>
-      ) : null}
+      )}
 
-      <section
-        className="grid shrink-0 grid-cols-[minmax(0,1fr)] gap-2 px-4 py-4"
-        aria-label="Reconciliation"
-      >
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold">Reconciliation</h2>
-          <span className="text-xs text-fg-3">
-            {open ? 'live — the expected set updates with every movement' : 'frozen at close'}
-          </span>
-        </div>
-        <Tabs
-          value={category}
-          onValueChange={(value) =>
-            onSearchChange({ category: value as ReconciliationCategory, page: 1 })
-          }
-        >
-          <TabsList>
-            {CATEGORIES.map((c) => (
-              <TabsTrigger
-                key={c.value}
-                value={c.value}
-                count={formatNumber(counts[c.value])}
-                alert={c.value === 'missing' && counts.missing > 0 && !open}
-              >
-                {c.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-        <div
-          className={cn(
-            'flex h-[520px] flex-col rounded-sm border border-line',
-            reconciliation.isPlaceholderData && 'opacity-60',
-          )}
-        >
-          <DataTable
-            label={`Reconciliation · ${CATEGORIES.find((c) => c.value === category)?.label}`}
-            keyboard={false}
-            columns={reconciliationColumns}
-            rows={reconciliation.data?.data ?? []}
-            getRowId={(row) => `${row.category}-${row.serialNumber}`}
-            total={reconciliation.data?.meta.total}
-            loading={reconciliation.isPending}
-            error={reconciliation.error}
-            onRetry={() => void reconciliation.refetch()}
-            pagination={{
-              page: search.page,
-              perPage: 50,
-              total: reconciliation.data?.meta.total ?? 0,
-              onPageChange: (page) => onSearchChange({ page }),
-            }}
-            empty={
-              <EmptyState
-                icon={CircleCheck}
-                title={`Nothing in ${CATEGORIES.find((c) => c.value === category)?.label.toLowerCase()}.`}
-              >
-                {category === 'matched'
-                  ? 'Scan the first serial to start counting.'
-                  : 'Every expected device is accounted for here.'}
-              </EmptyState>
-            }
-          />
-        </div>
-      </section>
-
-      {closing && <CloseDialog detail={detail} open onOpenChange={setClosing} />}
-      <ConfirmDialog
-        open={cancelling}
-        onOpenChange={setCancelling}
-        title={`Cancel inventory ${detail.site.name}?`}
-        description="Scans are kept for audit; no corrections are applied and no reports are sent."
-        confirmLabel="Cancel inventory"
-        cancelLabel="Keep counting"
-        destructive
-        comment={{ label: 'Reason (optional)' }}
-        pending={cancel.isPending}
-        onConfirm={async (comment) => {
-          try {
-            await cancel.mutateAsync({ action: 'cancel', body: comment ? { comment } : {} })
-            setCancelling(false)
-            notify.success(`Inventory ${detail.site.name} cancelled`)
-          } catch (error) {
-            notify.error(isApiError(error) ? error.title : 'Not cancelled', {
-              description: isApiError(error) ? error.detail : undefined,
-            })
-          }
-        }}
-      />
+      {reconciliationSection}
+      {dialogs}
     </Page>
   )
 }

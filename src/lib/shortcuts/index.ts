@@ -138,8 +138,25 @@ function isActivationTarget(target: EventTarget | null): boolean {
   )
 }
 
-function modalOpen(): boolean {
-  return document.querySelector('[role="dialog"][aria-modal="true"], [role="alertdialog"]') !== null
+/**
+ * Open modal layers: Radix Dialog/AlertDialog content (`data-state="open"`; Radix sets no
+ * `aria-modal`), the ⌘K palette and any other `aria-modal` dialog. Popovers also render
+ * `role="dialog"` but inside a popper wrapper; they are not modal and don't count.
+ */
+const MODAL_SELECTOR = [
+  '[role="dialog"][data-state="open"]',
+  '[role="alertdialog"][data-state="open"]',
+  '[role="dialog"][aria-modal="true"]',
+  '[role="alertdialog"][aria-modal="true"]',
+  '[cmdk-dialog]',
+].join(', ')
+
+/** True while a modal dialog, sheet or the command palette is open (shortcuts and the scan lock pause). */
+export function isModalOpen(root: ParentNode = document): boolean {
+  for (const element of root.querySelectorAll(MODAL_SELECTOR)) {
+    if (!element.closest('[data-radix-popper-content-wrapper]')) return true
+  }
+  return false
 }
 
 // ---- dispatcher --------------------------------------------------------------------------
@@ -154,7 +171,7 @@ function onKeyDown(event: KeyboardEvent): void {
 
   if ((combo === 'enter' || combo === 'space') && isActivationTarget(event.target)) return
   const typing = isTypingTarget(event.target)
-  const inModal = modalOpen()
+  const inModal = isModalOpen()
   const singleKeysOn = prefsStore.get().singleKeyShortcuts
   const now = Date.now()
   const prefix = pending && now - pending.at < SEQUENCE_TIMEOUT ? pending.step : null

@@ -3,11 +3,12 @@ import { Camera, CircleCheck, Undo2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useMediaQuery } from '@/lib/use-media-query'
 import { CameraScanner } from '@/components/scan/camera-scanner'
+import { ScanAnnouncer } from '@/components/scan/scan-announcer'
 import { ScanInput, type ScanInputHandle } from '@/components/scan/scan-input'
-import { useOnline } from '@/components/scan/scan-station'
+import { keepFocus, ScanCueToggles } from '@/components/scan/scan-layout'
+import { PendingAnnouncer, pendingText, useOnline } from '@/components/scan/scan-station'
 import { useScanSession } from '@/components/scan/use-scan-session'
-import { VerdictBanner } from '@/components/scan/verdict-banner'
-import { VERDICT_STYLES } from '@/components/scan/verdict'
+import { ScanFailedBanner, VerdictBanner } from '@/components/scan/verdict-banner'
 import { IdInk } from '@/components/domain/status'
 import { Button, IconButton } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -151,11 +152,27 @@ export function DeploymentScanner({
             disabled={!online}
             disabledReason="Offline — scanning needs a connection."
             tools={
-              <Button size="sm" icon={Camera} onClick={() => onCameraOpenChange(true)}>
-                Camera
-              </Button>
+              <>
+                <ScanCueToggles />
+                <Button
+                  size="sm"
+                  icon={Camera}
+                  onMouseDown={keepFocus}
+                  onClick={() => onCameraOpenChange(true)}
+                  className="max-md:h-11 max-md:px-3 max-md:text-sm pointer-coarse:h-11"
+                >
+                  Camera
+                </Button>
+              </>
             }
           />
+          {latest?.state === 'failed' && (
+            <ScanFailedBanner
+              sequence={latest.sequence}
+              value={latest.value}
+              error={latest.error}
+            />
+          )}
           {latest && latestResult && (
             <VerdictBanner
               result={latestResult}
@@ -171,10 +188,12 @@ export function DeploymentScanner({
             />
           )}
           {session.pending > 0 && (
-            <p className="text-xs text-fg-3" aria-live="polite">
-              {session.pending} scan{session.pending === 1 ? '' : 's'} being checked
+            <p aria-hidden className="text-xs text-fg-3">
+              {pendingText(session.pending)}
             </p>
           )}
+          <PendingAnnouncer count={session.pending} />
+          <ScanAnnouncer latest={latest} />
         </div>
       )}
       <section aria-label="Deliver">
@@ -201,10 +220,10 @@ export function DeploymentScanner({
         open={cameraOpen}
         onOpenChange={(open) => {
           onCameraOpenChange(open)
-          if (!open) inputRef.current?.focus()
+          if (!open) inputRef.current?.refocus()
         }}
         onDetected={session.scan}
-        flashTone={latestResult ? VERDICT_STYLES[latestResult.verdict].tone : null}
+        latest={latest}
         title={`Scan devices · ${sr.number}`}
       />
       {register && (

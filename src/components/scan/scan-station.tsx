@@ -1,26 +1,18 @@
-import {
-  Camera,
-  CircleCheck,
-  OctagonX,
-  TriangleAlert,
-  Volume2,
-  VolumeX,
-  WifiOff,
-} from 'lucide-react'
+import { Camera, CircleCheck, OctagonX, TriangleAlert, WifiOff } from 'lucide-react'
 import { useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
-import { Button, IconButton } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Banner } from '@/components/ui/feedback'
 import { Icon } from '@/components/ui/icon'
 import type { ScanResult } from '@/lib/api/types'
-import { setPrefs, usePrefs } from '@/lib/prefs/store'
 import { useShortcut } from '@/lib/shortcuts'
 import { cn } from '@/lib/utils'
 import { CameraScanner } from './camera-scanner'
+import { ScanAnnouncer } from './scan-announcer'
 import { ScanInput, type ScanInputHandle } from './scan-input'
+import { keepFocus, ScanCueToggles, ScanDock, ScanModeContext, ScanSessionBar } from './scan-layout'
 import { ScanList, type ScanEntry } from './scan-list'
-import { useScanSession } from './use-scan-session'
-import { VerdictBanner } from './verdict-banner'
-import { VERDICT_STYLES } from './verdict'
+import { useScanSession, type ScanSession } from './use-scan-session'
+import { ScanFailedBanner, VerdictBanner } from './verdict-banner'
 
 function subscribeOnline(callback: () => void) {
   window.addEventListener('online', callback)
@@ -37,6 +29,38 @@ export function useOnline(): boolean {
     () => navigator.onLine,
     () => true,
   )
+}
+
+export function pendingText(count: number): string {
+  return `${count} scan${count === 1 ? '' : 's'} being checked`
+}
+
+/**
+ * The pending-scan count for screen readers: mounted for the station's lifetime and spoken only
+ * once a queue builds up (2 or more), so a normal scan is not announced twice.
+ */
+export function PendingAnnouncer({ count }: { count: number }) {
+  return (
+    <span className="sr-only" aria-live="polite">
+      {count > 1 ? pendingText(count) : ''}
+    </span>
+  )
+}
+
+/** Whether `undoLast` (⌘Z, the dock's Undo) has something to undo. */
+export function canUndoLast(session: Pick<ScanSession<unknown>, 'entries'>): boolean {
+  return session.entries.some(
+    (entry) => entry.result?.undo && entry.result.applied && !entry.undone,
+  )
+}
+
+export interface ScanSessionInfo {
+  /** The page's h1: "Inventory · Hillford Hub". */
+  title: string
+  meta?: ReactNode
+  progress?: ReactNode
+  /** Session actions; the primary ("Finish & verify") is the view's one amber action. */
+  actions?: ReactNode
 }
 
 export interface ScanStationProps<T> {
@@ -69,7 +93,17 @@ export interface ScanStationProps<T> {
   cameraOpen?: boolean
   onCameraOpenChange?: (open: boolean) => void
   placeholder?: string
+  /** Classes of the station grid (field column + aside). */
   className?: string
+  /**
+   * Focus layout (DESIGN.md §9.3 inside the shell): a graphite session bar above the station.
+   * With `session`, `dock` or `footer` the station fills its container and scrolls itself.
+   */
+  session?: ScanSessionInfo
+  /** Phone bottom dock: Undo · Camera scan · `finish` (DESIGN.md §11.3). */
+  dock?: boolean | { finish?: ReactNode }
+  /** Content below the station inside its scroll area (reconciliation tables). */
+  footer?: ReactNode
 }
 
 /**
@@ -77,7 +111,8 @@ export interface ScanStationProps<T> {
  * banner → running list (+ optional progress aside). Enter submits; scans queue FIFO (max 20)
  * while a request is in flight; same value within 800 ms is a bounce. Shortcuts: Esc clears,
  * Esc Esc releases focus, ⌘Z/Ctrl+Z undoes the last undoable scan, F2 sound, F3 camera.
- * Offline: the field is disabled with "Offline — scanning needs a connection."
+ * Offline: the field is disabled with "Offline — scanning needs a connection." Verdicts are
+ * announced through two always-mounted live regions (`ScanAnnouncer`).
  */
 export function ScanStation<T = unknown>({
   label,
@@ -98,10 +133,13 @@ export function ScanStation<T = unknown>({
   onCameraOpenChange,
   placeholder,
   className,
+  session: sessionInfo,
+  dock,
+  footer,
 }: ScanStationProps<T>) {
   const online = useOnline()
-  const sound = usePrefs((prefs) => prefs.sound)
   const inputRef = useRef<ScanInputHandle>(null)
+  const [active, setActive] = useState(false)
   const [cameraOpenState, setCameraOpenState] = useState(false)
   const cameraOpen = cameraOpenProp ?? cameraOpenState
   const setCameraOpen = (open: boolean) => {
@@ -115,11 +153,6 @@ export function ScanStation<T = unknown>({
     group: 'Scan station',
     allowInInput: true,
   })
-  useShortcut('f2', () => setPrefs({ sound: !sound }), {
-    description: 'Sound on/off',
-    group: 'Scan station',
-    allowInInput: true,
-  })
   useShortcut('f3', () => setCameraOpen(true), {
     description: 'Camera scan',
     group: 'Scan station',
@@ -129,25 +162,31 @@ export function ScanStation<T = unknown>({
 
   const latest = session.latest
   const latestResult = latest?.result
+  const withDock = Boolean(dock) && !compact
+  const finish = typeof dock === 'object' ? dock.finish : undefined
 
   const tools = (
     <>
-      <IconButton
-        icon={sound ? Volume2 : VolumeX}
-        label={sound ? 'Sound on' : 'Sound off'}
-        shortcut="f2"
-        size="sm"
-        onClick={() => setPrefs({ sound: !sound })}
-      />
+      <ScanCueToggles />
       {camera && (
-        <Button size="sm" icon={Camera} onClick={() => setCameraOpen(true)} shortcut="f3">
+        <Button
+          size="sm"
+          icon={Camera}
+          onMouseDown={keepFocus}
+          onClick={() => setCameraOpen(true)}
+          shortcut="f3"
+          className={cn(
+            'max-md:h-11 max-md:px-3 max-md:text-sm pointer-coarse:h-11',
+            withDock && 'max-md:hidden',
+          )}
+        >
           Camera
         </Button>
       )}
     </>
   )
 
-  return (
+  const station = (
     <div
       // minmax(0,1fr) columns: the station never grows wider than its container (390 px phones)
       className={cn(
@@ -173,21 +212,25 @@ export function ScanStation<T = unknown>({
             disabledReason="Offline — scanning needs a connection."
             compact={compact}
             tools={tools}
+            onActiveChange={setActive}
           />
           {(context ?? session.pending > 0) && (
-            <div className="flex flex-wrap items-center gap-3 text-sm text-fg-2">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-fg-2">
               {context}
               {session.pending > 0 && (
-                <span className="ml-auto text-xs text-fg-3" aria-live="polite">
-                  {session.pending} scan{session.pending === 1 ? '' : 's'} being checked
+                <span aria-hidden className="ml-auto text-xs text-fg-3">
+                  {pendingText(session.pending)}
                 </span>
               )}
             </div>
           )}
+          <PendingAnnouncer count={session.pending} />
           {latest?.state === 'failed' ? (
-            <Banner tone="critical" icon={OctagonX} title={`Scan #${latest.sequence} not checked`}>
-              {latest.error} {latest.value}
-            </Banner>
+            <ScanFailedBanner
+              sequence={latest.sequence}
+              value={latest.value}
+              error={latest.error}
+            />
           ) : latest && latestResult ? (
             <VerdictBanner
               result={latestResult}
@@ -201,15 +244,17 @@ export function ScanStation<T = unknown>({
                   : undefined
               }
               undoPending={session.undoingId === latest.id}
+              dockUndo={withDock}
             />
           ) : null}
+          <ScanAnnouncer latest={latest} />
         </div>
         {!compact && (
           <div className="flex min-h-0 flex-1 flex-col border-t border-line bg-surface">
             <ScanList
               entries={session.entries}
               describe={describe}
-              onUndo={(entry) => void session.undo(entry)}
+              onUndo={(entry) => session.undo(entry)}
               title={listTitle}
               empty={emptyList}
             />
@@ -245,12 +290,37 @@ export function ScanStation<T = unknown>({
           open={cameraOpen}
           onOpenChange={(open) => {
             setCameraOpen(open)
-            if (!open) inputRef.current?.focus()
+            if (!open) inputRef.current?.refocus()
           }}
           onDetected={session.scan}
-          flashTone={latestResult ? VERDICT_STYLES[latestResult.verdict].tone : null}
+          latest={latest}
         />
       )}
     </div>
+  )
+
+  const focusLayout = Boolean(sessionInfo) || withDock || footer !== undefined
+  return (
+    <ScanModeContext value={active}>
+      {focusLayout ? (
+        <div className="flex h-full min-h-0 min-w-0 flex-col">
+          {sessionInfo && <ScanSessionBar {...sessionInfo} />}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {station}
+            {footer}
+          </div>
+          {withDock && (
+            <ScanDock
+              onUndo={() => session.undoLast()}
+              canUndo={canUndoLast(session)}
+              onCamera={camera ? () => setCameraOpen(true) : undefined}
+              finish={finish}
+            />
+          )}
+        </div>
+      ) : (
+        station
+      )}
+    </ScanModeContext>
   )
 }

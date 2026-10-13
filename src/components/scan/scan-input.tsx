@@ -11,6 +11,8 @@ import {
 } from 'react'
 import { Icon } from '@/components/ui/icon'
 import { Kbd } from '@/components/ui/kbd'
+import { isModalOpen } from '@/lib/shortcuts'
+import { useMediaQuery } from '@/lib/use-media-query'
 import { cn } from '@/lib/utils'
 
 /** Trim + upper-case (SCREENS.md §10). */
@@ -21,10 +23,56 @@ export function normalizeScan(raw: string): string {
 /** Identical values within this window are a scanner bounce, not a duplicate (DESIGN.md §10). */
 export const BOUNCE_MS = 800
 const DOUBLE_ESC_MS = 600
-const REFOCUS_MS = 300
+export const REFOCUS_MS = 300
+
+/** Menus, listboxes and popovers (Select, DropdownMenu, Popover); tooltips don't count. */
+const POPPER_SELECTOR = ['listbox', 'menu', 'dialog']
+  .map((role) => `[data-radix-popper-content-wrapper] [role="${role}"]`)
+  .join(', ')
+
+/** A dialog, the ⌘K palette, a sheet or a menu/listbox/popover is open. */
+export function overlayOpen(): boolean {
+  return isModalOpen() || document.querySelector(POPPER_SELECTOR) !== null
+}
+
+function isTypingElement(element: Element | null): boolean {
+  return (
+    element instanceof HTMLElement &&
+    (element.isContentEditable || element.matches('input, textarea, select'))
+  )
+}
+
+export interface RefocusState {
+  /** The focus lock is on (not released with Esc Esc or Tab). */
+  locked: boolean
+  disabled: boolean
+  /** The scan field. */
+  input: HTMLElement | null
+  /** `document.activeElement` */
+  active: Element | null
+  /** A dialog, palette, sheet, menu or popover is open right now. */
+  overlay: boolean
+  /** An overlay was open since the field lost focus (it has closed since). */
+  afterOverlay: boolean
+}
+
+/**
+ * The focus-lock rule (WCAG 2.1.2): the field takes focus back only while the lock is on and no
+ * overlay is open, and only when focus was lost (it sits on `<body>`) or an overlay that opened
+ * over the station has closed. It never takes focus from a control or field the user moved to.
+ */
+export function shouldRefocus(state: RefocusState): boolean {
+  const { locked, disabled, input, active, overlay, afterOverlay } = state
+  if (!locked || disabled || !input || overlay || active === input) return false
+  const lost = active === null || active === input.ownerDocument.body
+  if (lost) return true
+  return afterOverlay && !isTypingElement(active)
+}
 
 export interface ScanInputHandle {
   focus: () => void
+  /** Focuses the field only while the lock is on (after closing the camera, changing the hub…). */
+  refocus: () => void
   lock: () => void
   release: () => void
 }
@@ -34,7 +82,11 @@ export interface ScanInputProps {
   /** Visible label above the field ("Scan serial or asset tag"). */
   label: string
   placeholder?: string
-  /** Focus lock: blur re-focuses unless a dialog/palette is open; Esc Esc releases. */
+  /**
+   * Focus lock: lost focus comes back unless a dialog/palette is open; Esc Esc (or Tab) releases,
+   * Enter or a click on the field locks again. Off on touch devices (it would keep the soft
+   * keyboard up).
+   */
   focusLock?: boolean
   disabled?: boolean
   /** Shown instead of the placeholder while disabled ("Offline — scanning needs a connection."). */
@@ -45,14 +97,8 @@ export interface ScanInputProps {
   className?: string
   /** Extra controls on the right of the label row (camera button, sound toggle). */
   tools?: ReactNode
-}
-
-function overlayOpen(): boolean {
-  return (
-    document.querySelector(
-      '[role="dialog"][aria-modal="true"], [role="alertdialog"], [cmdk-dialog]',
-    ) !== null || document.querySelector('[data-radix-popper-content-wrapper]') !== null
-  )
+  /** Scan mode is active: the lock is on and the field has focus (session bar pill). */
+  onActiveChange?: (active: boolean) => void
 }
 
 /**
@@ -66,41 +112,114 @@ export const ScanInput = forwardRef<ScanInputHandle, ScanInputProps>(function Sc
     label,
     placeholder = 'Waiting for scanner…',
     focusLock = true,
-    disabled,
+    disabled = false,
     disabledReason,
     compact,
     normalize = normalizeScan,
     className,
     tools,
+    onActiveChange,
   },
   ref,
 ) {
   const id = useId()
   const inputRef = useRef<HTMLInputElement>(null)
+  const coarse = useMediaQuery('(pointer: coarse)')
+  const lockable = focusLock && !coarse
   const [value, setValue] = useState('')
-  const [locked, setLocked] = useState(focusLock)
+  // `lockedRef` is the truth for event handlers and timers (a render may not have happened yet
+  // when the field blurs right after Esc Esc); the state drives the visible lock text.
+  const [locked, setLockedState] = useState(true)
+  const lockedRef = useRef(true)
+  const lockableRef = useRef(lockable)
+  const disabledRef = useRef(disabled)
   const [focused, setFocused] = useState(false)
   const lastEsc = useRef(0)
   const lastSubmit = useRef<{ value: string; at: number } | null>(null)
   const refocusTimer = useRef<number | undefined>(undefined)
-
-  const focus = useCallback(() => inputRef.current?.focus(), [])
-  useImperativeHandle(ref, () => ({
-    focus,
-    lock: () => {
-      setLocked(true)
-      focus()
-    },
-    release: () => {
-      setLocked(false)
-      inputRef.current?.blur()
-    },
-  }))
+  const afterOverlay = useRef(false)
 
   useEffect(() => {
-    if (focusLock && !disabled) focus()
-    return () => window.clearTimeout(refocusTimer.current)
-  }, [focusLock, disabled, focus])
+    lockableRef.current = lockable
+    disabledRef.current = disabled
+  })
+
+  const setLock = useCallback((next: boolean) => {
+    lockedRef.current = next
+    setLockedState(next)
+  }, [])
+
+  const focus = useCallback(() => inputRef.current?.focus(), [])
+
+  const check = useCallback(() => {
+    const input = inputRef.current
+    const overlay = overlayOpen()
+    if (overlay) afterOverlay.current = true
+    const refocus = shouldRefocus({
+      locked: lockedRef.current && lockableRef.current,
+      disabled: disabledRef.current,
+      input,
+      active: document.activeElement,
+      overlay,
+      afterOverlay: afterOverlay.current,
+    })
+    if (refocus) {
+      afterOverlay.current = false
+      input?.focus()
+    }
+  }, [])
+
+  const scheduleCheck = useCallback(() => {
+    window.clearTimeout(refocusTimer.current)
+    refocusTimer.current = window.setTimeout(check, REFOCUS_MS)
+  }, [check])
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus,
+      refocus: () => {
+        if (lockedRef.current && lockableRef.current) focus()
+      },
+      lock: () => {
+        setLock(true)
+        focus()
+      },
+      release: () => {
+        setLock(false)
+        window.clearTimeout(refocusTimer.current)
+        inputRef.current?.blur()
+      },
+    }),
+    [focus, setLock],
+  )
+
+  // Grab focus on mount and when scanning becomes possible again (back online).
+  useEffect(() => {
+    if (lockable && lockedRef.current && !disabled) focus()
+  }, [lockable, disabled, focus])
+
+  useEffect(() => () => window.clearTimeout(refocusTimer.current), [])
+
+  const isLocked = lockable && locked
+  const active = isLocked && focused && !disabled
+
+  const onActiveChangeRef = useRef(onActiveChange)
+  useEffect(() => {
+    onActiveChangeRef.current = onActiveChange
+  })
+  useEffect(() => {
+    onActiveChangeRef.current?.(active)
+  }, [active])
+
+  // While locked but unfocused, watch overlays (portals under <body>) come and go: when a dialog
+  // that opened over the station closes, the field takes the focus back.
+  useEffect(() => {
+    if (!isLocked || focused || disabled) return
+    const observer = new MutationObserver(scheduleCheck)
+    observer.observe(document.body, { childList: true })
+    return () => observer.disconnect()
+  }, [isLocked, focused, disabled, scheduleCheck])
 
   const submit = () => {
     const normalized = normalize(value)
@@ -113,7 +232,6 @@ export const ScanInput = forwardRef<ScanInputHandle, ScanInputProps>(function Sc
     onSubmit(normalized)
   }
 
-  const isLocked = focusLock && locked
   const height = compact ? 'h-14' : 'h-scan max-md:h-[72px]'
 
   return (
@@ -124,49 +242,54 @@ export const ScanInput = forwardRef<ScanInputHandle, ScanInputProps>(function Sc
           {label}
         </label>
         <div className="flex min-w-0 items-center gap-2 text-xs">
-          {focusLock && (
+          {lockable && (
             <span
               className={cn(
                 'inline-flex min-w-0 items-center gap-1.5',
-                isLocked && focused ? 'text-accent-text' : 'text-fg-3',
+                active ? 'text-accent-text' : 'text-fg-3',
               )}
+              data-testid="scan-lock-state"
             >
-              <Icon icon={isLocked ? Lock : LockOpen} size={14} />
+              <Icon icon={isLocked ? Lock : LockOpen} size={14} className="shrink-0" />
               {disabled
                 ? 'Scanning paused'
                 : isLocked
                   ? focused
-                    ? 'Focus locked · every keystroke goes to the scanner field'
-                    : 'Focus locked'
+                    ? 'Focus locked · Esc Esc to release'
+                    : 'Focus lock paused · click the field to resume'
                   : 'Focus released · press Enter or click the field to lock'}
             </span>
           )}
           {tools}
         </div>
       </div>
-      {/* Clicking anywhere on the frame re-locks focus; keyboard users reach the input directly. */}
+      {/* Clicking anywhere on the frame locks and focuses; keyboard users reach the input directly. */}
       <div
         role="presentation"
         className={cn(
-          'flex items-center gap-4 rounded-md border-2 bg-sunken px-5 transition-shadow',
+          'flex items-center gap-4 rounded-md border-2 bg-sunken px-5 transition-shadow max-md:gap-3 max-md:px-3.5',
           height,
           disabled
             ? 'border-line'
-            : isLocked && focused
+            : active
               ? 'border-accent-line shadow-[0_0_0_4px_color-mix(in_srgb,var(--hg-accent)_22%,transparent)]'
-              : 'border-line-strong',
+              : focused
+                ? 'border-accent-line'
+                : 'border-line-strong',
         )}
         onClick={() => {
-          if (!disabled) {
-            setLocked(true)
-            focus()
-          }
+          if (disabled) return
+          setLock(true)
+          focus()
         }}
       >
         <Icon
           icon={compact ? ScanLine : ScanBarcode}
           size={32}
-          className={disabled ? 'text-fg-disabled' : 'text-accent-text'}
+          className={cn(
+            'shrink-0 max-md:size-6',
+            disabled ? 'text-fg-disabled' : 'text-accent-text',
+          )}
         />
         <input
           ref={inputRef}
@@ -180,29 +303,26 @@ export const ScanInput = forwardRef<ScanInputHandle, ScanInputProps>(function Sc
           spellCheck={false}
           inputMode="text"
           enterKeyHint="go"
-          aria-describedby={`${id}-lock`}
+          aria-describedby={lockable ? `${id}-lock` : undefined}
           onChange={(event) => setValue(event.target.value)}
           onFocus={() => {
             setFocused(true)
-            if (focusLock) setLocked(true)
+            afterOverlay.current = false
+            window.clearTimeout(refocusTimer.current)
           }}
           onBlur={() => {
             setFocused(false)
-            if (!isLocked || disabled) return
-            window.clearTimeout(refocusTimer.current)
-            refocusTimer.current = window.setTimeout(() => {
-              const active = document.activeElement
-              const typingElsewhere =
-                active instanceof HTMLElement &&
-                active !== inputRef.current &&
-                active.matches('input, textarea, select, [contenteditable="true"]')
-              if (!overlayOpen() && !typingElsewhere) focus()
-            }, REFOCUS_MS)
+            if (!(lockedRef.current && lockableRef.current) || disabledRef.current) return
+            scheduleCheck()
           }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
               event.preventDefault()
+              setLock(true)
               submit()
+            } else if (event.key === 'Tab' && !event.altKey && !event.ctrlKey && !event.metaKey) {
+              // Leaving with the keyboard is a decision: release, and never pull focus back.
+              setLock(false)
             } else if (event.key === 'Escape') {
               event.preventDefault()
               if (value) {
@@ -211,7 +331,8 @@ export const ScanInput = forwardRef<ScanInputHandle, ScanInputProps>(function Sc
               }
               const now = Date.now()
               if (now - lastEsc.current < DOUBLE_ESC_MS) {
-                setLocked(false)
+                setLock(false)
+                window.clearTimeout(refocusTimer.current)
                 inputRef.current?.blur()
               }
               lastEsc.current = now
@@ -219,14 +340,18 @@ export const ScanInput = forwardRef<ScanInputHandle, ScanInputProps>(function Sc
           }}
           className={cn(
             'h-full min-w-0 flex-1 bg-transparent font-mono tracking-[0.06em] uppercase outline-none placeholder:font-sans placeholder:tracking-normal placeholder:normal-case',
-            compact ? 'text-[24px]' : 'text-[34px] max-md:text-[26px]',
+            compact ? 'text-[24px]' : 'text-[34px] max-md:text-[24px]',
           )}
         />
         <Kbd>⏎</Kbd>
       </div>
-      <span id={`${id}-lock`} className="sr-only">
-        {isLocked ? 'Focus locked. Press Escape twice to release.' : 'Focus released.'}
-      </span>
+      {lockable && (
+        <span id={`${id}-lock`} className="sr-only">
+          {isLocked
+            ? 'Focus locked. Press Escape twice to release.'
+            : 'Focus released. Press Enter or click the field to lock.'}
+        </span>
+      )}
     </div>
   )
 })
