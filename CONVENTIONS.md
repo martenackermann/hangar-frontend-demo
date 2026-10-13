@@ -615,4 +615,3 @@ Taken while preparing the public demo, without a human in the loop.
 | The README screenshots come from one opt-in Playwright script; no test writes into the repository                                                                                                                  | `pnpm test:e2e` leaves `git status` clean                                                          |
 
 > **CI Node version:** CI runs on Node 22 LTS (`.nvmrc`). Under Node 24, undici 7 rejects jsdom's `File` objects when MSW intercepts `fetch` in Vitest, which breaks the multipart mock tests (test-runtime only; browsers are unaffected). Vercel builds the demo on Node 24, which is fine because it doesn't run tests.
-
