@@ -1,24 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { RoutePlaceholder } from '@/components/app/route-placeholder'
 import { requirePermission } from '@/lib/auth/guards'
+import { DispatchSettingsPage } from '@/modules/requests/components/dispatch-settings-page'
 
-/**
- * Dispatch settings (SCREENS.md). Owner: H1 (Requests & Comms).
- * PLACEHOLDER created by the foundation: the owning slice replaces this file
- * (keep the path, the permission guard and `staticData.title`).
- */
+/** Dispatch settings (SCREENS.md §9.5). Owner: H1 (Requests & Comms). Edit needs `comms.settings`. */
 export const Route = createFileRoute('/_app/admin/dispatch-settings')({
   beforeLoad: requirePermission('comms.read'),
   staticData: { title: 'Dispatch settings' },
-  component: Placeholder,
+  component: DispatchSettingsPage,
 })
-
-function Placeholder() {
-  return (
-    <RoutePlaceholder
-      title="Dispatch settings"
-      owner="H1"
-      purpose="Timing and switches of the automatic communication chains."
-    />
-  )
-}

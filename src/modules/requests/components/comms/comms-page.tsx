@@ -30,7 +30,11 @@ function Switches() {
     <>
       Next run {formatDateTime(settings.nextScheduledRunAt)}
       {' · '}
-      {off.length ? <span className="text-tone-caution-fg">{off.join(', ')}</span> : 'all chains on'}
+      {off.length ? (
+        <span className="text-tone-caution-fg">{off.join(', ')}</span>
+      ) : (
+        'all chains on'
+      )}
     </>
   )
 }
@@ -66,29 +70,34 @@ export function CommsPage({
     )
 
   return (
-    <Page>
-      <PageHeader
-        title="Communications"
-        meta={<Switches />}
-        actions={
-          <>
-            <Button variant="ghost" icon={Settings2} asChild>
-              <Link to="/admin/dispatch-settings">Dispatch settings</Link>
-            </Button>
-            {canDispatch && (
-              <>
-                <Button icon={MailCheck} onClick={() => onSearch({ preview: true })}>
-                  Dry run
-                </Button>
-                <Button variant="primary" icon={Send} loading={dispatch.pending} onClick={() => setConfirmRun(true)}>
-                  Run now
-                </Button>
-              </>
-            )}
-          </>
-        }
-      />
-      <div className="flex min-h-0 flex-1">
+    <div className="flex h-full min-h-0 min-w-0">
+      <Page className="flex-1">
+        <PageHeader
+          title="Communications"
+          meta={<Switches />}
+          actions={
+            <>
+              <Button variant="ghost" icon={Settings2} asChild>
+                <Link to="/admin/dispatch-settings">Dispatch settings</Link>
+              </Button>
+              {canDispatch && (
+                <>
+                  <Button icon={MailCheck} onClick={() => onSearch({ preview: true })}>
+                    Dry run
+                  </Button>
+                  <Button
+                    variant="primary"
+                    icon={Send}
+                    loading={dispatch.pending}
+                    onClick={() => setConfirmRun(true)}
+                  >
+                    Run now
+                  </Button>
+                </>
+              )}
+            </>
+          }
+        />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <Tabs value={view} onValueChange={setView} className="shrink-0 px-4 max-md:px-3">
             <TabsList aria-label="Communications views">
@@ -107,26 +116,26 @@ export function CommsPage({
           {view === 'dispatch-runs' && <RunsTab search={search} onSearch={onSearch} />}
           {view === 'templates' && <TemplatesTab search={search} onSearch={onSearch} />}
         </div>
-        {view === 'dispatch-runs' && search.run && !coreDrawerOpen && (
-          <RunDrawer key={search.run} id={search.run} onClose={() => onSearch({ run: undefined })} />
-        )}
-      </div>
-      <DispatchDialog
-        open={Boolean(search.preview)}
-        onOpenChange={(open) => !open && onSearch({ preview: undefined }, true)}
-      />
-      <ConfirmDialog
-        open={confirmRun}
-        onOpenChange={setConfirmRun}
-        title="Send all due mails now?"
-        description="The daily dispatch runs now instead of waiting for 07:00. Each record gets at most one mail per run; paused and VIP records are skipped."
-        confirmLabel="Send due mails"
-        pending={dispatch.pending}
-        onConfirm={() => {
-          setConfirmRun(false)
-          void dispatch.start()
-        }}
-      />
-    </Page>
+        <DispatchDialog
+          open={Boolean(search.preview)}
+          onOpenChange={(open) => !open && onSearch({ preview: undefined }, true)}
+        />
+        <ConfirmDialog
+          open={confirmRun}
+          onOpenChange={setConfirmRun}
+          title="Send all due mails now?"
+          description="The daily dispatch runs now instead of waiting for 07:00. Each record gets at most one mail per run; paused and VIP records are skipped."
+          confirmLabel="Send due mails"
+          pending={dispatch.pending}
+          onConfirm={() => {
+            setConfirmRun(false)
+            void dispatch.start()
+          }}
+        />
+      </Page>
+      {view === 'dispatch-runs' && search.run && !coreDrawerOpen && (
+        <RunDrawer key={search.run} id={search.run} onClose={() => onSearch({ run: undefined })} />
+      )}
+    </div>
   )
 }
