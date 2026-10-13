@@ -48,7 +48,7 @@ export function slotLabel(slot: ItemSlot): string {
 /** The verdict of a scan code comes from the one core table (SPEC_RESOLUTIONS #25). */
 export function verdictOf(code: string): ScanVerdict {
   const fromServer = servedEnums().scanCode.find((value) => value.value === code)?.verdict
-  return (fromServer as ScanVerdict | undefined) ?? 'error'
+  return fromServer ?? 'error'
 }
 
 export function scanResult<T>(

@@ -628,7 +628,10 @@ const personalizationHandlers: RequestHandler[] = [
       if (
         'osReinstall' in body &&
         body.osReinstall !== null &&
-        !['on_pickup', 'on_delivery'].includes(String(body.osReinstall))
+        !(
+          typeof body.osReinstall === 'string' &&
+          ['on_pickup', 'on_delivery'].includes(body.osReinstall)
+        )
       )
         return problems.validation(
           { osReinstall: ["Input should be 'on_pickup' or 'on_delivery'"] },
@@ -791,7 +794,7 @@ function packingProblem(row: ServiceRequestRow, request: Request): Response | nu
       `${row.number} is not ready for packing (status '${row.status}').`,
       request,
     )
-  if (!PARCEL.includes(effectiveDeliveryType(row) as DeliveryType)) {
+  if (!PARCEL.includes(effectiveDeliveryType(row)!)) {
     const message = 'This request is delivered by a technician.'
     return problem(409, 'guard_failed', 'Precondition failed', {
       detail: message,
@@ -839,7 +842,12 @@ function labelFor(shipment: ShipmentRow, actorId: number | null) {
 
 function nextCarrierId(): string {
   const day = businessToday().replaceAll('-', '')
-  const taken = new Set(db.collection('shipments').all().map((s) => s.carrierShipmentId))
+  const taken = new Set(
+    db
+      .collection('shipments')
+      .all()
+      .map((s) => s.carrierShipmentId),
+  )
   for (let n = 1; ; n++) {
     const id = `PC${day}${String(n).padStart(6, '0')}`
     if (!taken.has(id)) return id
@@ -873,8 +881,7 @@ const shippingHandlers: RequestHandler[] = [
         })
         .sort(
           (a, b) =>
-            (a.appointmentStartAt ?? '~').localeCompare(b.appointmentStartAt ?? '~') ||
-            a.id - b.id,
+            (a.appointmentStartAt ?? '~').localeCompare(b.appointmentStartAt ?? '~') || a.id - b.id,
         )
         .slice(0, 200)
       const data: ParcelPickingItem[] = rows.map((row) => ({

@@ -210,7 +210,9 @@ describe('mock model', () => {
   it('orders FIFO candidates by check-in date', () => {
     const asset = db
       .collection('assets')
-      .find((a) => a.status === 'available' && a.installationPlace !== null && a.articleId !== null)!
+      .find(
+        (a) => a.status === 'available' && a.installationPlace !== null && a.articleId !== null,
+      )!
     const site = db.collection('stock_locations').get(asset.locationId)!.siteId!
     const list = fifoCandidates(asset.articleId!, site)
     const dates = list.map((a) => a.checkedInAt ?? '9999')
