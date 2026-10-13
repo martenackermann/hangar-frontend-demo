@@ -421,7 +421,7 @@ test.describe('cross-slice flows', () => {
         heading: 'Service requests',
       },
       {
-        tile: /^Completed this week/,
+        tile: /^Deployed this week/,
         url: /\/service-requests\?.*closedFrom=/,
         heading: 'Service requests',
       },

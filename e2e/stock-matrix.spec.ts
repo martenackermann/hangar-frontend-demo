@@ -27,7 +27,11 @@ test('Dana edits a buffer; the order quantity follows demand + buffer − stock'
   await input.press('Enter')
   expect((await saved).ok()).toBe(true)
   const order = Math.max(0, demand + next - stock)
-  await expect(cell).toHaveAttribute('aria-label', new RegExp(`buffer ${next}, order ${order}$`))
+  // the name ends with the order quantity, then the shortage level when there is one
+  await expect(cell).toHaveAttribute(
+    'aria-label',
+    new RegExp(`buffer ${next}, order ${order}(, shortage .*)?$`),
+  )
 
   // the buffer is stored: it survives a reload (the mock answers a mutation only once the demo
   // database has written it)

@@ -17,8 +17,10 @@ for (const who of PERSONAS) {
     for (const label of who.hiddenGroups) {
       await expect(nav.getByRole('group', { name: label, exact: true })).toHaveCount(0)
     }
-    // the shell knows who is signed in
-    await expect(page.getByRole('button', { name: 'User menu' })).toBeVisible()
+    // the shell knows who is signed in (in the demo the persona pill is the account menu)
+    await expect(
+      page.getByRole('button', { name: new RegExp(`^${who.name}, demo persona`) }),
+    ).toBeVisible()
   })
 }
 
@@ -47,7 +49,7 @@ test('⌘K opens the command palette and jumps to a screen', async ({ page }) =>
   await expect(page).toHaveURL(/\/stock\/matrix/)
 
   // the top-bar search field opens it too
-  await page.getByRole('button', { name: 'Search or scan (⌘K)' }).click()
+  await page.getByRole('button', { name: /^Search or scan/ }).click()
   await expect(palette).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(palette).toBeHidden()
