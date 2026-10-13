@@ -8,8 +8,10 @@ import { cn } from '@/lib/utils'
 /**
  * Small dashboard charts (DESIGN.md §12 + dataviz method): thin marks (≤ 24 px columns with a
  * 4 px rounded data end, 2 px lines), solid hairline grid, current period in the accent
- * (`--hg-viz-now`), everything else de-emphasised (`--hg-viz-muted`). Every chart has a
- * per-mark hover/focus tooltip and a table view; values are never colour-only.
+ * (`--hg-viz-now`), everything else de-emphasised (`--hg-viz-muted`, ≥ 3 : 1 on surface). Every
+ * chart has a per-mark hover/focus tooltip and a table view; values are never colour-only.
+ * Charts with focusable marks are `role="group"` (an `img` can't contain focusable children);
+ * each focusable mark is its own `img` with a name.
  */
 
 function useWidth<T extends HTMLElement>(): [React.RefObject<T | null>, number] {
@@ -83,7 +85,7 @@ export function ColumnChart({
   return (
     <div ref={ref} className="relative w-full" style={{ height }}>
       {width > 0 && (
-        <svg width={width} height={height} role="img" aria-label={label} className="block">
+        <svg width={width} height={height} role="group" aria-label={label} className="block">
           <line
             x1={0}
             x2={width}
@@ -92,7 +94,7 @@ export function ColumnChart({
             stroke="var(--hg-viz-axis)"
           />
           <line x1={0} x2={width} y1={top + 0.5} y2={top + 0.5} stroke="var(--hg-viz-grid)" />
-          <text x={0} y={top - 4} className="fill-fg-3 text-2xs">
+          <text x={0} y={top - 4} aria-hidden className="fill-fg-3 text-2xs">
             {formatNumber(max)}
           </text>
           {points.map((p, i) => {
@@ -112,6 +114,9 @@ export function ColumnChart({
                   <path
                     d={d}
                     fill={i === nowIndex ? 'var(--hg-viz-now)' : 'var(--hg-viz-muted)'}
+                    // Amber on white is 1.8 : 1 — the Today bar gets an accent-line edge (light).
+                    stroke={i === nowIndex ? 'var(--hg-accent-line)' : undefined}
+                    strokeWidth={i === nowIndex ? 1 : undefined}
                     opacity={hover === null || hover === i ? 1 : 0.6}
                   />
                 )}
@@ -120,6 +125,7 @@ export function ColumnChart({
                     x={cx}
                     y={yTop - 3}
                     textAnchor="middle"
+                    aria-hidden
                     className="fill-fg-2 font-mono text-2xs"
                   >
                     {p.count}
@@ -130,6 +136,7 @@ export function ColumnChart({
                     x={cx}
                     y={height - 4}
                     textAnchor="middle"
+                    aria-hidden
                     className={cn(
                       'text-2xs',
                       i === nowIndex ? 'fill-fg font-semibold' : 'fill-fg-3',
@@ -145,12 +152,13 @@ export function ColumnChart({
                   height={plot}
                   fill="transparent"
                   tabIndex={0}
-                  aria-label={`${formatDate(p.date)}: ${p.count}`}
+                  role="img"
+                  aria-label={`${i === nowIndex ? 'Today, ' : ''}${formatDate(p.date)}: ${p.count}`}
                   onPointerEnter={() => setHover(i)}
                   onPointerLeave={() => setHover(null)}
                   onFocus={() => setHover(i)}
                   onBlur={() => setHover(null)}
-                  className="outline-none focus-visible:stroke-focus"
+                  className="outline-none focus-visible:stroke-focus focus-visible:stroke-2"
                 />
               </g>
             )

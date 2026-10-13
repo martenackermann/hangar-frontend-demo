@@ -5,8 +5,9 @@ import { cn } from '@/lib/utils'
 import { Icon } from './icon'
 
 /**
- * Tabs (DESIGN.md §10): 36 px, 13/500 fg-3 → fg when selected, 2 px amber underline, optional
- * count pill (critical wash for alert counts); overflow scrolls horizontally.
+ * Tabs (DESIGN.md §10): 36 px, 13/500 fg-3 → fg when selected, 2 px amber underline
+ * (`accent-line`, ≥3:1 in light mode too), optional count pill (critical wash for alert
+ * counts); overflow scrolls horizontally.
  * Use `activationMode="manual"` in drawers so arrowing does not load panels.
  */
 export const Tabs = RadixTabs.Root
@@ -34,8 +35,8 @@ export function tabClassName(className?: string): string {
   return cn(
     '-mb-px inline-flex h-9 shrink-0 items-center gap-1.5 border-b-2 border-transparent px-2.5 font-medium whitespace-nowrap text-fg-3',
     'hover:text-fg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus',
-    'aria-selected:border-accent aria-selected:text-fg data-[state=active]:border-accent data-[state=active]:text-fg',
-    'aria-[current=page]:border-accent aria-[current=page]:text-fg',
+    'aria-selected:border-accent-line aria-selected:text-fg data-[state=active]:border-accent-line data-[state=active]:text-fg',
+    'aria-[current=page]:border-accent-line aria-[current=page]:text-fg',
     className,
   )
 }

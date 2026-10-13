@@ -13,12 +13,16 @@ import { toast as sonner, Toaster as SonnerToaster } from 'sonner'
 import type { Tone } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
 import { Icon } from './icon'
-import { Kbd } from './kbd'
+import { ariaKeyshortcuts, Kbd } from './kbd'
 
 /**
  * Toasts (DESIGN.md §10): bottom-right, 420 px, overlay surface + dialog shadow. Tone icon ·
  * title (what happened, IDs in mono) · body · action (amber text, e.g. "Undo ⌘Z") · dismiss.
  * 6 s auto-dismiss (errors stay), pauses on hover/focus, max 3 stacked.
+ *
+ * Announcements: Sonner's container is already a polite live region, so cards carry no live
+ * role of their own (nested regions double-announce). Errors are the one exception: a single
+ * `role="alert"` so they are announced assertively, once. Alt+T focuses the toasts (Sonner).
  *
  *   notify.success('SR0012377 moved to Ready for picking', { description: '…', action: { label: 'Undo', shortcut: 'mod+z', onClick } })
  *   notify.error('Appointment sync failed', { description: 'The booking provider did not answer.' })
@@ -75,8 +79,7 @@ function ToastCard({
   const { icon: defaultIcon, tone } = TONE_ICONS[kind]
   return (
     <div
-      role={kind === 'error' ? 'alert' : 'status'}
-      aria-live={kind === 'error' ? 'assertive' : 'polite'}
+      role={kind === 'error' ? 'alert' : undefined}
       className={cn(
         'grid w-[420px] max-w-[calc(100vw-24px)] grid-cols-[auto_1fr_auto] items-start gap-2.5 rounded-md border border-line bg-overlay py-2.5 pr-2.5 pl-3 text-sm text-fg shadow-dialog',
         tone && `hg-tone-${tone}`,
@@ -87,7 +90,7 @@ function ToastCard({
         className={cn(
           'mt-0.5',
           tone ? 'text-(--t)' : 'text-fg-2',
-          kind === 'loading' && 'animate-spin',
+          kind === 'loading' && 'animate-spin motion-reduce:animate-none',
         )}
       />
       <div className="min-w-0">
@@ -104,10 +107,11 @@ function ToastCard({
               options.action?.onClick()
               sonner.dismiss(id)
             }}
+            aria-keyshortcuts={ariaKeyshortcuts(options.action.shortcut)}
             className="inline-flex h-6 items-center gap-1.5 rounded-xs px-1.5 font-semibold text-accent-text hover:bg-hover"
           >
             {options.action.label}
-            {options.action.shortcut && <Kbd keys={options.action.shortcut} />}
+            {options.action.shortcut && <Kbd keys={options.action.shortcut} hint />}
           </button>
         )}
         <button

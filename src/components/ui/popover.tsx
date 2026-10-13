@@ -13,6 +13,17 @@ export const PopoverTrigger = RadixPopover.Trigger
 export const PopoverAnchor = RadixPopover.Anchor
 export const PopoverClose = RadixPopover.Close
 
+/**
+ * Accessible name of a picker trigger (Combobox, DatePicker): the label plus what the trigger
+ * shows, so the value is announced ("Region: Riverton, Hillford", "Created: Any date"). When
+ * the shown text already starts with the label (a placeholder such as "Add article…"), the
+ * shown text alone is the name.
+ */
+export function pickerName(label: string, shown: string): string {
+  const plain = shown.replace(/…$/, '').trim()
+  return plain.toLowerCase().startsWith(label.toLowerCase()) ? plain : `${label}: ${shown}`
+}
+
 /** Shared floating-surface classes (menus, selects, comboboxes). */
 export const floatingSurface =
   'z-[70] rounded-md border border-line bg-overlay p-1 text-sm text-fg shadow-popover outline-none animate-pop-in'

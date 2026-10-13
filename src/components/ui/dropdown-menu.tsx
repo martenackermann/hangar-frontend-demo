@@ -3,7 +3,7 @@ import { DropdownMenu as Menu } from 'radix-ui'
 import { forwardRef, type ComponentPropsWithoutRef, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { Icon } from './icon'
-import { Kbd } from './kbd'
+import { ariaKeyshortcuts, Kbd } from './kbd'
 import { floatingSurface } from './popover'
 
 /**
@@ -55,6 +55,7 @@ export const DropdownMenuItem = forwardRef<HTMLDivElement, DropdownMenuItemProps
     return (
       <Menu.Item
         ref={ref}
+        aria-keyshortcuts={ariaKeyshortcuts(shortcut)}
         className={cn(itemClass, destructive && 'text-tone-critical-fg', className)}
         {...props}
       >
@@ -63,7 +64,7 @@ export const DropdownMenuItem = forwardRef<HTMLDivElement, DropdownMenuItemProps
         )}
         <span className="min-w-0 flex-1 truncate">{children}</span>
         {hint && <span className="text-xs text-fg-3">{hint}</span>}
-        {shortcut && <Kbd keys={shortcut} />}
+        {shortcut && <Kbd keys={shortcut} hint />}
       </Menu.Item>
     )
   },

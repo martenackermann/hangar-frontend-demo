@@ -93,7 +93,10 @@ export interface ConfirmDialogProps {
   onOpenChange: (open: boolean) => void
   /** "Send call-off order to Initech Logistics?" */
   title: ReactNode
-  /** Consequences, with numbers. */
+  /**
+   * Consequences, with numbers ("12 open requests return to Imported."). Without one, a
+   * destructive confirm says "This can't be undone." and other confirms show no body copy.
+   */
   description?: ReactNode
   children?: ReactNode
   /** Names the action: "Send order", "Close inventory". */
@@ -125,6 +128,7 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const [text, setText] = useState('')
   const commentMissing = Boolean(comment?.required) && text.trim() === ''
+  const body = description ?? (destructive ? "This can't be undone." : null)
   const confirm = () => {
     if (commentMissing || pending) return
     void onConfirm(comment ? text.trim() || undefined : undefined)
@@ -141,12 +145,18 @@ export function ConfirmDialog({
     >
       <AlertDialog.Portal>
         <AlertDialog.Overlay className={overlayClass} />
-        <AlertDialog.Content className={cn(contentClass, 'w-[min(480px,calc(100vw-24px))]')}>
+        <AlertDialog.Content
+          className={cn(contentClass, 'w-[min(480px,calc(100vw-24px))]')}
+          // No body copy → nothing to describe (and no Radix "missing Description" warning).
+          {...(body === null ? { 'aria-describedby': undefined } : {})}
+        >
           <div className="grid gap-1 px-4 pt-4 pb-3">
             <AlertDialog.Title className="text-lg font-semibold">{title}</AlertDialog.Title>
-            <AlertDialog.Description className="text-sm text-fg-2">
-              {description ?? 'Please confirm.'}
-            </AlertDialog.Description>
+            {body !== null && (
+              <AlertDialog.Description className="text-sm text-fg-2">
+                {body}
+              </AlertDialog.Description>
+            )}
           </div>
           <div className="grid gap-3 overflow-y-auto px-4 pb-3">
             {children}

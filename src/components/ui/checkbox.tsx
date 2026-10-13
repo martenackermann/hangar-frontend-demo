@@ -14,7 +14,10 @@ export interface CheckboxProps extends Omit<
   large?: boolean
 }
 
-/** 14 px (18 touch), radius 3, amber when checked, dash for "some rows" (DESIGN.md §10). */
+/**
+ * 14 px (18 touch), radius 3, amber when checked, dash for "some rows" (DESIGN.md §10). The
+ * checked box keeps a ≥3:1 boundary in light mode (`accent-line` border around the amber).
+ */
 export const Checkbox = forwardRef<HTMLButtonElement, CheckboxProps>(function Checkbox(
   { checked, onCheckedChange, large, className, ...props },
   ref,
@@ -25,9 +28,8 @@ export const Checkbox = forwardRef<HTMLButtonElement, CheckboxProps>(function Ch
       checked={checked}
       onCheckedChange={(value) => onCheckedChange(value === true)}
       className={cn(
-        'inline-grid shrink-0 place-items-center rounded-xs border border-line-strong bg-sunken transition-colors duration-[var(--hg-dur-instant)]',
-        'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus',
-        'data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=indeterminate]:border-accent data-[state=indeterminate]:bg-accent',
+        'hg-focus-on-accent inline-grid shrink-0 place-items-center rounded-xs border border-line-strong bg-sunken transition-colors duration-[var(--hg-dur-instant)]',
+        'data-[state=checked]:border-accent-line data-[state=checked]:bg-accent data-[state=indeterminate]:border-accent-line data-[state=indeterminate]:bg-accent',
         'disabled:border-line disabled:bg-transparent',
         large ? 'size-[18px]' : 'size-3.5 pointer-coarse:size-[18px]',
         className,
@@ -50,11 +52,17 @@ export interface SwitchProps extends Omit<
   label?: ReactNode
   /** Count after the label ("Hide VIP 14"). */
   count?: ReactNode
+  /**
+   * `accent` (default): amber when on, for switches that change what the view shows ("Needs
+   * attention only"). `neutral`: graphite (`--hg-fg-2`) when on, for configuration switches
+   * (calendars, dispatch settings) so they don't compete with the view's one amber primary.
+   */
+  variant?: 'accent' | 'neutral'
 }
 
-/** 28 × 16, amber when on, label right (applies immediately). */
+/** 28 × 16, amber (or graphite, `variant="neutral"`) when on, label right (applies immediately). */
 export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch(
-  { checked, onCheckedChange, label, count, className, id, ...props },
+  { checked, onCheckedChange, label, count, variant = 'accent', className, id, ...props },
   ref,
 ) {
   const control = (
@@ -64,14 +72,22 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
       checked={checked}
       onCheckedChange={onCheckedChange}
       className={cn(
-        'relative inline-flex h-4 w-7 shrink-0 items-center rounded-full border border-line-strong bg-pressed transition-colors',
-        'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus',
-        'data-[state=checked]:border-accent data-[state=checked]:bg-accent',
+        'hg-focus-on-accent relative inline-flex h-4 w-7 shrink-0 items-center rounded-full border border-line-strong bg-pressed transition-colors',
+        variant === 'accent'
+          ? 'data-[state=checked]:border-accent-line data-[state=checked]:bg-accent'
+          : 'data-[state=checked]:border-fg-2 data-[state=checked]:bg-fg-2',
         className,
       )}
       {...props}
     >
-      <RadixSwitch.Thumb className="block size-2.5 translate-x-[2px] rounded-full bg-fg-2 transition-transform duration-[var(--hg-dur-fast)] ease-out data-[state=checked]:translate-x-[14px] data-[state=checked]:bg-fg-on-accent" />
+      <RadixSwitch.Thumb
+        className={cn(
+          'block size-2.5 translate-x-[2px] rounded-full bg-fg-2 transition-transform duration-[var(--hg-dur-fast)] ease-out data-[state=checked]:translate-x-[14px]',
+          variant === 'accent'
+            ? 'data-[state=checked]:bg-fg-on-accent'
+            : 'data-[state=checked]:bg-surface',
+        )}
+      />
     </RadixSwitch.Root>
   )
   if (!label) return control

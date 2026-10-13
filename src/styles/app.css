@@ -59,6 +59,27 @@
     opacity: 0;
   }
 }
+@keyframes hg-progress-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+/* Reduced-motion stand-ins for the arrival washes: hold the wash, then drop it (no fade). */
+@keyframes hg-hold-wash-strong {
+  from,
+  to {
+    background-color: var(--hg-accent-wash-strong);
+  }
+}
+@keyframes hg-hold-wash {
+  from,
+  to {
+    background-color: var(--hg-accent-wash);
+  }
+}
 
 /* Touch devices: comfortable density and 44 px targets regardless of the toggle (DESIGN.md §5). */
 @media (pointer: coarse) {
@@ -119,6 +140,23 @@
   textarea::placeholder {
     color: var(--hg-fg-3);
   }
+
+  /* Reduced motion (DESIGN.md §7): tokens.css collapses every animation to 1 ms. The "just
+     moved" washes (`animate-fresh`, `animate-row-in`) still carry meaning, so they become a
+     static wash for 1.6 s instead of vanishing. Must stay in the base layer to beat the reset. */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fresh,
+    .animate-row-in {
+      animation-name: hg-hold-wash-strong !important;
+      animation-duration: 1.6s !important;
+    }
+    .animate-row-in {
+      animation-name: hg-hold-wash !important;
+    }
+    .animate-spin {
+      animation-name: none !important;
+    }
+  }
 }
 
 @layer components {
@@ -140,6 +178,40 @@
     );
     background-size: 200% 100%;
     animation: hg-shimmer 1.4s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hg-skeleton {
+      animation-name: none;
+      background: var(--hg-pressed);
+    }
+  }
+
+  /* Indeterminate progress line (refetch, DESIGN.md §10 Skeleton): put it on the bar inside a
+     2 px `overflow-hidden` track — an amber third sweeps across. Reduced motion: a static,
+     full-width amber line at partial strength.
+       <div aria-hidden class="… h-0.5 overflow-hidden"><div class="hg-progress-indeterminate h-full" /></div> */
+  .hg-progress-indeterminate {
+    width: 33.333%;
+    background: var(--hg-accent);
+    animation: hg-progress-sweep 1.2s var(--hg-ease-in-out) infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hg-progress-indeterminate {
+      width: 100%;
+      animation-name: none;
+      opacity: 0.6;
+    }
+  }
+
+  /* Focus on amber fills (primary button, selected day, checked box, amber dock button): the
+     ring sits 2 px out with a surface-coloured gap, so it never touches the amber (DESIGN.md
+     §14: ring ≥3:1 against control and background). Don't combine with outline-offset-*
+     utilities (they win over this layer). Composes with Tailwind shadow utilities. */
+  .hg-focus-on-accent:focus-visible {
+    outline: 2px solid var(--hg-focus);
+    outline-offset: 2px;
+    --tw-ring-offset-shadow: 0 0 0 2px var(--hg-surface);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-shadow, 0 0 #0000);
   }
 
   /* Hide scrollbars on horizontally scrolling chip/tab strips. */

@@ -101,6 +101,7 @@ export function KeyValues({ children, columns = 2 }: { children: ReactNode; colu
   )
 }
 
+/** One key/value pair; an empty value renders a muted "—" (read as "Not set"). */
 export function KeyValue({
   label,
   children,
@@ -114,8 +115,15 @@ export function KeyValue({
   return (
     <div className={cn('grid min-w-0 content-start gap-0.5', full && 'col-span-full')}>
       <dt className="text-xs text-fg-3">{label}</dt>
-      <dd className={cn('min-w-0 break-words', empty ? 'text-fg-disabled' : 'text-fg')}>
-        {empty ? '—' : children}
+      <dd className={cn('min-w-0 break-words', empty ? 'text-fg-3' : 'text-fg')}>
+        {empty ? (
+          <>
+            <span aria-hidden>—</span>
+            <span className="sr-only">Not set</span>
+          </>
+        ) : (
+          children
+        )}
       </dd>
     </div>
   )

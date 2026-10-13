@@ -44,6 +44,27 @@ export function Skeleton({ className, style }: { className?: string; style?: CSS
   return <span aria-hidden className={cn('hg-skeleton block h-2', className)} style={style} />
 }
 
+/**
+ * Loading region around skeletons: a polite status that says "Loading…" to screen readers
+ * while the bars stay decorative. `<LoadingStatus className="grid gap-3 p-4"><Skeleton …/></LoadingStatus>`.
+ */
+export function LoadingStatus({
+  children,
+  label = 'Loading…',
+  className,
+}: {
+  children?: ReactNode
+  label?: string
+  className?: string
+}) {
+  return (
+    <div role="status" aria-busy="true" className={className}>
+      <span className="sr-only">{label}</span>
+      {children}
+    </div>
+  )
+}
+
 /** Skeleton rows at real column widths. */
 export function SkeletonRows({
   rows = 8,
@@ -53,7 +74,7 @@ export function SkeletonRows({
   widths?: number[]
 }) {
   return (
-    <div aria-busy="true" aria-label="Loading" className="grid">
+    <LoadingStatus className="grid">
       {Array.from({ length: rows }, (_, row) => (
         <div
           key={row}
@@ -64,7 +85,7 @@ export function SkeletonRows({
           ))}
         </div>
       ))}
-    </div>
+    </LoadingStatus>
   )
 }
 
@@ -167,7 +188,10 @@ export function Avatar({
   )
 }
 
-/** Small neutral outlined badge for flags (VIP crown, Campus, OS reinstall). */
+/**
+ * Small neutral outlined badge for flags (VIP crown, Campus, OS reinstall). Never wider than its
+ * container: long text truncates with an ellipsis.
+ */
 export function FlagBadge({
   icon,
   children,
@@ -180,17 +204,20 @@ export function FlagBadge({
   return (
     <span
       className={cn(
-        'hg-badge inline-flex h-badge items-center gap-1 rounded-xs px-1.5 text-xs font-medium whitespace-nowrap text-fg-2 shadow-[inset_0_0_0_1px_var(--hg-line)]',
+        'hg-badge inline-flex h-badge max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-xs px-1.5 text-xs font-medium whitespace-nowrap text-fg-2 shadow-[inset_0_0_0_1px_var(--hg-line)]',
         className,
       )}
     >
       {icon && <Icon icon={icon} size={12} className="text-fg-2" />}
-      {children}
+      <span className="min-w-0 truncate">{children}</span>
     </span>
   )
 }
 
-/** Tone-washed badge (for non-status tones such as warnings counts). */
+/**
+ * Tone-washed badge (for non-status tones such as warnings counts). Never wider than its
+ * container: long text truncates with an ellipsis (pipeline cards, narrow columns).
+ */
 export function ToneBadge({
   tone,
   icon,
@@ -205,12 +232,12 @@ export function ToneBadge({
   return (
     <span
       className={cn(
-        `hg-badge hg-tone-${tone} inline-flex h-badge items-center gap-1 rounded-xs bg-(--t-wash) pr-1.5 pl-[5px] text-xs font-medium whitespace-nowrap text-(--t-fg) shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--t)_28%,transparent)]`,
+        `hg-badge hg-tone-${tone} inline-flex h-badge max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-xs bg-(--t-wash) pr-1.5 pl-[5px] text-xs font-medium whitespace-nowrap text-(--t-fg) shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--t)_28%,transparent)]`,
         className,
       )}
     >
       {icon && <Icon icon={icon} size={12} className="text-(--t)" />}
-      {children}
+      <span className="min-w-0 truncate">{children}</span>
     </span>
   )
 }

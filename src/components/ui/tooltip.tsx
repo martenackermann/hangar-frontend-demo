@@ -50,7 +50,7 @@ export function Tooltip({
           )}
         >
           <span>{content}</span>
-          {shortcut && <Kbd keys={shortcut} tone="inverse" />}
+          {shortcut && <Kbd keys={shortcut} hint tone="inverse" />}
         </RadixTooltip.Content>
       </RadixTooltip.Portal>
     </RadixTooltip.Root>

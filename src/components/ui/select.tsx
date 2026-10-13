@@ -14,8 +14,9 @@ export interface SelectOption<T extends string> {
 }
 
 /**
- * Select (DESIGN.md §10): trigger "[prefix] value ⌄", 28 px; overlay menu with 30 px items,
- * check on the selected value, type-ahead. Radix handles Space/Enter/↓, arrows and Esc.
+ * Select (DESIGN.md §10): trigger "[prefix] value ⌄", 28 px, `line-strong` border (input
+ * boundary ≥3:1); overlay menu with 30 px items, check on the selected value, type-ahead.
+ * Radix handles Space/Enter/↓, arrows and Esc.
  */
 export function Select<T extends string>({
   value,
@@ -50,8 +51,8 @@ export function Select<T extends string>({
         id={id}
         aria-label={label}
         className={cn(
-          'inline-flex h-control min-w-0 items-center gap-1.5 rounded-sm border border-line bg-surface pr-1.5 pl-2 whitespace-nowrap text-fg',
-          'hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus',
+          'inline-flex h-control min-w-0 items-center gap-1.5 rounded-sm border border-line-strong bg-surface pr-1.5 pl-2 whitespace-nowrap text-fg',
+          'hover:border-fg-3 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus',
           'disabled:text-fg-disabled data-[placeholder]:text-fg-3',
           className,
         )}

@@ -3,7 +3,7 @@ import { Check, ChevronDown, X } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { Icon } from './icon'
-import { Popover, PopoverContent, PopoverTrigger } from './popover'
+import { pickerName, Popover, PopoverContent, PopoverTrigger } from './popover'
 import { Spinner } from './spinner'
 
 export interface ComboboxOption<T extends string | number> {
@@ -46,7 +46,9 @@ export interface ComboboxMultiProps<T extends string | number> extends CommonPro
 /**
  * Combobox (DESIGN.md §10): input-like trigger opening a filtered list (cmdk). Single or multi
  * (checkboxes); async results via `onSearch` + `loading`. `↑↓` move, `Enter` toggles/selects,
- * empty state names what was searched.
+ * empty state names what was searched. The trigger's accessible name carries the value
+ * ("Region: Riverton"); chosen options are `aria-checked` (cmdk's `aria-selected` only marks
+ * the highlighted option).
  */
 export function Combobox<T extends string | number>(
   props: ComboboxSingleProps<T> | ComboboxMultiProps<T>,
@@ -69,23 +71,22 @@ export function Combobox<T extends string | number>(
       : selectedLabels.length <= 2
         ? selectedLabels.join(', ')
         : `${selectedLabels.length} selected`
+  const shown = summary ?? props.placeholder ?? 'Any'
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         disabled={props.disabled}
-        aria-label={props.label}
+        aria-label={pickerName(props.label, shown)}
         className={cn(
-          'inline-flex h-control min-w-0 items-center gap-1.5 rounded-sm border border-line bg-surface pr-1.5 pl-2 text-left whitespace-nowrap',
-          'hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus',
+          'inline-flex h-control min-w-0 items-center gap-1.5 rounded-sm border border-line-strong bg-surface pr-1.5 pl-2 text-left whitespace-nowrap',
+          'hover:border-fg-3 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus',
           'disabled:text-fg-disabled',
           props.className,
         )}
       >
         {props.prefix && <span className="text-fg-3">{props.prefix}</span>}
-        <span className={cn('min-w-0 flex-1 truncate', !summary && 'text-fg-3')}>
-          {summary ?? props.placeholder ?? 'Any'}
-        </span>
+        <span className={cn('min-w-0 flex-1 truncate', !summary && 'text-fg-3')}>{shown}</span>
         <Icon icon={ChevronDown} size={14} className="text-fg-3" />
       </PopoverTrigger>
       <PopoverContent className="w-[max(var(--radix-popover-trigger-width),240px)] p-0">
@@ -143,7 +144,7 @@ function ComboboxList<T extends string | number>(
         {props.multiple && props.value.length > 0 && (
           <button
             type="button"
-            className="inline-flex items-center gap-1 rounded-xs px-1 text-xs text-fg-3 hover:bg-hover hover:text-fg"
+            className="inline-flex h-6 items-center gap-1 rounded-xs px-1.5 text-xs text-fg-3 hover:bg-hover hover:text-fg"
             onClick={() => props.onValueChange([])}
           >
             <Icon icon={X} size={12} /> Clear
@@ -161,6 +162,7 @@ function ComboboxList<T extends string | number>(
               key={String(option.value)}
               value={`${option.label} ${String(option.value)}`}
               keywords={option.keywords}
+              aria-checked={isSelected}
               onSelect={() => toggle(option.value)}
               className="flex h-[30px] cursor-default items-center gap-2 rounded-xs px-2 outline-none select-none data-[selected=true]:bg-hover"
             >
@@ -170,7 +172,7 @@ function ComboboxList<T extends string | number>(
                   className={cn(
                     'grid size-3.5 place-items-center rounded-xs border',
                     isSelected
-                      ? 'border-accent bg-accent text-fg-on-accent'
+                      ? 'border-accent-line bg-accent text-fg-on-accent'
                       : 'border-line-strong bg-sunken',
                   )}
                 >

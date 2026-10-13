@@ -40,7 +40,7 @@
   /* ---- Hairlines --------------------------------------------------------- */
   --hg-line-subtle:   light-dark(#E7EAED, #1F252B);   /* row dividers                  */
   --hg-line:          light-dark(#D6DBE0, #2A3138);   /* panel + component borders     */
-  --hg-line-strong:   light-dark(#858F9A, #5C6672);   /* input borders — ≥3:1 on surface */
+  --hg-line-strong:   light-dark(#7F8994, #66707B);   /* input borders — ≥3:1 on canvas, surface, raised, overlay, sunken */
 
   /* ---- Ink --------------------------------------------------------------- */
   --hg-fg:            light-dark(#0F1215, #E6E9ED);   /* 18.8 / 14.7 : 1 on surface    */
@@ -56,8 +56,8 @@
   --hg-accent-press:  light-dark(#E39200, #F0A010);
   --hg-accent-text:   light-dark(#8A5300, #FFB224);             /* amber as text/icon: 6.3 / 9.9 : 1 */
   --hg-accent-wash:   light-dark(#FFF4E0, #2C271D);             /* selected rows, active chips        */
-  --hg-accent-wash-strong: light-dark(#FFE7B8, #3A311D);        /* cursor row, drag target            */
-  --hg-accent-line:   light-dark(#D18A00, #FFB224);             /* selection outline                  */
+  --hg-accent-wash-strong: light-dark(#FFE7B8, #352A12);        /* cursor row, drag target (fg-3 ≥4.5) */
+  --hg-accent-line:   light-dark(#B47600, #FFB224);             /* selection outline: ≥3:1 on every ground, washes included */
   --hg-focus:         light-dark(#B06F00, #FFB224);             /* focus ring: 4.1 / 9.9 : 1          */
 
   /* ---- Status tones ------------------------------------------------------
@@ -68,7 +68,7 @@
      worst adjacent ΔE ≥ 9.9 CVD / ≥ 15.9 normal, both themes).
      Colour is never the only carrier: every status ships icon + label,
      SR statuses also carry their position on the StageTrack.            */
-  --hg-tone-intake:          light-dark(#8A939E, #7A8591);
+  --hg-tone-intake:          light-dark(#7E8792, #7A8591);
   --hg-tone-intake-fg:       light-dark(#47505B, #AEB6C0);
   --hg-tone-intake-wash:     light-dark(#F3F4F5, #24292F);
 
@@ -103,7 +103,7 @@
   /* ---- Data viz ---------------------------------------------------------- */
   --hg-viz-grid:      light-dark(#E7EAED, #22282F);   /* hairline gridlines            */
   --hg-viz-axis:      light-dark(#C3C9D0, #39414A);
-  --hg-viz-muted:     light-dark(#9AA3AD, #5E6874);   /* sparkline de-emphasis line    */
+  --hg-viz-muted:     light-dark(#8D959E, #606A75);   /* de-emphasised marks — ≥3:1 on surface/raised */
   --hg-viz-now:       var(--hg-accent);               /* current period / last point   */
   /* Shortage heat (stock matrix): 0 = covered … 4 = critical shortage.
      Semantic heat ramp, always shipped with the number in the cell + legend. */
@@ -111,7 +111,7 @@
   --hg-heat-1:        light-dark(#FCEFEA, #33241F);
   --hg-heat-2:        light-dark(#F9DCD0, #522F21);
   --hg-heat-3:        light-dark(#F5C4C6, #5F292E);
-  --hg-heat-4:        light-dark(#EFA7AA, #813135);
+  --hg-heat-4:        light-dark(#EFA7AA, #7A2E32);   /* fg-2 ≥4.5:1, fg ≥7:1 on every step */
   --hg-heat-surplus:  light-dark(#EAF1FC, #1B2A40);   /* stock > 2× demand + buffer    */
   /* Categorical series (hub comparisons). Fixed order, never cycled:
      Riverton, Hillford, Eastgate, Campus. */
@@ -127,7 +127,7 @@
   --hg-rail-line:     light-dark(#262C33, #181D22);
   --hg-rail-fg:       #E6E9ED;
   --hg-rail-fg-2:     #A3ACB6;
-  --hg-rail-fg-3:     #7A838E;                         /* 4.5:1 on both rail grounds    */
+  --hg-rail-fg-3:     #9198A1;                         /* ≥4.5:1 on rail bg, hover, active (both themes) */
 
   /* ---- Typography -------------------------------------------------------- */
   --hg-font-sans: "Archivo Variable", "Archivo", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
@@ -217,6 +217,15 @@
   --hg-table-leading: var(--hg-leading-md);
 }
 
+/* "Increase contrast" (OS setting): every hairline one step stronger, muted ink → secondary. */
+@media (prefers-contrast: more) {
+  :root {
+    --hg-line-subtle:   light-dark(#D6DBE0, #2A3138);   /* = the normal --hg-line */
+    --hg-line:          var(--hg-line-strong);
+    --hg-fg-3:          var(--hg-fg-2);
+  }
+}
+
 /* ---- Browser surfaces: the parts nobody draws ---------------------------- */
 @layer base {
   html {
@@ -239,7 +248,12 @@
   }
   .hg-num { font-variant-numeric: tabular-nums; }
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+    *, *::before, *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;   /* infinite loops (spinners, shimmer) stop at once */
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 

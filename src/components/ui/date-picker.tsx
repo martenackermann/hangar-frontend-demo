@@ -1,5 +1,5 @@
-import { Calendar, Check, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { Calendar, Check, ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react'
+import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import {
   addDays,
   addWorkingDays,
@@ -10,14 +10,16 @@ import {
 } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Icon } from './icon'
-import { Popover, PopoverContent, PopoverTrigger } from './popover'
+import { pickerName, Popover, PopoverContent, PopoverTrigger } from './popover'
 
 /**
  * DatePicker (DESIGN.md §10): popover with presets first (Today, Tomorrow, Next working day,
  * This week, Next week), then a Mon-first calendar grid with ISO weeks, today outlined,
  * weekends muted. Typed input accepts `16.10`, `16 Oct`, `2026-10-16`, `+3d`, `today`.
  * Keyboard: arrows move days, PgUp/PgDn months, Home/End week, Enter selects, `T` today.
- * Values are business dates `YYYY-MM-DD`. `range` mode for filters.
+ * Values are business dates `YYYY-MM-DD`. `range` mode for filters. Triggers keep the value in
+ * their accessible name ("Resume on: Wed 14 Oct"); a typed date that can't be read shows an
+ * inline error instead of being ignored.
  */
 
 export interface DateRange {
@@ -238,8 +240,9 @@ function CalendarGrid({ value, onSelect, today }: CalendarProps) {
                         outside && 'text-fg-disabled',
                         inRange(date) && 'bg-accent-wash',
                         date === today && 'shadow-[inset_0_0_0_1px_var(--hg-line-strong)]',
+                        // Amber fill: the focus ring moves 2 px out with a surface gap.
                         selected &&
-                          'bg-accent font-semibold text-fg-on-accent hover:bg-accent-hover',
+                          'hg-focus-on-accent bg-accent font-semibold text-fg-on-accent hover:bg-accent-hover',
                       )}
                     >
                       {Number(date.slice(8))}
@@ -268,7 +271,9 @@ interface PickerPanelProps {
 
 function PickerPanel({ value, range, onChange, onDone }: PickerPanelProps) {
   const today = useToday()
+  const errorId = useId()
   const [typed, setTyped] = useState('')
+  const [typedError, setTypedError] = useState<string | null>(null)
   const [pendingFrom, setPendingFrom] = useState<string | undefined>(undefined)
   const presetList = presets(today, range)
 
@@ -295,15 +300,36 @@ function PickerPanel({ value, range, onChange, onDone }: PickerPanelProps) {
         aria-label="Type a date"
         placeholder="Type a date: 16.10, 16 Oct, +3d"
         value={typed}
-        onChange={(event) => setTyped(event.target.value)}
+        aria-invalid={typedError ? true : undefined}
+        aria-describedby={typedError ? errorId : undefined}
+        onChange={(event) => {
+          setTyped(event.target.value)
+          setTypedError(null)
+        }}
         onKeyDown={(event) => {
           if (event.key !== 'Enter') return
           event.preventDefault()
+          if (!typed.trim()) return
           const parsed = parseTypedDate(typed, today)
           if (parsed) selectDay(parsed)
+          else setTypedError(`Can't read “${typed.trim()}”. Try 16.10, 16 Oct or +3d.`)
         }}
-        className="h-8 rounded-sm border border-line-strong bg-sunken px-2 text-sm outline-none focus:border-focus"
+        className={cn(
+          'h-8 rounded-sm border border-line-strong bg-sunken px-2 text-sm outline-none',
+          'focus:border-focus focus:shadow-[0_0_0_1px_var(--hg-focus)]',
+          'aria-invalid:border-tone-critical aria-invalid:focus:shadow-[0_0_0_1px_var(--hg-tone-critical)]',
+        )}
       />
+      {typedError && (
+        <p
+          id={errorId}
+          role="alert"
+          className="flex items-center gap-1 px-0.5 text-xs text-tone-critical-fg"
+        >
+          <Icon icon={CircleAlert} size={12} />
+          {typedError}
+        </p>
+      )}
       <ul className="grid">
         {presetList.map((preset) => {
           const active = preset.range.from === value.from && preset.range.to === value.to
@@ -340,8 +366,8 @@ function PickerPanel({ value, range, onChange, onDone }: PickerPanelProps) {
 
 function triggerClass(className?: string) {
   return cn(
-    'inline-flex h-control items-center gap-1.5 rounded-sm border border-line bg-surface pr-2 pl-2 whitespace-nowrap',
-    'hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus',
+    'inline-flex h-control items-center gap-1.5 rounded-sm border border-line-strong bg-surface pr-2 pl-2 whitespace-nowrap',
+    'hover:border-fg-3 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus',
     className,
   )
 }
@@ -360,13 +386,12 @@ export function DatePicker({
   className?: string
 }) {
   const [open, setOpen] = useState(false)
+  const text = value ? formatDate(value) : placeholder
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger aria-label={label} className={triggerClass(className)}>
+      <PopoverTrigger aria-label={pickerName(label, text)} className={triggerClass(className)}>
         <Icon icon={Calendar} size={14} className="text-fg-3" />
-        <span className={value ? 'text-fg' : 'text-fg-3'}>
-          {value ? formatDate(value) : placeholder}
-        </span>
+        <span className={value ? 'text-fg' : 'text-fg-3'}>{text}</span>
       </PopoverTrigger>
       <PopoverContent>
         <PickerPanel
@@ -413,7 +438,7 @@ export function DateRangePicker({
           : placeholder
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger aria-label={label} className={triggerClass(className)}>
+      <PopoverTrigger aria-label={pickerName(label, text)} className={triggerClass(className)}>
         <Icon icon={Calendar} size={14} className="text-fg-3" />
         <span className={value.from || value.to ? 'text-fg' : 'text-fg-3'}>{text}</span>
       </PopoverTrigger>
