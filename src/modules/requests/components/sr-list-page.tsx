@@ -104,7 +104,7 @@ export function SrListPage({
   const rows = query.data?.data ?? []
   const columns = useMemo(() => srColumns(enums), [enums])
   const cols = useTableColumns('service-requests', columns)
-  const builtIns = useMemo(builtInViews, [])
+  const builtIns = useMemo(() => builtInViews(), [])
   const views = useSavedViews({
     route: '/service-requests',
     builtIns,
@@ -254,7 +254,7 @@ export function SrListPage({
           )
         }
       />
-      <SavedViewTabs views={views} onApply={(next) => onSearch(next as SearchPatch)} />
+      <SavedViewTabs views={views} onApply={(next) => onSearch(next)} />
       <FilterBar
         search={search}
         onSearchChange={(patch) => onSearch(patch, true)}

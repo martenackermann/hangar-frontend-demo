@@ -130,6 +130,20 @@ export function leaseHistoryQuery(id: number) {
   })
 }
 
+/** History of either workflow resource (one query shape for the shared timeline). */
+export function historyQuery(kind: 'sr' | 'lr', id: number) {
+  const queryKey: readonly unknown[] =
+    kind === 'sr' ? srKeys.scope('history', id) : leaseKeys.scope('history', id)
+  return queryOptions({
+    queryKey,
+    queryFn: ({ signal }) =>
+      api.get<List<HistoryEntry>>(
+        kind === 'sr' ? `/service-requests/${id}/history` : `/lease-returns/${id}/history`,
+        { signal },
+      ),
+  })
+}
+
 export function usePatchLeaseReturn(id: number) {
   const queryClient = useQueryClient()
   return useMutation({
@@ -225,12 +239,17 @@ export function templatePreviewQuery(
   templateId: string,
   entity?: { type: 'service_request' | 'lease_return'; id: number } | null,
 ) {
+  const entityType = entity?.type ?? null
+  const entityId = entity?.id ?? null
   return queryOptions({
-    queryKey: commsKeys.scope('preview', templateId, entity?.type ?? null, entity?.id ?? null),
+    queryKey: commsKeys.scope('preview', templateId, entityType, entityId),
     queryFn: ({ signal }) =>
       api.get<NotificationTemplatePreview>(
         `/notification-templates/${encodeURIComponent(templateId)}/preview`,
-        { query: entity ? { entityType: entity.type, entityId: entity.id } : undefined, signal },
+        {
+          query: entityType && entityId ? { entityType, entityId } : undefined,
+          signal,
+        },
       ),
   })
 }

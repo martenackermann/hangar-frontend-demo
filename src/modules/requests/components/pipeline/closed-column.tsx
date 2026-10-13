@@ -1,7 +1,7 @@
 import { ChevronsLeftRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatNumber } from '@/lib/format'
-import type { PipelineSummaryExt } from '../../api'
+import type { PipelineSummaryExt } from '@/modules/requests/api'
 import type { StageSummary } from './stage-column'
 
 /**

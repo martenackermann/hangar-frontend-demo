@@ -33,12 +33,8 @@ export function srColumns(enums: EnumsResponse): DataColumn<ServiceRequestListIt
       width: 132,
       locked: true,
       pinned: true,
-      cell: (sr) => (
-        <span className="grid leading-tight">
-          <IdInk value={sr.number} />
-          {sr.taskNumber && <span className="font-mono text-[11px] text-fg-3">{sr.taskNumber}</span>}
-        </span>
-      ),
+      title: (sr) => sr.taskNumber,
+      cell: (sr) => <IdInk value={sr.number} />,
     },
     {
       id: 'status',
@@ -68,12 +64,7 @@ export function srColumns(enums: EnumsResponse): DataColumn<ServiceRequestListIt
       header: 'Employee',
       width: 190,
       title: (sr) => `${sr.contact.displayName} · ${sr.contact.userId}`,
-      cell: (sr) => (
-        <span className="grid min-w-0 leading-tight">
-          <span className="truncate font-medium">{sr.contact.displayName}</span>
-          <span className="truncate font-mono text-[11px] text-fg-3">{sr.contact.userId}</span>
-        </span>
-      ),
+      cell: (sr) => <span className="truncate font-medium">{sr.contact.displayName}</span>,
     },
     {
       id: 'region',

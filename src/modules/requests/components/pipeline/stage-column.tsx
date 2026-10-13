@@ -13,8 +13,9 @@ import { Skeleton } from '@/components/ui/feedback'
 import type { PipelineStage, ServiceRequestStatus, Tone } from '@/lib/api/types'
 import { addDays, businessToday, formatNumber, plural } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { apiQuery, srListQuery, type PipelineSummaryExt } from '../../api'
-import type { PipelineSearch } from '../../search'
+import { apiQuery, srListQuery, type PipelineSummaryExt } from '@/modules/requests/api'
+import type { PipelineSearch } from '@/modules/requests/search'
+import { useNow } from '@/lib/use-now'
 import { SrCard } from './sr-card'
 
 /** Station tone per stage (the Line, DESIGN.md §1/§3.1). */
@@ -83,6 +84,7 @@ export function StageColumn({
   onToggleStatus: (status: ServiceRequestStatus) => void
 }) {
   const navigate = useNavigate()
+  const now = useNow()
   const stageStatuses = summary.statuses.map((s) => s.status)
   const active = (search.status ?? []).filter((s) => stageStatuses.includes(s))
   const query = useQuery(srListQuery(columnQuery(search, summary.stage, active, limit)))
@@ -102,7 +104,7 @@ export function StageColumn({
             tone={STAGE_TONES[summary.stage]}
             count={summary.count}
             first={first}
-            flow={next?.enteredLast24h}
+            flow={next && next.enteredLast24h > 0 ? next.enteredLast24h : undefined}
             aging={summary.aging}
             menu={
               <DropdownMenu>
@@ -177,6 +179,7 @@ export function StageColumn({
             <SrCard
               key={sr.id}
               sr={sr}
+              now={now}
               selected={selectedId === sr.id}
               initialFocus={focusFirst && index === 0}
               onOpen={() => onOpen(sr.id)}

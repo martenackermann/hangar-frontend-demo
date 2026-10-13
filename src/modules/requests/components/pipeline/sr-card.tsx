@@ -112,11 +112,13 @@ export const SrCard = forwardRef<
   HTMLDivElement,
   {
     sr: ServiceRequestListItem
+    /** Board clock (useNow) for the "fresh" marker — no Date.now() during render. */
+    now: number
     selected: boolean
     initialFocus?: boolean
     onOpen: () => void
   }
->(function SrCard({ sr, selected, initialFocus, onOpen }, ref) {
+>(function SrCard({ sr, now, selected, initialFocus, onOpen }, ref) {
   const enums = useEnums()
   const status = findEnumValue(enums, 'serviceRequestStatus', sr.status)
   const tone = status?.tone ?? 'intake'
@@ -124,7 +126,7 @@ export const SrCard = forwardRef<
     EXCEPTION.has(sr.status) || tone === 'caution' || tone === 'critical'
   const firstFlag = sr.attention[0]
   const moment = when(sr)
-  const fresh = Date.now() - Date.parse(sr.statusChangedAt) < FRESH_MS
+  const fresh = now - Date.parse(sr.statusChangedAt) < FRESH_MS
   const DeliveryIcon = sr.deliveryType ? DELIVERY_ICONS[sr.deliveryType] : null
   const paused =
     sr.communicationPaused ||
@@ -177,9 +179,14 @@ export const SrCard = forwardRef<
           {exception ? (
             <StatusBadge entity="serviceRequestStatus" state={sr.status} variant="wash" size="sm" />
           ) : firstFlag ? (
-            <ToneBadge tone={findEnumValue(enums, 'attentionFlag', firstFlag)?.tone ?? 'caution'}>
-              {enumLabel(enums, 'attentionFlag', firstFlag)}
-              {sr.attention.length > 1 ? ` +${sr.attention.length - 1}` : ''}
+            <ToneBadge
+              tone={findEnumValue(enums, 'attentionFlag', firstFlag)?.tone ?? 'caution'}
+              className="max-w-full min-w-0"
+            >
+              <span className="truncate">{enumLabel(enums, 'attentionFlag', firstFlag)}</span>
+              {sr.attention.length > 1 && (
+                <span className="shrink-0">+{sr.attention.length - 1}</span>
+              )}
             </ToneBadge>
           ) : (
             <StatusBadge entity="serviceRequestStatus" state={sr.status} size="sm" />
