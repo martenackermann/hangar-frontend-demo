@@ -229,7 +229,7 @@ export function LeaseListPage({
         search={search}
         onSearchChange={(patch) => onSearch(patch, true)}
         filters={filters}
-        searchPlaceholder="Filter by asset tag, serial, name or user id…"
+        searchPlaceholder="Filter by asset tag, serial or employee…"
         resultCount={query.data?.meta.total}
         end={
           <>

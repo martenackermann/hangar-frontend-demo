@@ -12,7 +12,7 @@ import { Field, Input } from '@/components/ui/input'
 import { KeyValue, KeyValues, SectionHeading } from '@/components/ui/page'
 import type { LeaseReturnDetail } from '@/lib/api/types'
 import { useCan } from '@/lib/auth/store'
-import { businessToday, formatDate, formatFullDateTime } from '@/lib/format'
+import { businessToday, formatDate, formatFullDateTime, plural } from '@/lib/format'
 import { applyServerErrors } from '@/lib/forms/server-errors'
 import { dispatchSettingsQuery, usePatchLeaseReturn } from '../api'
 import { dueText, leaseChainHint } from './chain'
@@ -100,7 +100,11 @@ function Countdown({ lease }: { lease: LeaseReturnDetail }) {
     <ProgressMeter
       label="Lease end"
       valueText={
-        days < 0 ? `${-days} days overdue` : days === 0 ? 'ends today' : `${days} days left`
+        days < 0
+          ? `${plural(-days, 'day')} overdue`
+          : days === 0
+            ? 'ends today'
+            : `${plural(days, 'day')} left`
       }
       max={window}
       segments={[{ value: passed, tone }]}

@@ -10,7 +10,7 @@ import type { LeaseReturnDetail } from '@/lib/api/types'
 import { hasPermission } from '@/lib/auth/permissions'
 import { useMe, usePermissions } from '@/lib/auth/store'
 import { enumLabel, findEnumValue, useEnums } from '@/lib/enums'
-import { formatDate, formatFullDateTime } from '@/lib/format'
+import { formatDate, formatFullDateTime, plural } from '@/lib/format'
 import { LEASE_DRAWER_TABS } from '@/lib/registry'
 import { preloadComponents } from '@/lib/registry/lazy'
 import { DrawerFrame, DrawerTabs, type DrawerNav, type DrawerTab } from './drawer-frame'
@@ -25,7 +25,8 @@ import { WorkflowActionBar } from './workflow-actions'
 
 function retirementText(days: number): string {
   if (days === 0) return 'retires today'
-  return days > 0 ? `in ${days} days` : `${-days} days overdue`
+  if (days === 1) return 'retires tomorrow'
+  return days > 0 ? `in ${days} days` : `${plural(-days, 'day')} overdue`
 }
 
 function LeaseHead({ lr }: { lr: LeaseReturnDetail }) {

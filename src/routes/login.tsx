@@ -263,7 +263,7 @@ function LoginPage() {
         </section>
         {demo && (
           <p className="text-center text-xs text-fg-3">
-            Demo data, fake integrations. Personas and data reset with “Reset demo data”.
+            Demo data, fake integrations. Reset personas and data from ⌘K › Reset demo data.
           </p>
         )}
       </div>

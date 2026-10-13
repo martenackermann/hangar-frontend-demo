@@ -5,13 +5,14 @@ import { FlagBadge, ToneBadge } from '@/components/ui/feedback'
 import { Icon } from '@/components/ui/icon'
 import type { EnumsResponse, LeaseReturnListItem } from '@/lib/api/types'
 import { enumLabel, findEnumValue } from '@/lib/enums'
-import { formatDate } from '@/lib/format'
+import { formatDate, plural } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { isPaused } from './sr-columns'
 
 export function retirementText(days: number): string {
   if (days === 0) return 'today'
-  return days > 0 ? `in ${days} days` : `${-days} days overdue`
+  if (days === 1) return 'tomorrow'
+  return days > 0 ? `in ${days} days` : `${plural(-days, 'day')} overdue`
 }
 
 /** caution ≤ 14 days, critical once passed (SCREENS.md §4.2). */

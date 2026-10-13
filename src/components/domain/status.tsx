@@ -4,7 +4,7 @@ import { Icon } from '@/components/ui/icon'
 import { notify } from '@/components/ui/toast'
 import type { ImportJobSummary, PipelineStage, Tone } from '@/lib/api/types'
 import { findEnumValue, useEnums, type EnumKey } from '@/lib/enums'
-import { formatDate, toDate } from '@/lib/format'
+import { formatDate, toDate, plural } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { SPINNING, statusIcon } from './status-meta'
 
@@ -255,7 +255,7 @@ export function AgingIndicator({
 }) {
   const aging = computeAging(since, stage)
   const text = aging.days >= 1 ? `${aging.days}d` : `${aging.hours}h`
-  const tooltip = `${aging.days >= 1 ? `${aging.days} days` : `${aging.hours} hours`} in stage${
+  const tooltip = `${aging.days >= 1 ? plural(aging.days, 'day') : plural(aging.hours, 'hour')} in stage${
     aging.slaDays ? ` · SLA ${aging.slaDays} days` : ''
   }${aging.level === 'overdue' ? ' · overdue' : ''}`
   const overdue = aging.level === 'overdue'

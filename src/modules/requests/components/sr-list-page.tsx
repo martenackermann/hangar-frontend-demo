@@ -296,7 +296,7 @@ export function SrListPage({
         search={search}
         onSearchChange={(patch) => onSearch(patch, true)}
         filters={filters}
-        searchPlaceholder="Filter by SR, name, email or user id…"
+        searchPlaceholder="Filter by SR, name or email…"
         resultCount={query.data?.meta.total}
         end={
           <>

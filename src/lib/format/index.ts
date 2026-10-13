@@ -107,7 +107,9 @@ export function formatDate(
   const p = parts(value, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }, 'd')
   const showYear = options.year ?? p.year !== currentYear()
   const weekday = options.weekday ?? !showYear
-  return [weekday ? p.weekday : null, p.day, p.month, showYear ? p.year : null]
+  // en-GB writes "Sept"; DESIGN §4.2 uses three-letter months everywhere
+  const month = p.month?.slice(0, 3)
+  return [weekday ? p.weekday : null, p.day, month, showYear ? p.year : null]
     .filter(Boolean)
     .join(' ')
 }

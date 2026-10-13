@@ -63,7 +63,7 @@ export function CommentsTab({ entity: lease }: { entity: LeaseReturnDetail }) {
             value={body}
             aria-invalid={Boolean(error)}
             onChange={(event) => setBody(event.target.value)}
-            placeholder="Called the user, device is a spare…"
+            placeholder="Called the employee, device is a spare…"
           />
           {error && (
             <p role="alert" className="text-xs text-tone-critical-fg">

@@ -1,5 +1,5 @@
 import type { DispatchSettings, LeaseReturnDetail, ServiceRequestDetail } from '@/lib/api/types'
-import { addDays, businessToday, toBusinessDate } from '@/lib/format'
+import { addDays, businessToday, formatDate, toBusinessDate } from '@/lib/format'
 
 /**
  * Next step of the communication chain for the drawers' "Communication state" (SPEC §6.3):
@@ -88,5 +88,5 @@ export function leaseChainHint(
 export function dueText(due: string | null): string {
   if (!due) return '—'
   const today = businessToday()
-  return due <= today ? 'due now (next 07:00 run)' : due
+  return due <= today ? 'due now (next 07:00 run)' : formatDate(due, { year: false })
 }
