@@ -613,3 +613,6 @@ Taken while preparing the public demo, without a human in the loop.
 | Configuration switches (calendars, dispatch settings) use `Switch variant="neutral"`; amber stays for switches that scope the current view                                                                         | One amber element per view (DESIGN §1)                                                             |
 | Pipeline and dashboard share their KPI definitions: open = non-terminal requests (VIP excluded unless a tile says "incl. VIP"), deployed = last 7 days, lead time = median import → deployed over the last 30 days | The two screens showed different numbers for the same words                                        |
 | The README screenshots come from one opt-in Playwright script; no test writes into the repository                                                                                                                  | `pnpm test:e2e` leaves `git status` clean                                                          |
+
+> **CI Node version:** CI runs on Node 22 LTS (`.nvmrc`). Under Node 24, undici 7 rejects jsdom's `File` objects when MSW intercepts `fetch` in Vitest, which breaks the multipart mock tests (test-runtime only; browsers are unaffected). Vercel builds the demo on Node 24, which is fine because it doesn't run tests.
+
