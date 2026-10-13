@@ -425,10 +425,14 @@ export const handlers: RequestHandler[] = [
       const next = new Date()
       next.setUTCMinutes(5, 0, 0)
       if (next.getTime() <= Date.now()) next.setUTCHours(next.getUTCHours() + 1)
+      // The demo has no scheduler: report the hourly run (hh:05) that would have happened last,
+      // so the shell doesn't show "Sync overdue" just because nobody runs the job.
+      const lastScheduled = new Date(next.getTime() - 3_600_000).toISOString()
+      const stored = state?.lastIncrementalSyncAt ?? null
       const body: SyncState = {
         running: Boolean(running),
         lastJobId: running?.id ?? state?.lastJobId ?? null,
-        lastIncrementalSyncAt: state?.lastIncrementalSyncAt ?? null,
+        lastIncrementalSyncAt: stored && stored > lastScheduled ? stored : lastScheduled,
         lastFullSyncAt: state?.lastFullSyncAt ?? null,
         lastResult: state?.lastResult ?? null,
         nextScheduledAt: next.toISOString(),
