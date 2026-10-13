@@ -545,7 +545,7 @@ export function InventoryStationPage({
         }
         actions={
           <>
-            <Button asChild variant="ghost" icon={ArrowLeft}>
+            <Button asChild variant="ghost" icon={ArrowLeft} className="max-md:hidden">
               <Link to="/stock/inventory">All inventories</Link>
             </Button>
             {detail.availableActions.includes('cancel') && (
@@ -636,7 +636,9 @@ export function InventoryStationPage({
       )}
 
       {open && canScan ? (
-        <div className="h-[600px] min-h-0 shrink-0 border-b border-line max-xl:h-auto">
+        // the kit's ScanStation sizes its single-column grids to the focus-lock line (456 px on
+        // a phone); pin them to the available width until the kit does it itself
+        <div className="h-[600px] min-h-0 shrink-0 border-b border-line max-xl:h-auto [&_.grid:not([class*=grid-cols])]:grid-cols-[minmax(0,1fr)]">
           <StationScanner
             detail={detail}
             zoneId={search.zone}
@@ -658,7 +660,10 @@ export function InventoryStationPage({
         </div>
       ) : null}
 
-      <section className="grid shrink-0 gap-2 px-4 py-4" aria-label="Reconciliation">
+      <section
+        className="grid shrink-0 grid-cols-[minmax(0,1fr)] gap-2 px-4 py-4"
+        aria-label="Reconciliation"
+      >
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold">Reconciliation</h2>
           <span className="text-xs text-fg-3">

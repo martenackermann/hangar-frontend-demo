@@ -301,7 +301,7 @@ export function CallOffDetailPage({ orderId }: { orderId: number }) {
         }
         actions={
           <>
-            <Button asChild variant="ghost" icon={ArrowLeft}>
+            <Button asChild variant="ghost" icon={ArrowLeft} className="max-md:hidden">
               <Link to="/stock/call-off-orders">All orders</Link>
             </Button>
             <Button
@@ -339,7 +339,7 @@ export function CallOffDetailPage({ orderId }: { orderId: number }) {
           </>
         }
       />
-      <div className="grid gap-4 px-4 pb-6">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 px-4 pb-6">
         {order.warnings.length > 0 && order.status === 'draft' && (
           <Banner tone="caution" icon={TriangleAlert} title="Check before sending">
             {order.warnings.map((w) => WARNING_TEXT[w] ?? w).join(' ')}
