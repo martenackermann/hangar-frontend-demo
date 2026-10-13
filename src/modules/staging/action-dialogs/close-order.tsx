@@ -1,5 +1,10 @@
 import type { ActionDialogDescriptor } from '@/lib/registry'
-import { CloseOrderDialog } from '@/modules/staging/components/close-order-dialog'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const CloseOrderDialog = lazyNamed(
+  () => import('@/modules/staging/components/close-order-dialog'),
+  'CloseOrderDialog',
+)
 
 const dialog: ActionDialogDescriptor = {
   resource: 'serviceRequest',

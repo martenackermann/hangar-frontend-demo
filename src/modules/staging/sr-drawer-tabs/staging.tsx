@@ -1,7 +1,9 @@
 import type { ServiceRequestDetail } from '@/lib/api/types'
 import type { DrawerTabDescriptor } from '@/lib/registry'
-import { StagingTab } from '@/modules/staging/components/staging-tab'
 import { BEFORE_BOOKING } from '@/modules/staging/statuses'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const StagingTab = lazyNamed(() => import('@/modules/staging/components/staging-tab'), 'StagingTab')
 
 const tab: DrawerTabDescriptor<ServiceRequestDetail> = {
   id: 'staging',

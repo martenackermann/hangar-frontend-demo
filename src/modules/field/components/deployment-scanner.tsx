@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Camera, CircleCheck, Undo2 } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { useMediaQuery } from '@/components/data-table/data-table'
+import { useMediaQuery } from '@/lib/use-media-query'
 import { CameraScanner } from '@/components/scan/camera-scanner'
 import { ScanInput, type ScanInputHandle } from '@/components/scan/scan-input'
 import { useOnline } from '@/components/scan/scan-station'

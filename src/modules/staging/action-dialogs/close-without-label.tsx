@@ -1,5 +1,10 @@
 import type { ActionDialogDescriptor } from '@/lib/registry'
-import { CloseWithoutLabelDialog } from '@/modules/staging/components/close-without-label-dialog'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const CloseWithoutLabelDialog = lazyNamed(
+  () => import('@/modules/staging/components/close-without-label-dialog'),
+  'CloseWithoutLabelDialog',
+)
 
 const dialog: ActionDialogDescriptor = {
   resource: 'serviceRequest',

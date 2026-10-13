@@ -12,6 +12,7 @@ import { useMe, usePermissions } from '@/lib/auth/store'
 import { enumLabel, findEnumValue, useEnums } from '@/lib/enums'
 import { formatDate, formatFullDateTime } from '@/lib/format'
 import { LEASE_DRAWER_TABS } from '@/lib/registry'
+import { preloadComponents } from '@/lib/registry/lazy'
 import { DrawerFrame, DrawerTabs, type DrawerNav, type DrawerTab } from './drawer-frame'
 import { DrawerError, DrawerLoading } from './drawer-states'
 import { useDrawerNavigation, useDrawerSearch, useSiblings } from './drawer-state'
@@ -107,6 +108,7 @@ export function LeaseDrawer({ id }: { id: number }) {
   const drawer = useDrawerNavigation()
   const siblings = useSiblings('lr')
   const query = useQuery(detailQueries.leaseReturn(id))
+  useEffect(() => preloadComponents(LEASE_DRAWER_TABS), [])
   const lr = query.data
 
   useEffect(() => {

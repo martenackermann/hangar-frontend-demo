@@ -1,5 +1,10 @@
 import type { ActionDialogDescriptor } from '@/lib/registry'
-import { LinkDialog } from '../components/link-service-request-dialog'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const LinkDialog = lazyNamed(
+  () => import('@/modules/requests/components/link-service-request-dialog'),
+  'LinkDialog',
+)
 
 const dialog: ActionDialogDescriptor = {
   resource: 'leaseReturn',

@@ -1,5 +1,10 @@
 import type { ActionDialogDescriptor } from '@/lib/registry'
-import { CancelOnSiteDialog } from '@/modules/field/components/action-dialogs'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const CancelOnSiteDialog = lazyNamed(
+  () => import('@/modules/field/components/action-dialogs'),
+  'CancelOnSiteDialog',
+)
 
 const dialog: ActionDialogDescriptor = {
   resource: 'serviceRequest',

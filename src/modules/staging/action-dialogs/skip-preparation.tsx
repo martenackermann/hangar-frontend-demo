@@ -1,5 +1,10 @@
 import type { ActionDialogDescriptor } from '@/lib/registry'
-import { SkipPreparationDialog } from '@/modules/staging/components/skip-preparation-dialog'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const SkipPreparationDialog = lazyNamed(
+  () => import('@/modules/staging/components/skip-preparation-dialog'),
+  'SkipPreparationDialog',
+)
 
 const dialog: ActionDialogDescriptor = {
   resource: 'serviceRequest',

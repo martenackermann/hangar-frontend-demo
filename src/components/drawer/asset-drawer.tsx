@@ -12,6 +12,7 @@ import { useMe, usePermissions } from '@/lib/auth/store'
 import { enumLabel, useEnums } from '@/lib/enums'
 import { formatFullDateTime } from '@/lib/format'
 import { ASSET_DRAWER_TABS } from '@/lib/registry'
+import { preloadComponents } from '@/lib/registry/lazy'
 import { DrawerFrame, DrawerTabs, type DrawerNav, type DrawerTab } from './drawer-frame'
 import { DrawerError, DrawerLoading } from './drawer-states'
 import { useDrawerNavigation, useDrawerSearch, useSiblings } from './drawer-state'
@@ -89,6 +90,7 @@ export function AssetDrawer({ id }: { id: number }) {
   const drawer = useDrawerNavigation()
   const siblings = useSiblings('asset')
   const query = useQuery(detailQueries.asset(id))
+  useEffect(() => preloadComponents(ASSET_DRAWER_TABS), [])
   const asset = query.data
 
   useEffect(() => {

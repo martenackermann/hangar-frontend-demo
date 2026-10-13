@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, RefreshCw, SearchX } from 'lucide-react'
-import { useCallback, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, IconButton } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { EmptyState, SkeletonRows } from '@/components/ui/feedback'
@@ -20,6 +20,7 @@ import { formatNumber } from '@/lib/format'
 import { usePrefs } from '@/lib/prefs/store'
 import { formatSort, parseSort, PER_PAGE_OPTIONS } from '@/lib/search/params'
 import { useShortcut } from '@/lib/shortcuts'
+import { useMediaQuery } from '@/lib/use-media-query'
 import { cn } from '@/lib/utils'
 import type { ColumnPrefs } from './column-prefs'
 
@@ -106,22 +107,6 @@ const features = tableFeatures({
   columnSizingFeature,
 })
 const SELECT_COLUMN_WIDTH = 36
-
-function subscribeMedia(query: string) {
-  return (callback: () => void) => {
-    const media = window.matchMedia(query)
-    media.addEventListener('change', callback)
-    return () => media.removeEventListener('change', callback)
-  }
-}
-
-export function useMediaQuery(query: string): boolean {
-  return useSyncExternalStore(
-    subscribeMedia(query),
-    () => window.matchMedia(query).matches,
-    () => false,
-  )
-}
 
 export function DataTable<T extends RowData>({
   label,

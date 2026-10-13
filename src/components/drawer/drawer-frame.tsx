@@ -1,13 +1,14 @@
 import { ChevronDown, ChevronUp, Link2, X } from 'lucide-react'
 import { Dialog as RadixDialog } from 'radix-ui'
-import { useCallback, useRef, useState, type ReactNode } from 'react'
-import { useMediaQuery } from '@/components/data-table/data-table'
+import { Suspense, useCallback, useRef, useState, type ReactNode } from 'react'
+import { useMediaQuery } from '@/lib/use-media-query'
 import { IconButton } from '@/components/ui/button'
 import { TabCount, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { notify } from '@/components/ui/toast'
 import { formatNumber } from '@/lib/format'
 import { useShortcut } from '@/lib/shortcuts'
 import { cn } from '@/lib/utils'
+import { DrawerLoading } from './drawer-states'
 
 const WIDTH_KEY = 'hangar.drawer.width'
 const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -227,7 +228,7 @@ export function DrawerTabs({
       </TabsList>
       {tabs.map((tab) => (
         <TabsContent key={tab.id} value={tab.id} className="px-4 pt-3.5 pb-6 outline-none">
-          {tab.content}
+          <Suspense fallback={<DrawerLoading />}>{tab.content}</Suspense>
         </TabsContent>
       ))}
     </Tabs>

@@ -1,5 +1,10 @@
 import type { ParamDrawerDescriptor } from '@/lib/registry'
-import { MailDrawer } from '../components/mail-drawer'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const MailDrawer = lazyNamed(
+  () => import('@/modules/requests/components/mail-drawer'),
+  'MailDrawer',
+)
 
 const descriptor: ParamDrawerDescriptor = {
   param: 'mail',

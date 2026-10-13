@@ -1,6 +1,6 @@
 import { createStore, useSelector } from '@tanstack/react-store'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 /**
  * Drawer state lives in the URL (SCREENS.md §1.5): `?sr=<id>&tab=<tabId>`, `?lr=`, `?asset=`,
@@ -16,9 +16,16 @@ export interface DrawerSearch {
   tab?: string | undefined
 }
 
+function pickDrawerSearch(search: DrawerSearch): DrawerSearch {
+  return { sr: search.sr, lr: search.lr, asset: search.asset, mail: search.mail, tab: search.tab }
+}
+
+/**
+ * The drawer params only: components re-render when a drawer param changes, not on every
+ * filter keystroke of the page underneath.
+ */
 export function useDrawerSearch(): DrawerSearch {
-  const search: DrawerSearch = useSearch({ strict: false })
-  return search
+  return useSearch({ strict: false, select: pickDrawerSearch, structuralSharing: true })
 }
 
 /** Open/close drawers and switch tabs without dropping the page's own search params. */
@@ -33,15 +40,26 @@ export function useDrawerNavigation() {
       }),
     [navigate],
   )
-  return {
-    open: (param: DrawerParam, id: number, tab?: string) =>
-      patch({ sr: undefined, lr: undefined, asset: undefined, mail: undefined, [param]: id, tab }),
-    /** Move to another record of the same kind, keeping the tab. */
-    move: (param: DrawerParam, id: number) => patch({ [param]: id }, true),
-    setTab: (tab: string) => patch({ tab }, true),
-    close: () =>
-      patch({ sr: undefined, lr: undefined, asset: undefined, mail: undefined, tab: undefined }),
-  }
+  // Stable for the component's lifetime, so `drawer.open` can be passed to memoized rows/cards.
+  return useMemo(
+    () => ({
+      open: (param: DrawerParam, id: number, tab?: string) =>
+        patch({
+          sr: undefined,
+          lr: undefined,
+          asset: undefined,
+          mail: undefined,
+          [param]: id,
+          tab,
+        }),
+      /** Move to another record of the same kind, keeping the tab. */
+      move: (param: DrawerParam, id: number) => patch({ [param]: id }, true),
+      setTab: (tab: string) => patch({ tab }, true),
+      close: () =>
+        patch({ sr: undefined, lr: undefined, asset: undefined, mail: undefined, tab: undefined }),
+    }),
+    [patch],
+  )
 }
 
 // ---- siblings: "6 of 318" + prev/next -------------------------------------------------------

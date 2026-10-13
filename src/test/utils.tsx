@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, type RenderOptions } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { EnumsProvider } from '@/lib/enums/provider'
 import { setSession } from '@/lib/auth/store'
 import type { LoginResponse } from '@/lib/api/types'
 import { api } from '@/lib/api/client'
@@ -13,7 +14,7 @@ export function createTestQueryClient(): QueryClient {
   })
 }
 
-/** Render with the app providers (Query + Tooltip). */
+/** Render with the app providers (Query + enums + Tooltip). */
 export function renderWithProviders(
   ui: ReactElement,
   options?: RenderOptions & { queryClient?: QueryClient },
@@ -21,7 +22,9 @@ export function renderWithProviders(
   const queryClient = options?.queryClient ?? createTestQueryClient()
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>{children}</TooltipProvider>
+      <EnumsProvider>
+        <TooltipProvider>{children}</TooltipProvider>
+      </EnumsProvider>
     </QueryClientProvider>
   )
   return { queryClient, ...render(ui, { wrapper, ...options }) }

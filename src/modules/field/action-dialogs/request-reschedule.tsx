@@ -1,5 +1,10 @@
 import type { ActionDialogDescriptor } from '@/lib/registry'
-import { RequestRescheduleDialog } from '@/modules/field/components/action-dialogs'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const RequestRescheduleDialog = lazyNamed(
+  () => import('@/modules/field/components/action-dialogs'),
+  'RequestRescheduleDialog',
+)
 
 const dialog: ActionDialogDescriptor = {
   resource: 'serviceRequest',

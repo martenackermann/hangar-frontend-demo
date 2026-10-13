@@ -1,6 +1,11 @@
 import type { LeaseReturnDetail } from '@/lib/api/types'
 import type { DrawerTabDescriptor } from '@/lib/registry'
-import { CommentsTab } from '../components/lease-comments-tab'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const CommentsTab = lazyNamed(
+  () => import('@/modules/requests/components/lease-comments-tab'),
+  'CommentsTab',
+)
 
 const tab: DrawerTabDescriptor<LeaseReturnDetail> = {
   id: 'comments',

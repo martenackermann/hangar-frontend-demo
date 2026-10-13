@@ -29,6 +29,7 @@ import { useMe, usePermissions } from '@/lib/auth/store'
 import { enumLabel, findEnumValue, useEnums } from '@/lib/enums'
 import { formatDate, formatDateTime, formatFullDateTime } from '@/lib/format'
 import { SR_DRAWER_TABS } from '@/lib/registry'
+import { preloadComponents } from '@/lib/registry/lazy'
 import { pushRecent } from '@/components/app/command-palette-store'
 import { DrawerFrame, DrawerTabs, type DrawerNav, type DrawerTab } from './drawer-frame'
 import { DrawerError, DrawerLoading } from './drawer-states'
@@ -214,6 +215,7 @@ export function SrDrawer({ id }: { id: number }) {
   const drawer = useDrawerNavigation()
   const siblings = useSiblings('sr')
   const query = useQuery(detailQueries.serviceRequest(id))
+  useEffect(() => preloadComponents(SR_DRAWER_TABS), [])
   const sr = query.data
 
   useEffect(() => {

@@ -1,6 +1,8 @@
 import type { ServiceRequestDetail } from '@/lib/api/types'
 import type { DrawerTabDescriptor } from '@/lib/registry'
-import { ItemsTab } from '../components/sr-items-tab'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const ItemsTab = lazyNamed(() => import('@/modules/requests/components/sr-items-tab'), 'ItemsTab')
 
 const tab: DrawerTabDescriptor<ServiceRequestDetail> = {
   id: 'items',

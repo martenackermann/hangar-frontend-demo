@@ -1,5 +1,10 @@
 import type { ActionDialogDescriptor } from '@/lib/registry'
-import { MarkMissing } from '../components/asset-action-dialogs'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const MarkMissing = lazyNamed(
+  () => import('@/modules/stock/components/asset-action-dialogs'),
+  'MarkMissing',
+)
 
 /** Asset `mark_missing` (H5, bulk ✓): optional reason. */
 const dialog: ActionDialogDescriptor = {

@@ -1,5 +1,7 @@
 import type { ActionDialogDescriptor } from '@/lib/registry'
-import { ShipDialog } from '@/modules/staging/components/ship-dialog'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const ShipDialog = lazyNamed(() => import('@/modules/staging/components/ship-dialog'), 'ShipDialog')
 
 const dialog: ActionDialogDescriptor = {
   resource: 'serviceRequest',

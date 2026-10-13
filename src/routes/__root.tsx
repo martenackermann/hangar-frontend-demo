@@ -2,6 +2,7 @@ import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { Devtools } from '@/components/app/devtools'
 import { Toaster } from '@/components/ui/toast'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { EnumsProvider } from '@/lib/enums/provider'
 import type { RouterContext } from '@/router'
 
 /**
@@ -14,10 +15,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function Root() {
   return (
-    <TooltipProvider>
-      <Outlet />
-      <Toaster />
-      <Devtools />
-    </TooltipProvider>
+    <EnumsProvider>
+      <TooltipProvider>
+        <Outlet />
+        <Toaster />
+        <Devtools />
+      </TooltipProvider>
+    </EnumsProvider>
   )
 }

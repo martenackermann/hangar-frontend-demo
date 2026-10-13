@@ -1,5 +1,10 @@
 import type { ActionDialogDescriptor } from '@/lib/registry'
-import { RescheduleOnSiteDialog } from '@/modules/field/components/action-dialogs'
+import { lazyNamed } from '@/lib/registry/lazy'
+
+const RescheduleOnSiteDialog = lazyNamed(
+  () => import('@/modules/field/components/action-dialogs'),
+  'RescheduleOnSiteDialog',
+)
 
 const dialog: ActionDialogDescriptor = {
   resource: 'serviceRequest',

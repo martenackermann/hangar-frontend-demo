@@ -37,6 +37,8 @@ export interface DrawerTabDescriptor<E> {
   /** Optional count pill. */
   count?: (entity: E) => number | null | undefined
   component: ComponentType<DrawerTabProps<E>>
+  /** Loads a lazy tab's chunk ahead of time (set when `component` wraps a `lazyNamed` one). */
+  preload?: () => Promise<unknown>
 }
 
 interface TabModule<E> {

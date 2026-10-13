@@ -1,19 +1,38 @@
-import { useQuery } from '@tanstack/react-query'
-import { coreQueries } from '@/lib/api/core'
+import { use } from 'react'
 import type { EnumsResponse, EnumValue, Tone, TransitionDef } from '@/lib/api/types'
 import { ENUM_CATALOG } from './catalog'
+import { EnumsContext } from './context'
 
 /**
  * Enum labels, tones and transition metadata come from `GET /meta/enums` (cached forever per
- * session). The static `ENUM_CATALOG` (same content, SPEC §4) is the placeholder until it has
- * loaded, so badges never flash raw keys.
+ * session), provided once by `EnumsProvider`. The static `ENUM_CATALOG` (same content, SPEC §4)
+ * is the placeholder until it has loaded, so badges never flash raw keys.
  */
 export type EnumKey = Exclude<keyof EnumsResponse, 'transitions' | 'permissions'>
 export type WorkflowResource = keyof EnumsResponse['transitions']
 
 export function useEnums(): EnumsResponse {
-  const { data } = useQuery({ ...coreQueries.enums(), placeholderData: ENUM_CATALOG })
-  return data ?? ENUM_CATALOG
+  return use(EnumsContext) ?? ENUM_CATALOG
+}
+
+type EnumIndex = Map<EnumKey, Map<string, EnumValue>>
+const indexes = new WeakMap<EnumsResponse, EnumIndex>()
+
+/** Value lookup by key in O(1); the index is built once per enums payload. */
+function indexOf(enums: EnumsResponse): EnumIndex {
+  let index = indexes.get(enums)
+  if (!index) {
+    index = new Map()
+    for (const [key, values] of Object.entries(enums)) {
+      if (key === 'transitions' || key === 'permissions' || !Array.isArray(values)) continue
+      index.set(
+        key as EnumKey,
+        new Map((values as EnumValue[]).map((entry) => [entry.value, entry])),
+      )
+    }
+    indexes.set(enums, index)
+  }
+  return index
 }
 
 export function findEnumValue(
@@ -22,7 +41,7 @@ export function findEnumValue(
   value: string | null | undefined,
 ): EnumValue | undefined {
   if (value === null || value === undefined) return undefined
-  return enums[key].find((entry) => entry.value === value)
+  return indexOf(enums).get(key)?.get(value)
 }
 
 /** Label for an enum value (falls back to the raw value in sentence case). */

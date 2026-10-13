@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, MoreHorizontal } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/dialog'
 import {
@@ -16,7 +16,8 @@ import { isApiError } from '@/lib/api/errors'
 import { RESOURCE_KEYS, RESOURCE_PATHS, type WorkflowResourceKey } from '@/lib/api/keys'
 import type { BlockedAction, BulkResult } from '@/lib/api/types'
 import { actionLabel, findTransition, useEnums } from '@/lib/enums'
-import { findActionDialog } from '@/lib/registry'
+import { ACTION_DIALOGS, findActionDialog } from '@/lib/registry'
+import { preloadComponents } from '@/lib/registry/lazy'
 import { useShortcut } from '@/lib/shortcuts'
 
 /**
@@ -138,6 +139,10 @@ export function WorkflowActionBar<E extends WorkflowEntity>({
   const mutation = useWorkflowAction(resource, entity, label)
   const [dialog, setDialog] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<string | null>(null)
+  // Dialog chunks load lazily; fetch this resource's ones while the user reads the record.
+  useEffect(() => {
+    preloadComponents(ACTION_DIALOGS.filter((d) => d.resource === resource))
+  }, [resource])
 
   const transitions = enums.transitions[resource]
   const orderOf = (action: string) => {
@@ -252,15 +257,17 @@ export function WorkflowActionBar<E extends WorkflowEntity>({
         />
       )}
       {ActiveDialog && (
-        <ActiveDialog
-          entity={entity}
-          open
-          onOpenChange={(open: boolean) => !open && setDialog(null)}
-          onDone={(updated?: E) => {
-            setDialog(null)
-            if (updated) onUpdated?.(updated)
-          }}
-        />
+        <Suspense fallback={null}>
+          <ActiveDialog
+            entity={entity}
+            open
+            onOpenChange={(open: boolean) => !open && setDialog(null)}
+            onDone={(updated?: E) => {
+              setDialog(null)
+              if (updated) onUpdated?.(updated)
+            }}
+          />
+        </Suspense>
       )}
     </div>
   )
