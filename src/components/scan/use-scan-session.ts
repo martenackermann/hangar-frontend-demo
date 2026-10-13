@@ -5,7 +5,7 @@ import { isApiError } from '@/lib/api/errors'
 import type { ScanResult } from '@/lib/api/types'
 import type { ScanEntry } from './scan-list'
 import { playCue, vibrate } from './sound'
-import { VERDICT_STYLES } from './verdict'
+import { cueFor, VERDICT_STYLES } from './verdict'
 
 /** Max queued scans while a request is in flight (SCREENS.md §10). */
 export const MAX_QUEUE = 20
@@ -29,13 +29,16 @@ export interface ScanSession<T> {
   undoLast: () => void
   undoingId: string | null
   counters: { ok: number; warning: number; error: number }
+  /** Starts a fresh session (empty list, counters and sequence); ignored while scans are pending. */
+  reset: () => void
 }
 
 let nextEntryId = 1
 
 /**
  * Scan session state machine: FIFO queue (max 20), exactly one request per scan, verdict sound
- * + vibration, undo via the result's `undo` link (409 `undo_not_possible` → toast).
+ * + vibration (both optional, see prefs), undo via the result's `undo` link (409
+ * `undo_not_possible` → toast).
  */
 export function useScanSession<T = unknown>({
   submit,
@@ -68,9 +71,8 @@ export function useScanSession<T = unknown>({
         if (!entry) break
         try {
           const result = await submitRef.current(entry.value)
-          const style = VERDICT_STYLES[result.verdict]
-          playCue(style.sound)
-          vibrate(style.vibrate)
+          playCue(cueFor(result.verdict, result.code))
+          vibrate(VERDICT_STYLES[result.verdict].vibrate)
           const done: ScanEntry<T> = { ...entry, state: 'done', result }
           update(entry.id, { state: 'done', result })
           onResultRef.current?.(result, done)
@@ -140,6 +142,12 @@ export function useScanSession<T = unknown>({
     if (target) void undo(target)
   }, [entries, undo])
 
+  const reset = useCallback(() => {
+    if (busy.current || queue.current.length > 0) return
+    sequence.current = 0
+    setEntries([])
+  }, [])
+
   const counters = { ok: 0, warning: 0, error: 0 }
   for (const entry of entries) {
     if (entry.undone) continue
@@ -156,5 +164,6 @@ export function useScanSession<T = unknown>({
     undoLast,
     undoingId,
     counters,
+    reset,
   }
 }

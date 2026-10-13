@@ -2,31 +2,36 @@ import { Camera, CameraOff, X } from 'lucide-react'
 import { Dialog as RadixDialog } from 'radix-ui'
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '@/components/ui/icon'
-import type { Tone } from '@/lib/api/types'
+import { useEnums } from '@/lib/enums'
 import { createCodeDetector, DEFAULT_SCAN_FORMATS } from '@/lib/scan/barcode'
 import { cn } from '@/lib/utils'
+import { ScanAnnouncer } from './scan-announcer'
 import { normalizeScan } from './scan-input'
+import type { ScanEntry } from './scan-list'
+import { VERDICT_STYLES, verdictIcon, verdictTitle } from './verdict'
 
 /** Same code again within this window is ignored (SCREENS.md §10 camera mode). */
 const CAMERA_DEBOUNCE_MS = 1200
 
 /**
  * Full-screen camera sheet (SCREENS.md §10): rear camera, continuous detection, viewfinder
- * overlay that flashes in the last verdict's tone. Uses the native BarcodeDetector where it
- * exists, otherwise the self-hosted zxing-wasm ponyfill. Needs HTTPS or localhost.
+ * overlay that flashes in each new verdict's tone, and the latest verdict in words (icon +
+ * title + serial) with its own live region — the station behind the sheet is hidden from
+ * screen readers while it is open. Uses the native BarcodeDetector where it exists, otherwise
+ * the self-hosted zxing-wasm ponyfill. Needs HTTPS or localhost.
  */
 export function CameraScanner({
   open,
   onOpenChange,
   onDetected,
-  flashTone,
+  latest,
   title = 'Camera scan',
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onDetected: (value: string) => void
-  /** Tone of the most recent verdict (flashes the viewfinder). */
-  flashTone?: Tone | null
+  /** The station's latest scan (verdict feedback inside the sheet). */
+  latest?: ScanEntry<unknown> | undefined
   title?: string
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -95,11 +100,15 @@ export function CameraScanner({
     }
   }, [open])
 
+  const result = latest?.state === 'done' ? latest.result : undefined
+  const failed = latest?.state === 'failed'
+  const tone = result ? VERDICT_STYLES[result.verdict].tone : failed ? 'critical' : null
+
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
         <RadixDialog.Content className="fixed inset-0 z-[60] flex flex-col bg-black text-white outline-none">
-          <div className="flex h-14 items-center justify-between px-4">
+          <div className="flex h-14 shrink-0 items-center justify-between px-4">
             <RadixDialog.Title className="flex items-center gap-2 text-lg font-semibold">
               <Icon icon={Camera} size={20} /> {title}
             </RadixDialog.Title>
@@ -130,19 +139,47 @@ export function CameraScanner({
                 <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
                 <div
                   aria-hidden
-                  key={flashTone ?? 'none'}
+                  // keyed on the scan, so the same verdict twice still flashes
+                  key={latest?.id ?? 'none'}
                   className={cn(
                     'pointer-events-none absolute inset-x-[10%] top-1/2 h-40 -translate-y-1/2 rounded-lg border-4',
-                    flashTone
-                      ? `hg-tone-${flashTone} animate-verdict border-(--t)`
-                      : 'border-accent',
+                    tone ? `hg-tone-${tone} animate-verdict border-(--t)` : 'border-accent',
                   )}
                 />
               </>
             )}
           </div>
+          {latest && (result ?? failed) && <CameraVerdict entry={latest} />}
+          <ScanAnnouncer latest={latest} />
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>
+  )
+}
+
+/** The latest verdict in the sheet: tone tile + icon, title and the scanned value. */
+function CameraVerdict({ entry }: { entry: ScanEntry<unknown> }) {
+  const enums = useEnums()
+  const result = entry.result
+  const style = result ? VERDICT_STYLES[result.verdict] : VERDICT_STYLES.error
+  const icon = result ? verdictIcon(result.verdict, result.code) : style.icon
+  const title = result ? verdictTitle(enums, result) : `Scan #${entry.sequence} not checked`
+  return (
+    <div className="shrink-0 px-3 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+      <div
+        key={entry.id}
+        className={`hg-tone-${style.tone} flex animate-verdict items-center gap-3 rounded-md border border-[color-mix(in_srgb,var(--t)_45%,transparent)] bg-(--t-wash) p-3 text-fg`}
+      >
+        <span className="grid size-10 shrink-0 place-items-center rounded-sm bg-(--t)">
+          <Icon icon={icon} size={24} className="text-[var(--hg-fg-inverse)]" />
+        </span>
+        <span className="grid min-w-0">
+          <span className="truncate text-xl font-[650] text-(--t-fg)">{title}</span>
+          <span className="truncate font-mono text-md font-semibold tracking-[0.04em]">
+            {result?.scannedValue ?? entry.value}
+          </span>
+        </span>
+      </div>
+    </div>
   )
 }
