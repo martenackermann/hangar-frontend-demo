@@ -48,7 +48,7 @@ import {
 } from './model'
 import './tables'
 import type { TourRow } from './tables'
-import { storeProtocol } from './workflow'
+import { sendProtocolMail, storeProtocol } from './workflow'
 
 /**
  * Mock endpoints of H4 Field service (API.md §7, SPEC_RESOLUTIONS #21) — same shapes,
@@ -945,6 +945,7 @@ export const handlers: RequestHandler[] = [
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
         return problems.validation({ email: ['Enter a valid email address.'] }, undefined, request)
       if (!sr.protocolFileId) storeProtocol(sr.id, actor.id)
+      sendProtocolMail(sr.id, email, actor.id)
       return HttpResponse.json({ notificationId: crypto.randomUUID() }, { status: 202 })
     }),
   ),

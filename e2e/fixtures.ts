@@ -60,7 +60,13 @@ export async function signIn(page: Page, who: PersonaCase): Promise<void> {
       localStorage.removeItem('hangar.session.v1')
     })
   }
-  await page.goto('/login')
+  try {
+    await page.goto('/login')
+  } catch (error) {
+    // dropping the session lets the app redirect to /login itself, which can abort this goto
+    if (!String(error).includes('ERR_ABORTED')) throw error
+    await page.goto('/login')
+  }
   await page.getByRole('button', { name: `Sign in as ${who.name}, ${who.role}` }).click()
   await expect(page).toHaveURL(new RegExp(`${who.home.replace(/\//g, '\\/')}(\\?|$)`))
   // the shell is up (the rail is a sheet on phones, so look for the shell's <main id="main">)

@@ -26,8 +26,9 @@ export function servedEnums(): EnumsResponse {
 }
 
 /**
- * Fetch the fixture as a static asset (kept out of the JS bundle). A truncated body (seen on a
- * busy dev server: "JSON at position 2097135") is retried once, bypassing the HTTP cache.
+ * Fetch the fixture as a static asset (kept out of the JS bundle). A truncated body ("JSON at
+ * position 2097135") or a dropped connection, both seen on a busy dev server, is retried once,
+ * bypassing the HTTP cache.
  */
 export async function loadFixture(): Promise<SeedFixture> {
   const { default: url } = await import('@/mocks/fixtures/seed.json?url')
@@ -35,7 +36,8 @@ export async function loadFixture(): Promise<SeedFixture> {
   try {
     fixture = await fetchFixture(url, 'default')
   } catch (error) {
-    if (!(error instanceof SyntaxError)) throw error
+    if (!(error instanceof SyntaxError || error instanceof TypeError)) throw error
+    await new Promise((resolve) => setTimeout(resolve, 250))
     fixture = await fetchFixture(url, 'reload')
   }
   setFixture(fixture)

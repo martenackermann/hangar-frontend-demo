@@ -1,4 +1,5 @@
-import type { DeviationOutcome } from '@/lib/api/types'
+import type { DeviationOutcome, Trigger } from '@/lib/api/types'
+import { notify } from '@/mocks/core/notify'
 import type { ServiceRequestRow } from '@/mocks/core/tables'
 import { locationOf, moveAsset } from '@/mocks/core/workflow'
 import { db } from '@/mocks/db'
@@ -280,6 +281,28 @@ function closeCollectedLeases(ctx: SrEffect, tags: readonly string[]): void {
   }
 }
 
+/** `sr.protocol` through the mock core `notify()` (the backend queues it the same way). */
+export function sendProtocolMail(
+  srId: number,
+  email: string | null,
+  actorId: number | null,
+  trigger: Trigger = 'user',
+): void {
+  const sr = db.collection('service_requests').get(srId)
+  if (!sr) return
+  const contact = db.collection('contacts').get(sr.contactId)
+  notify({
+    templateId: 'sr.protocol',
+    to: [email ?? contact?.email],
+    subject: `Handover protocol for ${sr.number}`,
+    context: { sr_number: sr.number },
+    entity: { type: 'service_request', id: sr.id, label: sr.number },
+    attachments: sr.protocolFileId ? [sr.protocolFileId] : [],
+    trigger,
+    actorId,
+  })
+}
+
 function storeProtocol(srId: number, actorId: number | null): void {
   const sr = db.collection('service_requests').get(srId)
   if (!sr) return
@@ -302,6 +325,13 @@ registerEffect<ServiceRequestRow>(SR, 'complete_deployment', (ctx) => {
   const stop = pendingStopOf(ctx.updated.id)
   if (stop) setStopOutcome(stop.id, 'completed', ctx.now)
   storeProtocol(ctx.updated.id, ctx.actor?.id ?? null)
+  if (ctx.payload.sendProtocol !== false) {
+    const email =
+      typeof ctx.payload.protocolEmail === 'string' && ctx.payload.protocolEmail.trim()
+        ? ctx.payload.protocolEmail.trim()
+        : null
+    sendProtocolMail(ctx.updated.id, email, ctx.actor?.id ?? null, ctx.trigger)
+  }
 })
 registerEffect<ServiceRequestRow>(SR, 'complete_manually', ({ updated, now }) => {
   const stop = pendingStopOf(updated.id)

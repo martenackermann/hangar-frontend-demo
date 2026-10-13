@@ -1,3 +1,4 @@
+import { onNotificationQueued } from '@/mocks/core/notify'
 import type { LeaseReturnRow, ServiceRequestRow } from '@/mocks/core/tables'
 import { addDays } from '@/lib/format'
 import { db } from '@/mocks/db'
@@ -177,6 +178,25 @@ onTransition<ServiceRequestRow>(SR, (ctx) => {
 registerEffect<LeaseReturnRow>(LR, 'close', ({ payload, comment, update }) => {
   const fromPayload = typeof payload.closeReason === 'string' ? payload.closeReason : null
   update({ closeReason: (fromPayload ?? comment ?? 'Closed manually').slice(0, 200) })
+})
+
+/**
+ * Mails the other slices queue through the mock core `notify()` (shipping confirmation, protocol,
+ * call-off, inventory report, ...) land in the mail log like the backend's `NotificationQueued`
+ * subscriber writes them.
+ */
+onNotificationQueued((mail) => {
+  queueMail({
+    templateId: mail.templateId,
+    to: mail.to,
+    cc: mail.cc,
+    subject: mail.subject,
+    context: mail.context,
+    entity: mail.entity,
+    trigger: mail.trigger,
+    actorId: mail.actorUserId,
+    attachments: mail.attachmentFileIds,
+  })
 })
 
 /** The hold mail goes out once per request; `hardwareUnavailableNotifiedAt` records it. */

@@ -147,7 +147,12 @@ function Tiles({
           value={formatNumber(t.leaseReturnsDueNext30Days)}
           alert={t.leaseReturnsOverdue > 0 ? 'critical' : undefined}
           context={`${formatNumber(t.leaseReturnsOverdue)} past their retirement date`}
-          {...screenTarget('/lease-returns', { retirementTo: addDays(today, 30) })}
+          // same predicate as the KPI: open leases retiring today … +30 days, VIPs included
+          {...screenTarget('/lease-returns', {
+            retirementFrom: today,
+            retirementTo: addDays(today, 30),
+            vip: 'include',
+          })}
         />
       </KpiStrip>
       <KpiStrip>

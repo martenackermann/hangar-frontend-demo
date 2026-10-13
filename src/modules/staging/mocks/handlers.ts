@@ -13,6 +13,7 @@ import type {
 } from '@/lib/api/types'
 import { businessToday, toBusinessDate } from '@/lib/format'
 import { authed, type MockActor } from '@/mocks/auth'
+import { notify } from '@/mocks/core/notify'
 import { moveAsset } from '@/mocks/core/workflow'
 import {
   articleRef,
@@ -1052,6 +1053,19 @@ const shippingHandlers: RequestHandler[] = [
         updatedAt: now,
       })
       const label = labelFor(shipment, actor.id)
+      if (confirmation) {
+        // `sr.shipping_confirmation` through the mock core notify(), as the backend queues it
+        notify({
+          templateId: 'sr.shipping_confirmation',
+          to: [contact?.email],
+          subject: `Your hardware for ${row.number} is on its way`,
+          context: { sr_number: row.number, tracking_urls: shipment.trackingUrls },
+          entity: { type: 'service_request', id: row.id, label: row.number },
+          attachments: [],
+          trigger: 'user',
+          actorId: actor.id,
+        })
+      }
       const created: ShipmentCreated = {
         shipment: shipmentDto(db.collection('shipments').get(shipment.id)!),
         serviceRequest: srDetail(db.collection('service_requests').get(row.id)!, actor),

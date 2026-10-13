@@ -27,6 +27,8 @@ export function queueMail(input: {
   templateId: string
   to: string[]
   cc?: string[]
+  /** Subject already rendered by the sender (other slices' mails via core `notify()`). */
+  subject?: string | null
   context: MailContext
   entity: { type: string; id: number; label: string } | null
   trigger: Trigger
@@ -43,7 +45,7 @@ export function queueMail(input: {
     status: 'sent',
     toAddresses: to,
     ccAddresses: [...new Set((input.cc ?? []).filter(Boolean))],
-    subject: rendered.subject,
+    subject: input.subject ?? rendered.subject,
     bodyHtml: rendered.html,
     bodyText: rendered.text,
     entityType: input.entity?.type ?? null,
