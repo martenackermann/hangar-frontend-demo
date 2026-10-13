@@ -79,7 +79,7 @@ export default defineConfig(({ mode }) => {
           // json: the demo fixture (seed.json) so demo mode works offline after the first visit.
           globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,wasm,json}'],
           globIgnores: ['mockServiceWorker.js', 'msw-bridge.js'],
-          maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+          maximumFileSizeToCacheInBytes: 8 * 1024 * 1024, // seed.json is ~3.5 MB
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api\//, /^\/mockServiceWorker\.js$/, /^\/msw-bridge\.js$/],
           // Demo builds: only one service worker can control the scope, so the MSW worker runs

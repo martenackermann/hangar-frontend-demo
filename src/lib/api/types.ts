@@ -477,6 +477,8 @@ export interface EnumValue {
   terminal?: boolean
   /** `scanCode` only (SPEC_RESOLUTIONS #25): the verdict that picks banner tone and sound. */
   verdict?: ScanVerdict
+  /** `scanCode` only: the sound cue of that verdict. */
+  sound?: 'ok' | 'warn' | 'error'
 }
 export interface TransitionDef {
   /** `"send_invitation"` */
@@ -492,6 +494,10 @@ export interface TransitionDef {
   requiresComment: boolean
   destructive: boolean
   owner: 'core' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5'
+  /** Import/sync/system only: never offered in `availableActions`, not callable by users. */
+  internal?: boolean
+  /** `false`: offered in `availableActions` but executed by a dedicated endpoint (e.g. `ship`). */
+  viaEndpoint?: boolean
 }
 export interface EnumsResponse {
   serviceRequestStatus: EnumValue[]

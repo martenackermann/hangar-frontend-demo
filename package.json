@@ -25,7 +25,7 @@
     "routes:gen": "tsr generate",
     "api:types": "openapi-typescript ../hangar-backend-demo/openapi.json -o src/lib/api/schema.d.ts",
     "icons:gen": "node scripts/generate-icons.ts",
-    "seed:fixture": "node scripts/seed-fixture/generate.ts --check --anchor=2026-10-13",
+    "seed:handmade": "node scripts/seed-fixture/generate.ts --check --anchor=2026-10-13",
     "seed:import": "node scripts/seed-import.ts",
     "screenshots": "playwright test --project=screenshots"
   },

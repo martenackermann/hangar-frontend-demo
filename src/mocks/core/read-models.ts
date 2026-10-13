@@ -30,11 +30,12 @@ import type {
   UserRef,
   UserSummary,
 } from '@/lib/api/types'
-import { ENUM_CATALOG, PERSONAS, ROLE_PERMISSIONS } from '@/lib/enums/catalog'
+import { PERSONAS, ROLE_PERMISSIONS } from '@/lib/enums/catalog'
 import { addWorkingDays, businessToday, daysBetween, toBusinessDate } from '@/lib/format'
 import type { MockActor } from '@/mocks/auth'
 import { db } from '@/mocks/db'
 import { evaluateActions } from '@/mocks/workflow'
+import { servedEnums } from './fixture'
 import type {
   AssetMovementRow,
   AssetRow,
@@ -209,7 +210,7 @@ export function me(row: UserRow): Me {
 
 export function persona(row: UserRow): Persona {
   const info = PERSONAS.find((p) => p.email === row.email)
-  const roleLabel = ENUM_CATALOG.role.find((r) => r.value === row.role)?.label ?? row.role
+  const roleLabel = servedEnums().role.find((r) => r.value === row.role)?.label ?? row.role
   return {
     email: row.email,
     displayName: displayName(row),
@@ -257,7 +258,7 @@ export function savedView(
 // ---- service requests ---------------------------------------------------------------------
 
 export function stageOf(status: ServiceRequestStatus): PipelineStage {
-  return ENUM_CATALOG.serviceRequestStatus.find((s) => s.value === status)?.stage ?? 'imported'
+  return servedEnums().serviceRequestStatus.find((s) => s.value === status)?.stage ?? 'imported'
 }
 
 export function effectiveDeliveryType(
@@ -573,7 +574,7 @@ export function assetMovement(row: AssetMovementRow): AssetMovement {
   return {
     id: row.id,
     action: row.action,
-    actionLabel: ENUM_CATALOG.assetAction.find((a) => a.value === row.action)?.label ?? row.action,
+    actionLabel: servedEnums().assetAction.find((a) => a.value === row.action)?.label ?? row.action,
     fromStatus: row.fromStatus,
     toStatus: row.toStatus,
     fromLocation: locationRef(row.fromLocationId),
@@ -713,7 +714,7 @@ export function historyEntries(
       trigger: t.trigger,
       action: t.action,
       actionLabel:
-        ENUM_CATALOG.transitions[
+        servedEnums().transitions[
           entityType === 'service_request' ? 'serviceRequest' : 'leaseReturn'
         ].find((d) => d.action === t.action)?.label ?? t.action.replace(/_/g, ' '),
       fromStatus: t.fromStatus,

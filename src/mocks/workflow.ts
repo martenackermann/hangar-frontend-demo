@@ -1,16 +1,17 @@
 import type { BlockedAction, BulkResult, Trigger, TransitionDef } from '@/lib/api/types'
-import { ENUM_CATALOG, type PermissionKey } from '@/lib/enums/catalog'
+import type { PermissionKey } from '@/lib/enums/catalog'
 import { businessToday } from '@/lib/format'
 import type { MockActor } from './auth'
 import { db, type BaseRecord } from './db'
+import { servedEnums } from './core/fixture'
 import { problem, problemInfo, problems } from './http'
 
 /**
  * Workflow engine of the mock API — the MSW twin of the backend's TransitionService +
  * ActionRegistry (SPEC §2.4, §4; SPEC_RESOLUTIONS #2, #3, #4, #15, #34).
  *
- * The transition maps are defined ONCE: `ENUM_CATALOG.transitions` (also served as
- * `/meta/enums.transitions`). Core registers the guards/effects that only touch core tables
+ * The transition maps are defined ONCE: the served `/meta/enums.transitions` (`servedEnums()`:
+ * the fixture's enums, i.e. the backend's when imported, else `ENUM_CATALOG`). Core registers the guards/effects that only touch core tables
  * (`src/mocks/core/workflow.ts`); slices register theirs in `src/modules/<m>/mocks/workflow.ts`:
  *
  *   registerGuard('serviceRequest', 'book_appointment', ({ payload }) =>
@@ -183,8 +184,9 @@ export function onTransition<R extends WorkflowRow>(resource: Resource, effect: 
   registries[resource].subscribers.push(effect as unknown as Effect)
 }
 
+/** The transition map as served by `/meta/enums` (backend export or static catalog). */
 export function transitionsOf(resource: Resource): readonly TransitionDef[] {
-  return ENUM_CATALOG.transitions[resource]
+  return servedEnums().transitions[resource]
 }
 
 export function findDef(resource: Resource, action: string): TransitionDef | undefined {
@@ -248,7 +250,7 @@ export function evaluateActions(
   const available: string[] = []
   const blocked: BlockedAction[] = []
   for (const def of transitionsOf(resource)) {
-    if (!def.triggers.includes('user') || !def.from.includes(row.status)) continue
+    if (def.internal || !def.triggers.includes('user') || !def.from.includes(row.status)) continue
     if (!hasPerm(actor, def.permission) || !executable(resource, def)) continue
     const ctx = context(resource, def.action, row, actor, 'user')
     if (!authorized(resource, ctx)) continue
@@ -280,7 +282,7 @@ export function applyAction<R extends WorkflowRow>(
   const row = table.get(id)
   if (!row) return { ok: false, response: problems.notFound(resource, id, request) }
   const def = findDef(resource, action)
-  if (!def?.triggers.includes(trigger)) {
+  if (!def?.triggers.includes(trigger) || (trigger === 'user' && def.internal)) {
     return {
       ok: false,
       response: problem(404, 'unknown_action', 'Unknown action', {

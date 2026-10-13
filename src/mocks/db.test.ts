@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   DB_STORAGE_KEY,
   DemoDatabase,
+  webStorage,
   shiftDates,
   weekShiftDays,
   type FixtureLike,
@@ -101,7 +102,12 @@ describe('DemoDatabase', () => {
   it('runs slice seeds, persists, and reloads when the manifest matches', () => {
     const db = new DemoDatabase()
     expect(
-      db.init({ fixture: fixture(), seeds: [seed(1)], storage: localStorage, today: '2026-10-13' }),
+      db.init({
+        fixture: fixture(),
+        seeds: [seed(1)],
+        storage: webStorage(localStorage),
+        today: '2026-10-13',
+      }),
     ).toEqual({ seeded: true })
     expect(db.table('gadgets').count()).toBe(1)
     db.table<Widget>('widgets').update(2, { name: 'Changed' })
@@ -109,7 +115,9 @@ describe('DemoDatabase', () => {
     expect(localStorage.getItem(DB_STORAGE_KEY)).toContain('Changed')
 
     const reloaded = new DemoDatabase()
-    expect(reloaded.init({ fixture: fixture(), seeds: [seed(1)], storage: localStorage })).toEqual({
+    expect(
+      reloaded.init({ fixture: fixture(), seeds: [seed(1)], storage: webStorage(localStorage) }),
+    ).toEqual({
       seeded: false,
     })
     expect(reloaded.table<Widget>('widgets').get(2)?.name).toBe('Changed')
@@ -117,7 +125,12 @@ describe('DemoDatabase', () => {
 
   it('reseeds when a seed version changes, and on reset()', () => {
     const db = new DemoDatabase()
-    db.init({ fixture: fixture(), seeds: [seed(1)], storage: localStorage, today: '2026-10-13' })
+    db.init({
+      fixture: fixture(),
+      seeds: [seed(1)],
+      storage: webStorage(localStorage),
+      today: '2026-10-13',
+    })
     db.table<Widget>('widgets').update(2, { name: 'Changed' })
     db.flush()
 
@@ -126,7 +139,7 @@ describe('DemoDatabase', () => {
       upgraded.init({
         fixture: fixture(),
         seeds: [seed(2)],
-        storage: localStorage,
+        storage: webStorage(localStorage),
         today: '2026-10-13',
       }),
     ).toEqual({ seeded: true })

@@ -32,7 +32,7 @@ Dashboard (`stock`).
    `public/**`, `scripts/**`, `e2e/fixtures.ts`, and other slices' files.
 3. **Generated files are never hand-edited**: `src/routeTree.gen.ts` (`pnpm routes:gen`),
    `src/lib/api/schema.d.ts` (`pnpm api:types`), `public/mockServiceWorker.js`,
-   `src/mocks/fixtures/seed.json` (`pnpm seed:fixture` / `pnpm seed:import`).
+   `src/mocks/fixtures/seed.json` (`pnpm seed:import`).
 4. **No new dependencies.** Everything a slice needs is installed. If something is missing,
    report it.
 5. Before handing back, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build:demo` and
@@ -55,7 +55,7 @@ Dashboard (`stock`).
 | `pnpm screenshots`               | Refreshes `docs/screenshots/foundation/` (shell + login, both themes). Not part of `test:e2e`.  |
 | `pnpm routes:gen`                | Regenerate `src/routeTree.gen.ts`.                                                              |
 | `pnpm api:types`                 | Regenerate `src/lib/api/schema.d.ts` from `../hangar-backend-demo/openapi.json`.                |
-| `pnpm seed:fixture`              | Regenerate and validate the hand-made `seed.json` (deterministic, anchor 2026-10-13).           |
+| `pnpm seed:handmade`             | Fallback only: write the old hand-made `seed.json` (when the backend is unavailable).           |
 | `pnpm seed:import`               | Replace `seed.json` with the backend export (`uv run hangar seed --export-json`, needs its DB). |
 | `pnpm icons:gen`                 | Render the PWA icons from `public/icon.svg`.                                                    |
 
@@ -366,7 +366,8 @@ requirePermission(...)` or `requireAnyPermission(...)`. A missing permission ren
 - **Downloads**: `downloadFrom(() => api.post<DownloadLink>(…))` or `downloadGet(path)`
   (a blob in demo mode, `location.assign` against the backend).
 - **Enums**: `useEnums()`, `enumLabel`, `enumTone`. Labels and tones always come from
-  `/meta/enums`; `ENUM_CATALOG` mirrors it for the mocks.
+  `/meta/enums`. `ENUM_CATALOG` is a static mirror (fallback, role permissions, personas); the
+  mock serves the fixture's `enums`, i.e. the backend's own.
 - **Dates**: shown in the business time zone from `/meta/config` (`@/lib/format`:
   `formatDate`, `formatDateTime`, `formatRelative`, `formatAge`, `businessToday`,
   `addWorkingDays`…).
@@ -434,7 +435,7 @@ keywords? }`. Groups: Overview, Requests, Warehouse, Field (first for technician
 ## 10. Mock API (demo mode and tests)
 
 Demo mode runs the whole product in the browser: MSW plus an in-memory database loaded from
-`src/mocks/fixtures/seed.json` and persisted in localStorage (`hangar.demo-db.v2`). The same
+`src/mocks/fixtures/seed.json` and persisted in IndexedDB (`hangar-demo`, key `hangar.demo-db.v3`). The same
 handlers run in Vitest. A screen that works in demo mode must work against the backend
 unchanged: same shapes, same validation, same permissions.
 
@@ -474,7 +475,10 @@ unchanged: same shapes, same validation, same permissions.
 - **Dates shift** to today by whole weeks on load (SPEC_RESOLUTIONS #47), so weekdays and
   "today's tour" stay stable. "Reset demo data" (⌘K, admin) reloads the fixture.
 - **Workflow engine** (`@/mocks/workflow`): the SR, lease and asset transition maps are
-  defined once (`ENUM_CATALOG.transitions`, served as `/meta/enums.transitions`). Core
+  defined once: the fixture's `enums.transitions` (exported by the backend), served as
+  `/meta/enums.transitions` and read through `servedEnums()`. `internal` actions (import, sync,
+  system) are never offered to users; `viaEndpoint: false` actions (`ship`) are offered but
+  executed by their dedicated endpoint. Core
   registers the rules that touch core tables (`src/mocks/core/workflow.ts`); slices register
   theirs in `mocks/workflow.ts`:
 
@@ -513,13 +517,23 @@ filterTo`, `problem(status, code, title, …)` and `problems.*` (problem+json), 
 
 ## 11. Seed fixture
 
-`src/mocks/fixtures/seed.json` (`{ meta, tables, enums, config }`, SPEC_RESOLUTIONS #16) is
-**hand-made** by `scripts/seed-fixture/generate.ts` (deterministic, anchor 2026-10-13, about
-1 MB): 99 SRs covering every status, 45 lease returns, 335 assets, 845 movements, 7 users,
-booking calendars (ids follow the regions sorted by name, so Riverton is calendar 7) and
-Theo's five Riverton stops for today. `pnpm seed:fixture` regenerates and validates it. Once
-the backend seeders are complete, `pnpm seed:import` swaps in the output of
-`uv run hangar seed --export-json` (row shapes: `src/mocks/fixtures/types.ts`). The fixture is
+`src/mocks/fixtures/seed.json` (`{ meta, tables, enums, config }`, SPEC_RESOLUTIONS #16) is the
+**backend's own export**: `pnpm seed:import` runs `uv run hangar seed --export-json <tmp>` in
+`../hangar-backend-demo` (`HANGAR_BACKEND_DIR` overrides; it needs the backend database, e.g.
+`DATABASE_URL=postgresql+psycopg://dev:dev@localhost:5432/hangar_main`), validates the
+envelope and writes the file with `meta.source = "backend"`. `--from=<file>` imports an
+existing export. The current file (anchor 2026-10-13, ~3.5 MB) holds 7 users, 4 sites,
+9 regions, 40 articles, 1,134 assets, 2,667 movements, 300 SRs, 876 items, 150 lease returns,
+420 contacts and 1,707 status transitions, plus the backend's `enums` and `config`.
+
+**When your backend slice adds seed data** (tours, calendars, mails, inventories…), re-run
+`pnpm seed:import` (shared-file request) so the demo gets the same rows; until then seed your
+tables in `mocks/seed.ts` from the core rows. Booking calendars and Theo's tour are **not** in
+the core export yet: H4 provides them (backend export or mock seed). The mock serves
+`config` with `demoMode: true`, no Mailpit link and an in-memory mailer.
+
+`pnpm seed:handmade` (`scripts/seed-fixture/generate.ts`) writes the smaller hand-made dataset
+used before the backend existed; use it only when the backend is unavailable. The fixture is
 served as a static asset (not bundled) and precached for offline demo use.
 
 ## 12. Testing
@@ -555,7 +569,7 @@ way.
 | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | TypeScript 6.0 (not 7), ESLint 10, MSW 2, TanStack Table v9, zod 4 without the zod adapter            | Tooling compatibility (typescript-eslint `<6.1`) and the spec versions |
 | API types hand-written in `src/lib/api/types.ts`; `schema.d.ts` regenerated (27 backend paths so far) | The backend OpenAPI document was incomplete when the foundation began  |
-| Seed fixture hand-made; the backend export is wired up via `pnpm seed:import`                         | The backend export needs its database and the slices' seeders          |
+| Seed fixture = backend export (`pnpm seed:import`); demo DB persisted in IndexedDB                    | One dataset for both; localStorage is too small for ~3.5 MB            |
 | Operational screens (warehouse included) visible to technicians and viewers with `sr.read`            | SPEC_RESOLUTIONS #36 supersedes the SCREENS §1.2 ticks                 |
 | 404 page inside the shell (`_app/$.tsx`), not at `src/routes/$.tsx`                                   | Keeps the navigation; unauthenticated users go to login first          |
 | Column visibility/order/width per user in localStorage; saved views store filters and sort only       | SCREENS §0 (Tables)                                                    |

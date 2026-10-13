@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ENUM_CATALOG } from '@/lib/enums/catalog'
 import { actorForUser } from './auth'
+import { servedEnums } from './core/fixture'
 import { srDetail } from './core/read-models'
 import { db } from './db'
 import { problemInfo } from './http'
@@ -20,17 +20,17 @@ const firstSr = (status: string) => {
   return sr
 }
 
-describe('transition maps (SPEC §4, defined once in ENUM_CATALOG)', () => {
+describe('transition maps (SPEC §4, served by /meta/enums)', () => {
   it('every action targets a known status and names a known permission', () => {
-    const statuses = new Set(ENUM_CATALOG.serviceRequestStatus.map((s) => s.value))
-    const permissions = new Set(ENUM_CATALOG.permissions.map((p) => p.key))
-    for (const def of ENUM_CATALOG.transitions.serviceRequest) {
+    const statuses = new Set(servedEnums().serviceRequestStatus.map((s) => s.value))
+    const permissions = new Set(servedEnums().permissions.map((p) => p.key))
+    for (const def of servedEnums().transitions.serviceRequest) {
       for (const from of def.from)
         expect(statuses.has(from), `${def.action} from ${from}`).toBe(true)
       if (def.to) expect(statuses.has(def.to), `${def.action} to ${def.to}`).toBe(true)
       if (def.permission) expect(permissions.has(def.permission), def.action).toBe(true)
     }
-    expect(ENUM_CATALOG.transitions.serviceRequest.find((d) => d.action === 'claim')?.bulk).toBe(
+    expect(servedEnums().transitions.serviceRequest.find((d) => d.action === 'claim')?.bulk).toBe(
       false,
     )
   })

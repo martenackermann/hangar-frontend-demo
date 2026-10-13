@@ -1,3 +1,5 @@
+import type { EnumsResponse } from '@/lib/api/types'
+import { ENUM_CATALOG } from '@/lib/enums/catalog'
 import type { SeedFixture } from '@/mocks/fixtures/types'
 
 /**
@@ -13,6 +15,14 @@ export function setFixture(fixture: SeedFixture): void {
 export function getFixture(): SeedFixture {
   if (!current) throw new Error('Demo fixture not loaded.')
   return current
+}
+
+/**
+ * The `/meta/enums` payload the mock serves and the workflow engine runs on: the fixture's
+ * `enums` (the backend's own when imported with `pnpm seed:import`), else the static catalog.
+ */
+export function servedEnums(): EnumsResponse {
+  return current?.enums ?? ENUM_CATALOG
 }
 
 /** Fetch the fixture as a static asset (kept out of the JS bundle). */

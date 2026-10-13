@@ -11,7 +11,6 @@ import type {
   SyncState,
   Tone,
 } from '@/lib/api/types'
-import { ENUM_CATALOG } from '@/lib/enums/catalog'
 import {
   actorForUser,
   actorFromRequest,
@@ -26,7 +25,7 @@ import { apiPath, intParam, listOf, noContent, problem, problems, readJson } fro
 import { advanceJob, serializeJob, startJob } from '@/mocks/jobs'
 import { multiValue } from '@/mocks/list'
 import { applyAction, applyBulk, type Resource } from '@/mocks/workflow'
-import { getFixture } from './fixture'
+import { getFixture, servedEnums } from './fixture'
 import {
   assetDetail,
   displayName,
@@ -66,7 +65,7 @@ function toneOf(
   key: 'serviceRequestStatus' | 'leaseReturnStatus' | 'assetStatus',
   value: string,
 ): { label: string; tone: Tone | null } {
-  const entry = ENUM_CATALOG[key].find((e) => e.value === value)
+  const entry = servedEnums()[key].find((e) => e.value === value)
   return { label: entry?.label ?? value, tone: entry?.tone ?? null }
 }
 
@@ -381,12 +380,20 @@ export const coreHandlers: RequestHandler[] = [
 
   // meta
   http.get(apiPath('/meta/config'), () => {
-    const config: AppConfig = { ...getFixture().config, today: db.today, demoMode: true }
+    const fixture = getFixture().config
+    // The browser demo has no SMTP/Mailpit, whatever the fixture was exported with.
+    const config: AppConfig = {
+      ...fixture,
+      today: db.today,
+      demoMode: true,
+      mailpitUrl: null,
+      gateways: { ...fixture.gateways, mailer: 'memory' },
+    }
     return HttpResponse.json(config)
   }),
   http.get(
     apiPath('/meta/enums'),
-    authed(null, () => HttpResponse.json(ENUM_CATALOG)),
+    authed(null, () => HttpResponse.json(servedEnums())),
   ),
 
   // reference lists

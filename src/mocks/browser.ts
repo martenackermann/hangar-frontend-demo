@@ -1,7 +1,15 @@
+import { createStore, get, set } from 'idb-keyval'
 import { setupWorker } from 'msw/browser'
 import { env } from '@/lib/env'
 import { loadFixture } from './core/fixture'
-import { db, initDemoDb, resetDemoData } from './db'
+import {
+  db,
+  DB_STORAGE_KEY,
+  initDemoDb,
+  resetDemoData,
+  type DemoStorage,
+  type PersistedDatabase,
+} from './db'
 import { handlers, seeds } from './handlers'
 
 declare global {
@@ -17,9 +25,25 @@ declare global {
  * Dev: MSW's own /mockServiceWorker.js. Builds: the PWA worker /sw.js imports the MSW worker
  * through public/msw-bridge.js (one service worker per scope).
  */
+/** IndexedDB persistence (structured clone, no size issues); preloaded so `init` stays sync. */
+async function openStorage(): Promise<DemoStorage | null> {
+  try {
+    localStorage.removeItem('hangar.demo-db.v2') // pre-IndexedDB versions
+  } catch {
+    // storage disabled
+  }
+  try {
+    const store = createStore('hangar-demo', 'database')
+    const persisted = await get<PersistedDatabase>(DB_STORAGE_KEY, store)
+    return { read: () => persisted, write: (payload) => set(DB_STORAGE_KEY, payload, store) }
+  } catch {
+    return null // private mode / IndexedDB unavailable: in memory only
+  }
+}
+
 export async function startMockWorker(): Promise<void> {
-  const fixture = await loadFixture()
-  const { seeded } = initDemoDb({ fixture, seeds })
+  const [fixture, storage] = await Promise.all([loadFixture(), openStorage()])
+  const { seeded } = initDemoDb({ fixture, seeds, storage })
   window.__hangarDemo = { db, reset: resetDemoData }
   window.addEventListener('pagehide', () => db.flush())
 

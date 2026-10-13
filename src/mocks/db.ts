@@ -15,8 +15,9 @@ import { addDays, businessToday, daysBetween } from '@/lib/format'
  *
  * - Slice seeds (`src/modules/<m>/mocks/seed.ts` → `seed: SeedDefinition`) run after the core
  *   tables are loaded, in `order`, each with its own deterministic faker.
- * - Persistence: everything is saved to localStorage under a versioned key; a changed fixture or
- *   seed `version` reseeds. "Reset demo data" reloads the fixture for today.
+ * - Persistence: a snapshot is saved through a `DemoStorage` (the browser uses IndexedDB, see
+ *   `src/mocks/browser.ts`; localStorage is too small for the ~3.5 MB fixture). A changed fixture
+ *   or seed `version` reseeds. "Reset demo data" reloads the fixture for today.
  */
 
 export type Id = number
@@ -171,7 +172,7 @@ export interface SeedDefinition {
 }
 
 const DEMO_SEED = 20_261_013
-export const DB_STORAGE_KEY = 'hangar.demo-db.v2'
+export const DB_STORAGE_KEY = 'hangar.demo-db.v3'
 
 function hashString(value: string): number {
   let hash = 2_166_136_261
@@ -235,7 +236,7 @@ export function weekShiftDays(anchorDate: string, today: string): number {
 
 type Snapshot = Record<string, BaseRecord[]>
 
-interface PersistedDatabase {
+export interface PersistedDatabase {
   manifest: string
   today: string
   shiftDays: number
@@ -243,11 +244,31 @@ interface PersistedDatabase {
   tables: Snapshot
 }
 
+/**
+ * Where the demo database is persisted. `read` is synchronous (the browser preloads the value
+ * from IndexedDB before `init`); `write` may be async and is debounced by the database.
+ */
+export interface DemoStorage {
+  read(): PersistedDatabase | undefined
+  write(payload: PersistedDatabase): void | Promise<void>
+}
+
+/** A `DemoStorage` over a Web Storage object (tests, small datasets). */
+export function webStorage(storage: Storage, key = DB_STORAGE_KEY): DemoStorage {
+  return {
+    read: () => {
+      const raw = storage.getItem(key)
+      return raw ? (JSON.parse(raw) as PersistedDatabase) : undefined
+    },
+    write: (payload) => storage.setItem(key, JSON.stringify(payload)),
+  }
+}
+
 export interface InitOptions {
   fixture: FixtureLike
   seeds?: readonly SeedDefinition[]
-  /** Where to persist; `null` keeps everything in memory (tests). Default: localStorage. */
-  storage?: Storage | null
+  /** Where to persist; `null`/omitted keeps everything in memory (tests). */
+  storage?: DemoStorage | null
   /** Override "today" (tests). */
   today?: string
 }
@@ -256,7 +277,7 @@ export class DemoDatabase {
   #collections = new Map<string, Collection<BaseRecord>>()
   #fixture: FixtureLike | null = null
   #seeds: SeedDefinition[] = []
-  #storage: Storage | null = null
+  #storage: DemoStorage | null = null
   #today = businessToday()
   #shiftDays = 0
   #saveTimer: ReturnType<typeof setTimeout> | undefined
@@ -300,7 +321,7 @@ export class DemoDatabase {
   init({ fixture, seeds = [], storage, today }: InitOptions): { seeded: boolean } {
     this.#fixture = fixture
     this.#seeds = sortSeeds(seeds)
-    this.#storage = storage === undefined ? (globalThis.localStorage ?? null) : storage
+    this.#storage = storage ?? null
     this.#today = today ?? businessToday()
 
     const persisted = this.#readPersisted()
@@ -380,8 +401,7 @@ export class DemoDatabase {
   #readPersisted(): PersistedDatabase | undefined {
     if (!this.#storage) return undefined
     try {
-      const raw = this.#storage.getItem(DB_STORAGE_KEY)
-      return raw ? (JSON.parse(raw) as PersistedDatabase) : undefined
+      return this.#storage.read()
     } catch {
       return undefined
     }
@@ -404,12 +424,16 @@ export class DemoDatabase {
       savedAt: new Date().toISOString(),
       tables: this.snapshot(),
     }
-    try {
-      this.#storage.setItem(DB_STORAGE_KEY, JSON.stringify(payload))
-    } catch (error) {
+    const fail = (error: unknown) => {
       // Quota exceeded or storage disabled: keep working in memory.
       this.#persistFailed = true
       console.warn('[demo] Could not persist demo data; changes are kept in memory only.', error)
+    }
+    try {
+      const pending = this.#storage.write(payload)
+      if (pending) pending.catch(fail)
+    } catch (error) {
+      fail(error)
     }
   }
 }
