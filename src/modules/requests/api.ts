@@ -58,7 +58,19 @@ export interface NotificationTemplateInfoExt extends Omit<NotificationTemplateIn
 // ---- helpers -----------------------------------------------------------------------------------
 
 /** Search params the API does not know (UI state) are dropped before calling the API. */
-const UI_KEYS = new Set(['view', 'sr', 'lr', 'asset', 'mail', 'tab', 'board', 'cols'])
+const UI_KEYS = new Set([
+  'view',
+  'sr',
+  'lr',
+  'asset',
+  'mail',
+  'tab',
+  'board',
+  'cols',
+  'run',
+  'template',
+  'preview',
+])
 
 export function apiQuery(search: Record<string, unknown>): Query {
   const query: Query = {}

@@ -194,6 +194,8 @@ export const commsSearchSchema = listSearchSchema.extend({
   entityType: enumParam(['service_request', 'lease_return', 'calloff_order', 'inventory', 'import_job', 'tour']),
   from: dateParam(),
   to: dateParam(),
+  /** Dispatch runs tab: only dry runs (`true`) / only real runs (`false`). */
+  dryRun: boolParam(),
   /** Dispatch run drawer (`?run=12`). */
   run: idParam(),
   /** Template preview (`?template=sr.invitation`). */
