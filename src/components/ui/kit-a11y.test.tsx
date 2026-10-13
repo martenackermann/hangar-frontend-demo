@@ -135,7 +135,7 @@ describe('picker trigger names', () => {
     function Harness() {
       const [value, setValue] = useState<string[]>(['hil'])
       return (
-        <Combobox
+        <Combobox<string>
           multiple
           label="Region"
           options={options}
