@@ -20,7 +20,7 @@ export function retirementTone(days: number): 'critical' | 'caution' | null {
   return days <= 14 ? 'caution' : null
 }
 
-function Retirement({ lease }: { lease: LeaseReturnListItem }) {
+function retirementCell(lease: LeaseReturnListItem) {
   const tone = retirementTone(lease.daysUntilRetirement)
   return (
     <span className="flex min-w-0 items-baseline gap-1.5 whitespace-nowrap">
@@ -98,7 +98,7 @@ export function leaseColumns(
       header: 'Retirement',
       sortField: 'retirementDate',
       width: 170,
-      cell: (lease) => <Retirement lease={lease} />,
+      cell: retirementCell,
     },
     {
       id: 'status',

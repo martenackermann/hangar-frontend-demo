@@ -10,54 +10,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/feedback'
-import type { PipelineStage, ServiceRequestStatus, Tone } from '@/lib/api/types'
-import { addDays, businessToday, formatNumber, plural } from '@/lib/format'
-import { cn } from '@/lib/utils'
-import { apiQuery, srListQuery, type PipelineSummaryExt } from '@/modules/requests/api'
-import type { PipelineSearch } from '@/modules/requests/search'
+import type { ServiceRequestStatus } from '@/lib/api/types'
+import { formatNumber, plural } from '@/lib/format'
 import { useNow } from '@/lib/use-now'
+import { cn } from '@/lib/utils'
+import { apiQuery, srListQuery } from '@/modules/requests/api'
+import type { PipelineSearch } from '@/modules/requests/search'
+import { CLOSED_STAGES, COLUMN_PAGE, STAGE_TONES, columnQuery, type StageSummary } from './board'
 import { SrCard } from './sr-card'
-
-/** Station tone per stage (the Line, DESIGN.md §1/§3.1). */
-export const STAGE_TONES: Record<PipelineStage, Tone> = {
-  imported: 'intake',
-  invited: 'outreach',
-  booked: 'booked',
-  personalizing: 'workshop',
-  ready: 'workshop',
-  delivery: 'transit',
-  deployed: 'done',
-  closed: 'intake',
-}
-
-const PAGE = 50
-const CLOSED_STAGES = new Set<PipelineStage>(['deployed', 'closed'])
-
-export type StageSummary = PipelineSummaryExt['stages'][number]
-
-/** Board scope (filters) shared by every column's card query. */
-export function columnQuery(
-  search: PipelineSearch,
-  stage: PipelineStage,
-  statuses: readonly ServiceRequestStatus[],
-  limit: number,
-) {
-  const closed = CLOSED_STAGES.has(stage)
-  return apiQuery({
-    siteId: search.siteId,
-    regionId: search.regionId,
-    deliveryType: search.deliveryType,
-    vip: search.vip,
-    campus: search.campus,
-    needsAttention: search.needsAttention,
-    stage,
-    status: statuses.length ? statuses : undefined,
-    perPage: limit,
-    sort: closed ? '-statusChangedAt' : (search.sort ?? 'appointmentStartAt'),
-    includeClosed: closed ? true : undefined,
-    closedFrom: closed ? addDays(businessToday(), -14) : undefined,
-  })
-}
 
 export function StageColumn({
   summary,
@@ -193,7 +153,7 @@ export function StageColumn({
               size="sm"
               variant="ghost"
               loading={query.isFetching}
-              onClick={() => onLimit(Math.min(200, limit + PAGE))}
+              onClick={() => onLimit(Math.min(200, limit + COLUMN_PAGE))}
               disabled={limit >= 200}
             >
               {limit >= 200
@@ -206,5 +166,3 @@ export function StageColumn({
     </PipelineColumn>
   )
 }
-
-export const COLUMN_PAGE = PAGE

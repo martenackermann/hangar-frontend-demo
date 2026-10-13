@@ -1,6 +1,5 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { MailCheck, Send } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useDrawerNavigation } from '@/components/drawer/drawer-state'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -9,8 +8,8 @@ import { isApiError } from '@/lib/api/errors'
 import type { DispatchRun } from '@/lib/api/types'
 import { useCan } from '@/lib/auth/store'
 import { formatNumber, plural } from '@/lib/format'
-import { templatesQuery, useDryRun } from '../api'
-import { startDispatch } from '../dispatch'
+import { useDryRun } from '../api'
+import { useStartDispatch, useTemplateNames } from './dispatch-hooks'
 import { skipLabel } from './labels'
 
 /**
@@ -18,26 +17,6 @@ import { skipLabel } from './labels'
  * the daily dispatch (stored with `dryRun: true`, SPEC_RESOLUTIONS #10) — mails grouped by
  * template, skipped reasons — then "Send now" queues the real run and tracks its job.
  */
-export function useTemplateNames(): (id: string) => string {
-  const { data } = useQuery(templatesQuery)
-  return useMemo(() => {
-    const names = new Map((data?.data ?? []).map((t) => [t.id, t.name]))
-    return (id: string) => names.get(id) ?? id
-  }, [data])
-}
-
-export function useStartDispatch() {
-  const queryClient = useQueryClient()
-  const [pending, setPending] = useState(false)
-  return {
-    pending,
-    start: () => {
-      setPending(true)
-      return startDispatch(queryClient).finally(() => setPending(false))
-    },
-  }
-}
-
 export function DispatchSummary({ run }: { run: DispatchRun }) {
   const templateName = useTemplateNames()
   const drawer = useDrawerNavigation()

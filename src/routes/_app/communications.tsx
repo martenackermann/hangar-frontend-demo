@@ -20,7 +20,10 @@ function CommunicationsRoute() {
     <CommsPage
       search={search}
       onSearch={(patch, replace) =>
-        void navigate({ search: ((prev: CommsSearch) => ({ ...prev, ...patch })) as never, replace })
+        void navigate({
+          search: ((prev: CommsSearch) => ({ ...prev, ...patch })) as never,
+          replace,
+        })
       }
     />
   )

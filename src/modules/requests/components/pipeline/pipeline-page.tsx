@@ -33,7 +33,8 @@ import { apiQuery, pipelineKeys, pipelineSummaryQuery } from '@/modules/requests
 import { DELIVERY_TYPES, type PipelineSearch } from '@/modules/requests/search'
 import { DispatchDialog } from '../dispatch-dialog'
 import { ClosedColumn } from './closed-column'
-import { COLUMN_PAGE, StageColumn } from './stage-column'
+import { COLUMN_PAGE } from './board'
+import { StageColumn } from './stage-column'
 
 const SORT_OPTIONS = [
   { value: 'appointmentStartAt', label: 'Appointment' },

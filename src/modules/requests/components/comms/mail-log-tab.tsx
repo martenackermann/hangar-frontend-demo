@@ -23,7 +23,7 @@ import { enumLabel, useEnums } from '@/lib/enums'
 import { formatDateTime, formatTime } from '@/lib/format'
 import { apiQuery, mailLogQuery } from '@/modules/requests/api'
 import { MAIL_STATUSES, TRIGGERS, type CommsSearch } from '@/modules/requests/search'
-import { useTemplateNames } from '../dispatch-dialog'
+import { useTemplateNames } from '../dispatch-hooks'
 
 const ENTITY_TYPES = [
   { value: 'service_request', label: 'Service request' },

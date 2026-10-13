@@ -13,14 +13,15 @@ import type { DispatchRun } from '@/lib/api/types'
 import { formatDateTime, formatFullDateTime, formatNumber } from '@/lib/format'
 import { dispatchRunQuery, dispatchRunsQuery } from '@/modules/requests/api'
 import type { CommsSearch } from '@/modules/requests/search'
-import { DispatchSummary, useTemplateNames } from '../dispatch-dialog'
+import { DispatchSummary } from '../dispatch-dialog'
+import { useTemplateNames } from '../dispatch-hooks'
 import { runTriggerLabel, skipLabel } from '../labels'
 
 function sum(record: Record<string, number>): number {
   return Object.values(record).reduce((total, n) => total + n, 0)
 }
 
-export function runDuration(run: DispatchRun): string {
+function runDuration(run: DispatchRun): string {
   if (!run.finishedAt) return run.status === 'running' || run.status === 'queued' ? 'running' : '—'
   const seconds = Math.max(
     0,

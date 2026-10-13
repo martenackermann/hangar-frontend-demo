@@ -8,13 +8,13 @@ import { expect, persona, signIn } from './fixtures'
  * inject into the mail preview `iframe sandbox srcdoc` (API.md §4.8) and Chrome logs "Blocked
  * script execution in 'about:srcdoc'". Real users never see it (no scripts run in the frame).
  */
-const SANDBOX_NOISE = /Blocked script execution in 'about:srcdoc'/
+const SANDBOX_NOISE = "Blocked script execution in 'about:srcdoc'"
 const test = base.extend<{ consoleErrors: string[] }>({
   consoleErrors: [
     async ({ page }, use) => {
       const errors: string[] = []
       page.on('console', (message) => {
-        if (message.type() === 'error' && !SANDBOX_NOISE.test(message.text()))
+        if (message.type() === 'error' && !message.text().includes(SANDBOX_NOISE))
           errors.push(message.text())
       })
       page.on('pageerror', (error) => errors.push(error.message))

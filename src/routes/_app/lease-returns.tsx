@@ -20,7 +20,10 @@ function LeaseReturnsRoute() {
     <LeaseListPage
       search={search}
       onSearch={(patch, replace) =>
-        void navigate({ search: ((prev: LeaseSearch) => ({ ...prev, ...patch })) as never, replace })
+        void navigate({
+          search: ((prev: LeaseSearch) => ({ ...prev, ...patch })) as never,
+          replace,
+        })
       }
     />
   )

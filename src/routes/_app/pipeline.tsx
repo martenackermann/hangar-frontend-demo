@@ -18,7 +18,10 @@ function PipelineRoute() {
     <PipelinePage
       search={search}
       onSearch={(patch, replace) =>
-        void navigate({ search: ((prev: PipelineSearch) => ({ ...prev, ...patch })) as never, replace })
+        void navigate({
+          search: ((prev: PipelineSearch) => ({ ...prev, ...patch })) as never,
+          replace,
+        })
       }
     />
   )

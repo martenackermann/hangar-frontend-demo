@@ -2,7 +2,7 @@ import { ChevronsLeftRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatNumber } from '@/lib/format'
 import type { PipelineSummaryExt } from '@/modules/requests/api'
-import type { StageSummary } from './stage-column'
+import type { StageSummary } from './board'
 
 /**
  * The collapsed Closed column (DESIGN.md §10 PipelineBoard, 136 px): cancelled in the last
