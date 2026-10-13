@@ -170,6 +170,15 @@ onTransition<ServiceRequestRow>(SR, (ctx) => {
   }
 })
 
+/**
+ * Lease `close` reason like the backend (runs after the core effect, which stores the comment):
+ * payload `closeReason` (H5 deactivation: `device_deactivated`) → comment → "Closed manually".
+ */
+registerEffect<LeaseReturnRow>(LR, 'close', ({ payload, comment, update }) => {
+  const fromPayload = typeof payload.closeReason === 'string' ? payload.closeReason : null
+  update({ closeReason: (fromPayload ?? comment ?? 'Closed manually').slice(0, 200) })
+})
+
 /** Runs after the core effect (which sets `hardwareUnavailableNotifiedAt` unconditionally). */
 registerEffect<ServiceRequestRow>(SR, 'mark_hardware_unavailable', (ctx) => {
   if (ctx.row.hardwareUnavailableNotifiedAt !== null) return

@@ -198,7 +198,10 @@ export const commsSearchSchema = listSearchSchema.extend({
     'inventory',
     'import_job',
     'tour',
+    'asset',
   ]),
+  /** One record's mails (`?entityType=calloff_order&entityId=12`, linked from H5/H4 pages). */
+  entityId: idParam(),
   from: dateParam(),
   to: dateParam(),
   /** Dispatch runs tab: only dry runs (`true`) / only real runs (`false`). */

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Mail, Paperclip, SearchX } from 'lucide-react'
+import { Mail, Paperclip, SearchX, X } from 'lucide-react'
 import { useMemo } from 'react'
 import { DataTable, type DataColumn } from '@/components/data-table/data-table'
 import {
@@ -32,6 +32,7 @@ const ENTITY_TYPES = [
   { value: 'inventory', label: 'Inventory' },
   { value: 'import_job', label: 'Import' },
   { value: 'tour', label: 'Tour' },
+  { value: 'asset', label: 'Asset' },
 ]
 
 /** Related record: SR/lease/asset open their drawer; call-offs, inventories, imports link to their page. */
@@ -260,6 +261,25 @@ export function MailLogTab({
         resultCount={query.data?.meta.total}
         end={<DensityToggle />}
       />
+      {search.entityId !== undefined && (
+        <div className="flex items-center gap-2 border-b border-line-subtle px-4 py-1.5 text-xs text-fg-2 max-md:px-3">
+          Mails of{' '}
+          <span className="font-mono text-fg">
+            {rows[0]?.entity?.label ??
+              `${ENTITY_TYPES.find((t) => t.value === search.entityType)?.label ?? 'record'} #${search.entityId}`}
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={X}
+            onClick={() =>
+              onSearch({ entityId: undefined, entityType: undefined, page: undefined })
+            }
+          >
+            Show all mails
+          </Button>
+        </div>
+      )}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <DataTable
           label="Mail log"

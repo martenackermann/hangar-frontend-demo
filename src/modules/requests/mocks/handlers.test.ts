@@ -15,6 +15,7 @@ import type {
   ServiceRequestListItem,
 } from '@/lib/api/types'
 import { db } from '@/mocks/db'
+import { applyAction } from '@/mocks/workflow'
 import { PERSONA_EMAILS, signInAs } from '@/test/utils'
 import type { PipelineSummaryExt } from '../api'
 
@@ -161,6 +162,28 @@ describe('H1 mock API', () => {
       const split = stage.aging
       expect(split.onTime + split.aging + split.overdue).toBe(stage.count)
     }
+  })
+
+  it('closes leases with the payload reason (H5 deactivation) or the comment', async () => {
+    await signInAs(PERSONA_EMAILS.dispatcher)
+    const open = db.collection('lease_returns').filter((l) => l.status === 'info_sent')
+    const [first, second] = open
+    if (!first || !second) throw new Error('seed has no open lease returns')
+    const system = applyAction('leaseReturn', first.id, 'close', {
+      actor: null,
+      trigger: 'system',
+      payload: { closeReason: 'device_deactivated', comment: 'device_deactivated' },
+    })
+    expect(system.ok).toBe(true)
+    expect(db.collection('lease_returns').get(first.id)).toMatchObject({
+      status: 'closed',
+      closeReason: 'device_deactivated',
+    })
+    const manual = await api.post<LeaseReturnDetail>(`/lease-returns/${second.id}/actions/close`, {
+      comment: 'Returned at the desk',
+    })
+    expect(manual.closeReason).toBe('Returned at the desk')
+    expect(manual.closedAt).not.toBeNull()
   })
 
   it('enforces permissions', async () => {
