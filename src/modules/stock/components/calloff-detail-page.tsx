@@ -293,6 +293,9 @@ export function CallOffDetailPage({ orderId }: { orderId: number }) {
     <Page className="overflow-y-auto">
       <PageHeader
         title={`Call-off order`}
+        // Phones: the actions take their own full-width row and wrap, the primary first.
+        className="max-md:[&>div:last-child]:w-full max-md:[&>div:last-child]:flex-wrap"
+
         meta={
           <span className="inline-flex items-center gap-2">
             <CopyableId value={order.number} />
@@ -323,12 +326,13 @@ export function CallOffDetailPage({ orderId }: { orderId: number }) {
             )}
             {order.status === 'draft' && canManage && (
               <Tooltip content={sendBlocked ? blockReason : undefined}>
-                <span>
+                <span className="max-md:order-first max-md:w-full">
                   <Button
                     variant="primary"
                     icon={Send}
                     shortcut="mod+enter"
                     disabled={sendBlocked}
+                    className="max-md:w-full"
                     onClick={() => setConfirm('send')}
                   >
                     Send to Initech Logistics
@@ -414,8 +418,8 @@ export function CallOffDetailPage({ orderId }: { orderId: number }) {
             </EmptyState>
           ) : (
             <div className="-m-4 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
+              <table className="w-full text-sm max-md:block">
+                <thead className="max-md:hidden">
                   <tr className="border-b border-line text-xs text-fg-3">
                     <th className="h-8 px-4 text-left font-medium">Article</th>
                     <th className="px-2 text-right font-medium">Demand</th>
@@ -426,21 +430,41 @@ export function CallOffDetailPage({ orderId }: { orderId: number }) {
                     <th className="w-20 px-4" aria-label="Warnings and actions" />
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="max-md:block">
                   {order.lines.map((line) => (
-                    <tr key={line.id} className="border-b border-line-subtle last:border-0">
-                      <td className="h-row px-4">
+                    <tr
+                      key={line.id}
+                      className="border-b border-line-subtle last:border-0 max-md:grid max-md:grid-cols-[repeat(4,minmax(0,1fr))_auto] max-md:items-center max-md:gap-x-3 max-md:gap-y-1 max-md:px-4 max-md:py-3"
+                    >
+                      <td className="h-row px-4 max-md:col-span-3 max-md:h-auto max-md:p-0">
                         <IdInk value={line.article.number} className="mr-2 text-xs" />
                         {line.article.name}
-                        <span className="ml-2 text-xs text-fg-3">{line.article.modelNumber}</span>
+                        <span className="ml-2 text-xs text-fg-3 max-md:ml-0 max-md:block">
+                          {line.article.modelNumber}
+                        </span>
                       </td>
-                      <td className="px-2 text-right font-mono tabular-nums">{line.demandQty}</td>
-                      <td className="px-2 text-right font-mono tabular-nums">{line.stockQty}</td>
-                      <td className="px-2 text-right font-mono tabular-nums">{line.bufferQty}</td>
-                      <td className="px-2 text-right font-mono text-fg-2 tabular-nums">
-                        {line.suggestedQty}
-                      </td>
-                      <td className="px-2 text-right">
+                      {(
+                        [
+                          ['Demand', line.demandQty],
+                          ['Stock', line.stockQty],
+                          ['Buffer', line.bufferQty],
+                          ['Suggested', line.suggestedQty],
+                        ] as const
+                      ).map(([label, value]) => (
+                        <td
+                          key={label}
+                          className={cn(
+                            'px-2 text-right font-mono tabular-nums max-md:row-start-2 max-md:p-0 max-md:text-left',
+                            label === 'Suggested' && 'text-fg-2',
+                          )}
+                        >
+                          <span className="block font-sans text-2xs text-fg-3 md:hidden">
+                            {label}
+                          </span>
+                          {value}
+                        </td>
+                      ))}
+                      <td className="px-2 text-right max-md:col-start-4 max-md:row-start-1 max-md:p-0">
                         {editable ? (
                           <QuantityInput
                             line={line}
@@ -458,7 +482,7 @@ export function CallOffDetailPage({ orderId }: { orderId: number }) {
                           </span>
                         )}
                       </td>
-                      <td className="px-4">
+                      <td className="px-4 max-md:col-start-5 max-md:row-start-1 max-md:p-0">
                         <span className="flex items-center justify-end gap-1">
                           <LineWarnings line={line} />
                           {editable && (

@@ -1,17 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, PackageCheck, Printer, Truck } from 'lucide-react'
+import { ChevronLeft, ChevronRight, PackageCheck, Printer } from 'lucide-react'
 import { useState } from 'react'
 import { z } from 'zod'
 import { BulkAction, BulkActionBar } from '@/components/data-table/bulk-action-bar'
-import { IdInk } from '@/components/domain/status'
+import { IdInk, StatusBadge } from '@/components/domain/status'
 import { useDrawerNavigation } from '@/components/drawer/drawer-state'
 import { DrawerError } from '@/components/drawer/drawer-states'
 import { useBulkAction, useWorkflowAction } from '@/components/drawer/workflow-actions'
 import { Button, IconButton } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DatePicker } from '@/components/ui/date-picker'
-import { EmptyState, SkeletonRows, ToneBadge } from '@/components/ui/feedback'
+import { EmptyState, SkeletonRows } from '@/components/ui/feedback'
 import { Page, PageHeader, Toolbar } from '@/components/ui/page'
 import { api } from '@/lib/api/client'
 import { useHubs } from '@/lib/api/core'
@@ -22,6 +22,7 @@ import { enumLabel, useEnums } from '@/lib/enums'
 import { addWorkingDays, businessToday, formatDate, formatTime, isWorkingDay } from '@/lib/format'
 import { dateParam, idParam } from '@/lib/search/params'
 import { useShortcut } from '@/lib/shortcuts'
+import { cn } from '@/lib/utils'
 import { stagingQueries } from '@/modules/staging/api'
 import { HubSelect } from '@/modules/staging/components/hub-select'
 import { useHubId } from '@/modules/staging/hooks/use-hub'
@@ -29,7 +30,8 @@ import { useHubId } from '@/modules/staging/hooks/use-hub'
 /**
  * Picking for technicians (SCREENS.md §5.4): prepared requests of a hub with an appointment on
  * `date`, grouped by booking calendar and enriched with the tour of that day (`GET /tours`,
- * H4). Mark provided per row or in bulk; print a pick list.
+ * H4). Mark provided per row or in bulk; print a pick list. The header holds only the hub
+ * selector, like every warehouse screen; below `md` each request stacks into a three-line row.
  */
 const searchSchema = z.object({ siteId: idParam(), date: dateParam() })
 type Search = z.infer<typeof searchSchema>
@@ -110,14 +112,7 @@ function PickingPage() {
       <PageHeader
         title="Picking"
         meta={data ? `${data.totals.toPick} to pick · ${data.totals.picked} picked` : site?.name}
-        actions={
-          <>
-            <Button icon={Printer} onClick={() => window.print()} disabled={!data}>
-              Print pick list
-            </Button>
-            <HubSelect value={siteId} onChange={(next) => patch({ siteId: next })} />
-          </>
-        }
+        actions={<HubSelect value={siteId} onChange={(next) => patch({ siteId: next })} />}
       />
       <Toolbar>
         <IconButton
@@ -149,6 +144,15 @@ function PickingPage() {
             {selected.length === openIds.length ? 'Clear selection' : 'Select all to pick'}
           </Button>
         )}
+        <Button
+          size="sm"
+          icon={Printer}
+          className="ml-auto"
+          onClick={() => window.print()}
+          disabled={!data}
+        >
+          Print pick list
+        </Button>
       </Toolbar>
       <div className="min-h-0 flex-1 overflow-y-auto" data-print-root>
         <h2 className="hidden text-lg font-semibold print:block">
@@ -225,8 +229,8 @@ function PickGroup({
           picked
         </span>
       </header>
-      <table className="w-full text-sm">
-        <thead className="text-left text-xs text-fg-3">
+      <table className="w-full text-sm max-md:block">
+        <thead className="text-left text-xs text-fg-3 max-md:hidden">
           <tr>
             <th className="w-9 px-3 py-1.5 font-medium" data-print-hide>
               <span className="sr-only">Select</span>
@@ -238,7 +242,7 @@ function PickGroup({
             <th className="w-48 px-3 py-1.5 text-right font-medium">Picked</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="max-md:block">
           {group.serviceRequests.map((row) => (
             <PickRowView
               key={row.id}
@@ -270,8 +274,11 @@ function PickRowView({
   const pickable = canPick && !row.picked && row.availableActions.includes('mark_provided')
   const devices = row.items.filter((item) => item.direction === 'deliver')
   return (
-    <tr className="border-t border-line-subtle align-top">
-      <td className="px-3 py-2" data-print-hide>
+    <tr className="border-t border-line-subtle align-top max-md:grid max-md:grid-cols-[auto_auto_minmax(0,1fr)_auto] max-md:items-center max-md:gap-x-2 max-md:gap-y-1 max-md:px-3 max-md:py-2.5 max-md:first:border-t-0">
+      <td
+        className={cn('px-3 py-2 max-md:p-0', canPick ? 'max-md:w-4' : 'max-md:hidden')}
+        data-print-hide
+      >
         {pickable && (
           <Checkbox
             checked={checked}
@@ -280,8 +287,8 @@ function PickRowView({
           />
         )}
       </td>
-      <td className="hg-mono py-2">{formatTime(row.appointmentStartAt)}</td>
-      <td className="py-2">
+      <td className="hg-mono py-2 max-md:py-0">{formatTime(row.appointmentStartAt)}</td>
+      <td className="py-2 max-md:py-0">
         <button
           type="button"
           className="hover:underline"
@@ -290,26 +297,24 @@ function PickRowView({
           <IdInk value={row.number} />
         </button>
       </td>
-      <td className="py-2">{row.contact.displayName}</td>
-      <td className="py-2">
+      <td className="py-2 max-md:col-span-full max-md:py-0">{row.contact.displayName}</td>
+      <td className="py-2 max-md:col-span-full max-md:py-0">
         <ul className="grid gap-0.5">
           {devices.map((item) => (
             <li key={item.slot} className="flex items-center gap-2">
               <span aria-hidden className="hidden size-3 border border-black print:inline-block" />
               <IdInk value={item.asset?.assetTag ?? item.asset?.serialNumber} />
-              <span className="truncate text-fg-2">
+              <span className="min-w-0 truncate text-fg-2">
                 {item.asset?.article?.name ?? item.requestedType}
               </span>
             </li>
           ))}
         </ul>
       </td>
-      <td className="px-3 py-2 text-right">
-        {row.picked ? (
-          <ToneBadge tone="transit" icon={Truck}>
-            Provided
-          </ToneBadge>
-        ) : pickable ? (
+      <td className="px-3 py-2 text-right max-md:col-start-4 max-md:row-start-1 max-md:p-0">
+        {row.picked || !pickable ? (
+          <StatusBadge entity="serviceRequestStatus" state={row.status} size="sm" />
+        ) : (
           <span data-print-hide>
             <Button
               size="sm"
@@ -319,8 +324,6 @@ function PickRowView({
               Mark provided
             </Button>
           </span>
-        ) : (
-          <ToneBadge tone="workshop">To pick</ToneBadge>
         )}
       </td>
     </tr>
