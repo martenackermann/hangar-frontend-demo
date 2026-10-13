@@ -1,24 +1,32 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { RoutePlaceholder } from '@/components/app/route-placeholder'
+import { z } from 'zod'
 import { requirePermission } from '@/lib/auth/guards'
+import { enumParam } from '@/lib/search/params'
+import { DeploymentPage } from '@/modules/field/components/deployment-page'
 
-/**
- * Deployment (SCREENS.md). Owner: H4 (Field service).
- * PLACEHOLDER created by the foundation: the owning slice replaces this file
- * (keep the path, the permission guard and `staticData.title`).
- */
-export const Route = createFileRoute('/_app/field/tours/$tourId/stops/$stopId')({
-  beforeLoad: requirePermission('tours.execute_own'),
-  staticData: { title: 'Deployment' },
-  component: Placeholder,
+/** Deployment (SCREENS.md §6.3). Owner: H4 (Field service). Mobile-first on-site screen. */
+const searchSchema = z.object({
+  tab: enumParam(['instructions', 'devices', 'contact', 'finish']),
 })
 
-function Placeholder() {
+export const Route = createFileRoute('/_app/field/tours/$tourId/stops/$stopId')({
+  validateSearch: searchSchema,
+  beforeLoad: requirePermission('tours.execute_own'),
+  staticData: { title: 'Deployment' },
+  component: DeploymentRoute,
+})
+
+function DeploymentRoute() {
+  const { tourId, stopId } = Route.useParams()
+  const { tab } = Route.useSearch()
+  const navigate = Route.useNavigate()
   return (
-    <RoutePlaceholder
-      title="Deployment"
-      owner="H4"
-      purpose="On-site execution of one stop: instructions, device scans, deviation, complete or reschedule."
+    <DeploymentPage
+      key={`${tourId}:${stopId}`}
+      tourId={Number(tourId)}
+      stopId={Number(stopId)}
+      tab={tab}
+      onTabChange={(next) => void navigate({ search: { tab: next }, replace: true })}
     />
   )
 }
