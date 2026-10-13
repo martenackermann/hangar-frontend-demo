@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Camera, CircleCheck, Undo2 } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { useMediaQuery } from '@/components/data-table/data-table'
 import { CameraScanner } from '@/components/scan/camera-scanner'
 import { ScanInput, type ScanInputHandle } from '@/components/scan/scan-input'
 import { useOnline } from '@/components/scan/scan-station'
@@ -47,6 +48,7 @@ export function DeploymentScanner({
   const enums = useEnums()
   const online = useOnline()
   const inputRef = useRef<ScanInputHandle>(null)
+  const phone = useMediaQuery('(max-width: 767px)')
   const sr = view.serviceRequest
   const [register, setRegister] = useState<ScanResult<ServiceRequestItem> | null>(null)
   const refresh = () =>
@@ -142,8 +144,10 @@ export function DeploymentScanner({
         <div className="grid gap-3">
           <ScanInput
             ref={inputRef}
-            label="Scan device (serial or asset tag)"
+            label={phone ? 'Scan device' : 'Scan device (serial or asset tag)'}
             onSubmit={session.scan}
+            focusLock={!phone}
+            compact={phone}
             disabled={!online}
             disabledReason="Offline — scanning needs a connection."
             tools={

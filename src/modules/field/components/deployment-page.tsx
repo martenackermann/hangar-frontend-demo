@@ -103,8 +103,11 @@ export function DeploymentPage({
   if (completed) return <CompletedScreen view={view} sr={completed} />
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-[720px] flex-col bg-canvas">
+    <div className="mx-auto flex min-h-full w-full max-w-[720px] min-w-0 flex-col overflow-x-hidden bg-canvas">
       <header className="sticky top-0 z-10 grid gap-1 border-b border-line bg-surface px-3 py-2">
+        <h1 className="sr-only">
+          Deployment {sr.number} · {sr.contact.displayName}
+        </h1>
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="lg" icon={ArrowLeft}>
             <Link to="/field/my-tour" search={{ date: view.tour.tourDate }}>
@@ -127,7 +130,7 @@ export function DeploymentPage({
         </div>
       </header>
 
-      <div className="grid gap-3 p-3 pb-28">
+      <div className="grid min-w-0 flex-1 content-start gap-3 p-3">
         {!pending && (
           <Banner
             tone={view.stop.outcome === 'completed' ? 'done' : 'caution'}
@@ -208,7 +211,7 @@ export function DeploymentPage({
       </div>
 
       {active && (
-        <div className="fixed inset-x-0 bottom-0 z-20 mx-auto grid max-w-[720px] grid-cols-2 gap-2 border-t border-line bg-raised p-3 pb-[max(12px,env(safe-area-inset-bottom))] shadow-bar">
+        <div className="sticky bottom-0 z-20 grid grid-cols-2 gap-2 border-t border-line bg-raised p-3 pb-[max(12px,env(safe-area-inset-bottom))] shadow-bar">
           <Button
             variant="secondary"
             size="touch"

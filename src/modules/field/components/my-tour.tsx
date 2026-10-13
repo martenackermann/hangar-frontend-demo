@@ -97,6 +97,7 @@ export function MyTour({
         ) : null
       }
     >
+      <h1 className="sr-only">My tour</h1>
       {offline && (
         <Banner
           tone="caution"
