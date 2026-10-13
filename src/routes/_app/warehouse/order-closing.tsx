@@ -129,7 +129,7 @@ function OrderClosingPage() {
       },
       {
         id: 'user',
-        header: 'User',
+        header: 'Employee',
         width: 170,
         cell: (row) => row.contact.displayName,
         title: (row) => row.contact.displayName,
@@ -224,7 +224,7 @@ function OrderClosingPage() {
             onPerPageChange: (perPage) => patch({ perPage, page: 1 }),
           }}
           empty={
-            <EmptyState icon={ClipboardCheck} title="No orders waiting for closing at this hub.">
+            <EmptyState icon={ClipboardCheck} title="No orders waiting for closing at this hub">
               Orders appear here once personalization is finished.
             </EmptyState>
           }

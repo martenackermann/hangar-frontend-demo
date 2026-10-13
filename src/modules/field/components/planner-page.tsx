@@ -152,13 +152,13 @@ export function PlannerPage({
           ) : overview.isError ? (
             <EmptyState
               icon={TriangleAlert}
-              title="The week could not be loaded."
+              title="The week could not be loaded"
               actions={<Button onClick={() => void overview.refetch()}>Retry</Button>}
             />
           ) : (
             <div className={cn('grid gap-6', overview.isPlaceholderData && 'opacity-60')}>
               {totalAppointments === 0 && (
-                <EmptyState icon={CalendarRange} title="No appointments in this week." />
+                <EmptyState icon={CalendarRange} title="No appointments in this week" />
               )}
               <PlannerGrid overview={overview.data} selected={selected} onSelect={openCell} />
               <TechnicianLanes

@@ -10,7 +10,7 @@ import { Select } from '@/components/ui/select'
 import { useHubs, useRegions } from '@/lib/api/core'
 import type { DashboardKpis, Tone } from '@/lib/api/types'
 import { useEnums } from '@/lib/enums'
-import { addDays, formatDate, formatNumber, formatRelative, formatTime } from '@/lib/format'
+import { addDays, formatDate, formatNumber, formatRelative, formatTime, plural } from '@/lib/format'
 import { useNow } from '@/lib/use-now'
 import { cn } from '@/lib/utils'
 import { stockQueries } from '../api'
@@ -67,12 +67,20 @@ const th = 'h-8 px-3 text-left text-xs font-medium text-fg-3 whitespace-nowrap'
 const td = 'h-row px-3 whitespace-nowrap'
 const num = 'text-right font-mono tabular-nums'
 
+/**
+ * KPI tiles. Scope and terms follow the pipeline's: "Deployed", "Needs attention", "Employee".
+ * Unlike the pipeline (VIP hidden by default) the dashboard counts VIP requests, so the Open
+ * requests tile says how many of them are VIP, and the time windows are named in each tile
+ * (this week = since Monday; lead time = average of the last 30 days).
+ */
 function Tiles({
   kpis,
   scope,
+  vipOpen,
 }: {
   kpis: DashboardKpis
   scope: Record<string, number | undefined>
+  vipOpen: number | undefined
 }) {
   const t = kpis.tiles
   const s = kpis.series
@@ -88,6 +96,7 @@ function Tiles({
         <StatTile
           label="Open requests"
           value={formatNumber(t.openServiceRequests)}
+          unit={vipOpen ? `incl. ${formatNumber(vipOpen)}00a0VIP` : undefined}
           context="New requests per day, last 14 days"
           spark={s.importedPerDay.map((p) => p.count)}
           sparkLabels={dayLabels(s.importedPerDay)}
@@ -97,7 +106,7 @@ function Tiles({
           label="Needs attention"
           value={formatNumber(t.needsAttention)}
           alert={t.needsAttention > 0 ? 'caution' : undefined}
-          context="Open requests with an attention flag"
+          context="Open requests that need attention"
           {...sr({ needsAttention: true })}
         />
         <StatTile
@@ -109,7 +118,7 @@ function Tiles({
           {...sr({ appointmentFrom: today, appointmentTo: today, includeClosed: true })}
         />
         <StatTile
-          label="Completed this week"
+          label="Deployed this week"
           value={formatNumber(t.completedThisWeek)}
           delta={{
             value: weekDelta,
@@ -125,9 +134,9 @@ function Tiles({
         <StatTile
           label="Escalated"
           value={formatNumber(t.escalatedServiceRequests)}
-          unit="requests"
+          unit={t.escalatedServiceRequests === 1 ? 'request' : 'requests'}
           alert={t.escalatedServiceRequests > 0 ? 'critical' : undefined}
-          context={`${formatNumber(t.escalatedLeaseReturns)} lease returns escalated`}
+          context={`plus ${plural(t.escalatedLeaseReturns, 'lease return')}`}
           {...sr({ status: 'escalated' })}
         />
         <StatTile
@@ -161,7 +170,9 @@ function Tiles({
         <StatTile
           label="Stock shortfall"
           value={formatNumber(t.stockShortfallArticles)}
-          unit="article × hub"
+          unit={
+            t.stockShortfallArticles === 1 ? 'article short at a hub' : 'articles short at a hub'
+          }
           alert={t.stockShortfallArticles > 0 ? 'caution' : undefined}
           context="Demand above stock"
           {...screenTarget('/stock/matrix', {
@@ -176,20 +187,20 @@ function Tiles({
           {...screenTarget('/stock/inventory', { status: 'open' })}
         />
         <StatTile
-          label="Chain mails today"
+          label="Mails sent today"
           value={formatNumber(t.chainMailsSentToday)}
           context="Invitations, reminders, escalations"
           {...screenTarget('/communications')}
         />
         <StatTile
-          label="Import → completion"
+          label="Import → deployed"
           value={
             t.avgDaysImportToCompletion30d === null
               ? '—'
               : t.avgDaysImportToCompletion30d.toFixed(1)
           }
           unit="days"
-          context="Average, completed in the last 30 days"
+          context="Average, deployed in the last 30 days"
         />
       </KpiStrip>
     </div>
@@ -212,6 +223,7 @@ export function DashboardPage({
   )
   const kpis = query.data
   const scope = { siteId: search.siteId, regionId: search.regionId }
+  const vipOpen = useQuery(stockQueries.dashboardVipOpen(scope)).data
 
   const stageTone = (stage: string): Tone =>
     enums.pipelineStage.find((s) => s.value === stage)?.tone ?? 'intake'
@@ -229,7 +241,7 @@ export function DashboardPage({
         title="Dashboard"
         meta={
           kpis
-            ? `As of ${formatTime(kpis.asOf)} · refreshes every minute`
+            ? `As of ${formatTime(kpis.asOf)} · VIP included · refreshes every minute`
             : 'Rollout, stock and data freshness'
         }
       />
@@ -270,12 +282,12 @@ export function DashboardPage({
       ) : !kpis ? (
         <SkeletonRows rows={10} />
       ) : !hasActivity ? (
-        <EmptyState icon={Gauge} title="No activity yet.">
+        <EmptyState icon={Gauge} title="No activity yet">
           Data appears here after the first import.
         </EmptyState>
       ) : (
         <div className={cn('grid gap-4 pb-6', query.isPlaceholderData && 'opacity-60')}>
-          <Tiles kpis={kpis} scope={scope} />
+          <Tiles kpis={kpis} scope={scope} vipOpen={vipOpen} />
           <div className="grid grid-cols-2 gap-4 px-4 max-lg:grid-cols-1">
             <ChartCard
               title="Requests by stage"
@@ -293,7 +305,7 @@ export function DashboardPage({
             </ChartCard>
             {series && (
               <ChartCard
-                title="Completions per day"
+                title="Deployments per day"
                 subtitle="Last 14 days"
                 table={series.completionsPerDay.map((p) => ({
                   label: formatDate(p.date),
@@ -301,7 +313,7 @@ export function DashboardPage({
                 }))}
               >
                 <ColumnChart
-                  label="Completions per day, last 14 days"
+                  label="Deployments per day, last 14 days"
                   points={series.completionsPerDay}
                   nowIndex={series.completionsPerDay.length - 1}
                 />
@@ -347,7 +359,7 @@ export function DashboardPage({
                     <th className={th}>Region</th>
                     <th className={cn(th, 'text-right')}>Open</th>
                     <th className={cn(th, 'text-right')}>Booked</th>
-                    <th className={cn(th, 'text-right')}>Completed this week</th>
+                    <th className={cn(th, 'text-right')}>Deployed this week</th>
                     <th className={cn(th, 'text-right')}>Escalated</th>
                   </tr>
                 </thead>
@@ -375,7 +387,7 @@ export function DashboardPage({
             </TableSection>
             <TableSection title="Stock alerts">
               {kpis.stockAlerts.length === 0 ? (
-                <EmptyState icon={Gauge} title="No shortfalls.">
+                <EmptyState icon={Gauge} title="No shortfalls">
                   Every hub covers its open demand.
                 </EmptyState>
               ) : (

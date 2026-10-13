@@ -162,7 +162,7 @@ function useColumns(): DataColumn<AssetListItem>[] {
     },
     {
       id: 'user',
-      header: 'Assigned user',
+      header: 'Employee',
       cell: (row) => row.assignedContact?.displayName,
       width: 160,
     },
@@ -277,7 +277,7 @@ export function AssetsPage({
         meta={
           search.installationPlace
             ? `Installation place ${search.installationPlace}`
-            : 'Every device: stock, workflow, at users, returns, off fleet'
+            : 'Every device: in stock, in workflow, with employees, returning, off fleet'
         }
         actions={
           canExport && (
@@ -343,7 +343,7 @@ export function AssetsPage({
           </div>
         )}
         empty={
-          <EmptyState icon={SearchX} title="No assets match these filters.">
+          <EmptyState icon={SearchX} title="No assets match these filters">
             Remove a filter or search for a serial number.
           </EmptyState>
         }

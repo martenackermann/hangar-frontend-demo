@@ -9,6 +9,7 @@ import {
   FilePlus2,
   Filter,
   RefreshCw,
+  Send,
   TriangleAlert,
 } from 'lucide-react'
 import { useMemo, useState, type KeyboardEvent } from 'react'
@@ -215,6 +216,8 @@ export function MatrixPage({
     <Page>
       <PageHeader
         title="Stock matrix"
+        // Phones: the actions take their own full-width row and wrap, the primary first.
+        className="max-md:[&>div:last-child]:w-full max-md:[&>div:last-child]:flex-wrap"
         meta={
           matrix
             ? `${matrix.calculatedAt ? `Calculated ${formatRelative(matrix.calculatedAt)}` : 'Never calculated'} · ${rows.length} articles × ${sites.length} hubs`
@@ -232,13 +235,24 @@ export function MatrixPage({
             )}
             {canRecalc && (
               <Button
-                variant="primary"
                 icon={RefreshCw}
                 shortcut="r"
                 loading={recalc.isPending || matrix?.meta.recalculating}
                 onClick={() => recalc.mutate()}
               >
                 {matrix?.meta.recalculating ? 'Recalculating…' : 'Recalculate'}
+              </Button>
+            )}
+            {canOrder && (
+              <Button
+                variant="primary"
+                icon={Send}
+                className="max-md:order-first max-md:w-full"
+                onClick={() =>
+                  setOrderFor(search.siteId?.length === 1 ? (search.siteId[0] ?? 0) : 0)
+                }
+              >
+                Send call-off order
               </Button>
             )}
           </>
@@ -299,14 +313,14 @@ export function MatrixPage({
           query.isError ? (
             <EmptyState
               icon={Boxes}
-              title="The stock matrix could not be loaded."
+              title="The stock matrix could not be loaded"
               actions={<Button onClick={() => void query.refetch()}>Retry</Button>}
             />
           ) : (
             <SkeletonRows rows={12} widths={[80, 200, 160, 90, 120, 120, 120, 120]} />
           )
         ) : rows.length === 0 ? (
-          <EmptyState icon={Filter} title="No articles match these filters.">
+          <EmptyState icon={Filter} title="No articles match these filters">
             Remove a filter to see more articles.
           </EmptyState>
         ) : (
@@ -363,7 +377,7 @@ export function MatrixPage({
                 </th>
               </tr>
               <tr className="text-xs text-fg-3">
-                <th className="sticky left-0 z-30 h-8 w-72 min-w-72 border-b border-line bg-surface px-3 text-left font-medium">
+                <th className="sticky left-0 z-30 h-8 w-72 min-w-72 border-b border-line bg-surface px-3 text-left font-medium max-md:w-40 max-md:min-w-40">
                   Article · device type
                 </th>
                 {sites.map((site) => (
@@ -381,7 +395,7 @@ export function MatrixPage({
                     key={row.article.id}
                     className={cn('group', !row.article.isActive && 'text-fg-3')}
                   >
-                    <td className="sticky left-0 z-10 w-72 max-w-72 border-r border-b border-line-subtle bg-surface px-3 py-1.5 group-hover:bg-hover">
+                    <td className="sticky left-0 z-10 w-72 max-w-72 border-r border-b border-line-subtle bg-surface px-3 py-1.5 group-hover:bg-hover max-md:w-40 max-md:max-w-40">
                       <div className="flex min-w-0 items-baseline gap-2">
                         <span className="hg-mono shrink-0 text-xs text-fg-3">
                           {row.article.number}
@@ -435,7 +449,7 @@ export function MatrixPage({
         <CreateCallOffDialog
           open
           onOpenChange={(open) => !open && setOrderFor(null)}
-          siteId={orderFor}
+          siteId={orderFor || undefined}
         />
       )}
     </Page>

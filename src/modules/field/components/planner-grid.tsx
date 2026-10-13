@@ -8,9 +8,11 @@ import { cn } from '@/lib/utils'
 
 /**
  * Week grid of the tour planner (SCREENS.md §6.1): rows = calendars (region routes), columns =
- * working days; a cell shows appointment / planned counts and the tour chip (status tone +
- * technician initials, "Unplanned" when appointments but no tour). Arrow keys move the cell
- * focus, Enter opens the tour editor.
+ * working days; a cell shows booked / planned counts and the tour chip (status tone +
+ * technician initials, "Unplanned" when appointments but no tour), "—" when the day is empty.
+ * Today is marked by an amber date label only (DESIGN.md §10 TourLane), so the selection
+ * (accent-line outline + wash) stays the one amber surface in the grid. Arrow keys move the
+ * cell focus, Enter opens the tour editor.
  */
 export function PlannerGrid({
   overview,
@@ -66,7 +68,7 @@ export function PlannerGrid({
             )}
           >
             {formatDate(day)}
-            {day === today && <span className="ml-1 font-normal">· today</span>}
+            {day === today && <span className="ml-1">· Today</span>}
           </div>
         ))}
       </div>
@@ -83,6 +85,7 @@ export function PlannerGrid({
             const isSelected =
               selected?.calendarId === row.calendar.id && selected.date === cell.date
             const unplanned = !cell.tour && cell.appointmentCount > 0
+            const empty = !cell.tour && cell.appointmentCount === 0 && cell.plannedCount === 0
             return (
               <div role="gridcell" key={cell.date} className="border-b border-l border-line-subtle">
                 <button
@@ -96,23 +99,29 @@ export function PlannerGrid({
                   onFocus={() => setFocus([r, c])}
                   onKeyDown={(event) => move(event, r, c)}
                   onClick={() => onSelect(row.calendar.id, cell.date)}
-                  aria-label={`${row.calendar.name}, ${formatDate(cell.date)}: ${cell.appointmentCount} appointments, ${cell.plannedCount} planned${cell.tour ? '' : unplanned ? ', unplanned' : ''}`}
+                  aria-label={`${row.calendar.name}, ${formatDate(cell.date)}${cell.date === today ? ' (today)' : ''}: ${empty ? 'nothing booked' : `${cell.appointmentCount} booked, ${cell.plannedCount} planned${cell.tour ? '' : unplanned ? ', unplanned' : ''}`}`}
                   aria-pressed={isSelected}
                   className={cn(
                     'grid h-full min-h-16 w-full content-start gap-1 px-2 py-1.5 text-left hover:bg-hover',
                     'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus',
-                    isSelected && 'bg-accent-wash-strong',
-                    cell.date === today && !isSelected && 'bg-accent-wash',
+                    isSelected &&
+                      'bg-accent-wash-strong shadow-[inset_0_0_0_1px_var(--hg-accent-line)] hover:bg-accent-wash-strong',
                   )}
                 >
-                  <span className="flex items-center gap-2 text-xs text-fg-3">
-                    <span title="Appointments">
-                      <span className="hg-mono text-fg">{cell.appointmentCount}</span> appt
+                  {empty ? (
+                    <span aria-hidden className="text-xs text-fg-3">
+                      —
                     </span>
-                    <span title="Planned stops">
-                      <span className="hg-mono text-fg">{cell.plannedCount}</span> planned
+                  ) : (
+                    <span className="flex items-center gap-2 text-xs text-fg-3">
+                      <span title="Booked appointments">
+                        <span className="hg-mono text-fg">{cell.appointmentCount}</span> booked
+                      </span>
+                      <span title="Planned stops">
+                        <span className="hg-mono text-fg">{cell.plannedCount}</span> planned
+                      </span>
                     </span>
-                  </span>
+                  )}
                   {cell.tour ? (
                     <span className="flex items-center gap-1.5">
                       <StatusBadge entity="tourStatus" state={cell.tour.status} size="sm" />

@@ -36,8 +36,13 @@ const ON_SITE = new Set(['provided', 'shipped'])
 
 /**
  * Deployment (SCREENS.md §6.3): one stop on site, mobile-first — sticky header, tabs
- * instructions · devices · contact · finish, sticky bottom bar Scan · Complete; success screen
- * with the protocol download and the next stop.
+ * instructions · devices · contact · finish, sticky bottom bar Scan · Complete deployment (hidden
+ * on the Finish tab, where the form's own submit is the one primary action); success screen with
+ * the protocol download and the next stop.
+ *
+ * The bars stick inside the shell's scrolling `<main>`, so the root must not become a scroll
+ * container itself: `overflow-x-clip`, never `overflow-x-hidden` (that would turn the root into
+ * the sticky containing block and the footer would scroll away with the content).
  */
 export function DeploymentPage({
   tourId,
@@ -72,8 +77,8 @@ export function DeploymentPage({
         icon={forbidden ? Lock : TriangleAlert}
         title={
           forbidden
-            ? "This stop belongs to another technician's tour."
-            : 'The stop could not be loaded.'
+            ? "This stop belongs to another technician's tour"
+            : 'The stop could not be loaded'
         }
         actions={
           forbidden ? (
@@ -103,7 +108,7 @@ export function DeploymentPage({
   if (completed) return <CompletedScreen view={view} sr={completed} />
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-[720px] min-w-0 flex-col overflow-x-hidden bg-canvas">
+    <div className="mx-auto flex min-h-full w-full max-w-[720px] min-w-0 flex-col overflow-x-clip bg-canvas">
       <header className="sticky top-0 z-10 grid gap-1 border-b border-line bg-surface px-3 py-2">
         <h1 className="sr-only">
           Deployment {sr.number} · {sr.contact.displayName}
@@ -210,8 +215,8 @@ export function DeploymentPage({
         </Tabs>
       </div>
 
-      {active && (
-        <div className="sticky bottom-0 z-20 grid grid-cols-2 gap-2 border-t border-line bg-raised p-3 pb-[max(12px,env(safe-area-inset-bottom))] shadow-bar">
+      {active && current !== 'finish' && (
+        <div className="sticky bottom-0 z-20 grid grid-cols-[auto_minmax(0,1fr)] gap-2 border-t border-line bg-raised p-3 pb-[max(12px,env(safe-area-inset-bottom))] shadow-bar">
           <Button
             variant="secondary"
             size="touch"
@@ -229,7 +234,7 @@ export function DeploymentPage({
             icon={CheckCircle2}
             onClick={() => onTabChange('finish')}
           >
-            Complete
+            Complete deployment
           </Button>
         </div>
       )}
@@ -338,7 +343,7 @@ function ContactPanel({ view }: { view: DeploymentView }) {
     <div className="grid gap-4">
       <KeyValues>
         <KeyValue label="Name">{c.displayName}</KeyValue>
-        <KeyValue label="User id">
+        <KeyValue label="Employee id">
           <span className="hg-mono">{c.userId}</span>
         </KeyValue>
         <KeyValue label="Email">{c.email}</KeyValue>
@@ -386,9 +391,9 @@ function CompletedScreen({ view, sr }: { view: DeploymentView; sr: ServiceReques
       <div className="hg-tone-done mx-auto grid size-16 place-items-center rounded-full bg-(--t-wash) text-(--t)">
         <CheckCircle2 aria-hidden size={32} />
       </div>
-      <h1 className="text-xl font-semibold" role="status">
-        {sr.number} completed
-      </h1>
+      <div role="status">
+        <h1 className="text-xl font-semibold">{sr.number} completed</h1>
+      </div>
       <p className="text-fg-2">
         {sr.milestones.completedAt ? formatFullDateTime(sr.milestones.completedAt) : null}
       </p>

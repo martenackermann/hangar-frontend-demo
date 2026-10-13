@@ -145,10 +145,9 @@ export function CalendarsPage() {
         error={query.error}
         onRetry={() => void query.refetch()}
         empty={
-          <EmptyState
-            icon={CalendarDays}
-            title="No calendars yet. Run an appointment sync to load them."
-          />
+          <EmptyState icon={CalendarDays} title="No calendars yet">
+            Run an appointment sync to load them.
+          </EmptyState>
         }
       />
       {renaming && (

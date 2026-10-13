@@ -151,7 +151,7 @@ function RegionsPage() {
             onRetry={() => void query.refetch()}
             activeId={search.region ? String(search.region) : null}
             onOpen={(row) => open(row.id)}
-            empty={<EmptyState icon={MapIcon} title="No regions." />}
+            empty={<EmptyState icon={MapIcon} title="No regions" />}
           />
         </div>
         {search.region !== undefined ? (

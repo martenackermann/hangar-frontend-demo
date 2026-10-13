@@ -239,7 +239,7 @@ function ArticlesPage() {
               onPerPageChange: (perPage) => patch({ perPage, page: 1 }),
             }}
             empty={
-              <EmptyState icon={Package} title="No articles." actions={newButton}>
+              <EmptyState icon={Package} title="No articles" actions={newButton}>
                 Add the device models you roll out.
               </EmptyState>
             }

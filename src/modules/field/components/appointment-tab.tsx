@@ -48,7 +48,7 @@ export function AppointmentTab({ sr }: { sr: ServiceRequestDetail }) {
             {current
               ? current.source === 'manual'
                 ? 'Booked by dispatch'
-                : 'Booked by the user'
+                : 'Booked by the employee'
               : null}
           </KeyValue>
           <KeyValue label="Booked">
@@ -122,7 +122,7 @@ export function AppointmentTab({ sr }: { sr: ServiceRequestDetail }) {
           ))}
         </ul>
       ) : (
-        <EmptyState icon={CalendarClock} title="No appointments for this request." />
+        <EmptyState icon={CalendarClock} title="No appointments for this request" />
       )}
 
       {reschedule && (

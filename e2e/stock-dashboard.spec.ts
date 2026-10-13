@@ -19,7 +19,7 @@ test('a chart switches to its table view and back', async ({ page }) => {
   await signIn(page, persona('dana'))
   await page.goto('/dashboard')
   // Column charts have focusable bars, so the chart is a named group (bars are images).
-  const chart = page.getByRole('group', { name: 'Completions per day, last 14 days' })
+  const chart = page.getByRole('group', { name: 'Deployments per day, last 14 days' })
   await expect(chart).toBeVisible()
   const tables = await page.getByRole('table').count()
   await page.getByRole('button', { name: 'Show table' }).first().click()

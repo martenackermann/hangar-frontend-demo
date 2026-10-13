@@ -132,7 +132,7 @@ export function CompleteForm({
   useShortcut('mod+enter', () => void submit(), {
     enabled: canSubmit,
     allowInInput: true,
-    description: 'Complete',
+    description: 'Complete deployment',
     group: 'Deployment',
   })
 
@@ -247,7 +247,7 @@ export function CompleteForm({
         title={reason ?? undefined}
         shortcut={compact ? undefined : 'mod+enter'}
       >
-        Complete
+        Complete deployment
       </Button>
     </form>
   )

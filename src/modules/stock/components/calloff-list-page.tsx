@@ -166,7 +166,7 @@ export function CallOffListPage({
           onPerPageChange: (perPage) => onSearchChange({ perPage, page: 1 }),
         }}
         empty={
-          <EmptyState icon={Send} title="No call-off orders yet.">
+          <EmptyState icon={Send} title="No call-off orders yet">
             Create one from the Stock matrix.
           </EmptyState>
         }

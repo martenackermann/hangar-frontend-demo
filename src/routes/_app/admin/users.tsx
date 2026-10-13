@@ -77,7 +77,7 @@ function UsersPage() {
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="truncate font-medium">{row.displayName}</span>
           {row.isDemoPersona && (
-            <Tooltip content="Demo persona — role and password are fixed">
+            <Tooltip content="Demo persona — always active; role and password are fixed">
               <span aria-label="Demo persona" className="inline-flex text-fg-3">
                 <Icon icon={Lock} size={12} />
               </span>
@@ -155,8 +155,10 @@ function UsersPage() {
               <DropdownMenuItem
                 icon={PowerOff}
                 destructive
-                disabled={row.id === me?.id}
-                hint={row.id === me?.id ? 'Your account' : undefined}
+                disabled={row.id === me?.id || row.isDemoPersona}
+                hint={
+                  row.id === me?.id ? 'Your account' : row.isDemoPersona ? 'Persona' : undefined
+                }
                 onSelect={() => setDeactivating(row)}
               >
                 Deactivate
@@ -220,7 +222,7 @@ function UsersPage() {
           error={query.error}
           onRetry={() => void query.refetch()}
           onOpen={(row) => setEditing(row)}
-          empty={<EmptyState icon={Users} title="No users match these filters." />}
+          empty={<EmptyState icon={Users} title="No users match these filters" />}
         />
       </div>
       <UserDialog

@@ -25,6 +25,8 @@ import { cn } from '@/lib/utils'
 /**
  * My tour (SCREENS.md §6.2, DESIGN.md §9.4): the technician's day at 390 px — date stepper,
  * tour card with progress and Start, the Line of stops with call / navigate-free big targets.
+ * One amber action per view: Start tour while the tour can be started, otherwise the current
+ * stop's Open.
  */
 export function MyTour({
   date,
@@ -92,7 +94,7 @@ export function MyTour({
       ) : query.isError && !offline ? (
         <EmptyState
           icon={WifiOff}
-          title="Your tour could not be loaded."
+          title="Your tour could not be loaded"
           actions={
             <Button variant="secondary" size="touch" onClick={() => void query.refetch()}>
               Retry
@@ -102,7 +104,7 @@ export function MyTour({
       ) : !tour ? (
         <EmptyState
           icon={MapPin}
-          title="No tour planned for you on this day."
+          title="No tour planned for you on this day"
           actions={
             <Button
               variant="secondary"
@@ -133,7 +135,7 @@ export function MyTour({
                 tour={tour}
                 stop={stop}
                 isNow={stop.id === tour.stops.find((s) => s.outcome === 'pending')?.id}
-                disabled={offline}
+                primary={!tour.availableActions.includes('start')}
               />
             ))}
           </ol>
@@ -156,16 +158,22 @@ function TourCard({ tour, disabled }: { tour: TourDetail; disabled: boolean }) {
         <h2 className="text-md font-semibold">{tour.calendar.name}</h2>
         <StatusBadge entity="tourStatus" state={tour.status} className="ml-auto" />
       </div>
-      <ProgressMeter
-        label="Tour progress"
-        valueText={`${done} of ${tour.stopCount} done`}
-        max={Math.max(1, tour.stopCount)}
-        segments={[
-          { value: tour.completedCount, tone: 'done', label: 'Done' },
-          { value: tour.rescheduledCount, tone: 'caution', label: 'Rescheduled' },
-          { value: tour.cancelledCount, tone: 'critical', label: 'Cancelled' },
-        ]}
-      />
+      <div className="grid gap-1.5">
+        <ProgressMeter
+          label="Tour progress"
+          valueText={`${done} of ${tour.stopCount} done`}
+          max={Math.max(1, tour.stopCount)}
+          segments={[
+            { value: tour.completedCount, tone: 'done', label: 'Done' },
+            { value: tour.rescheduledCount, tone: 'caution', label: 'Rescheduled' },
+            { value: tour.cancelledCount, tone: 'critical', label: 'Cancelled' },
+          ]}
+        />
+        <p aria-hidden className="text-xs text-fg-2">
+          <span className="hg-mono text-fg">{done}</span> of{' '}
+          <span className="hg-mono text-fg">{tour.stopCount}</span> done
+        </p>
+      </div>
       {tour.availableActions.includes('start') && (
         <Button
           variant="primary"
@@ -197,12 +205,13 @@ function StopStation({
   tour,
   stop,
   isNow,
-  disabled,
+  primary,
 }: {
   tour: TourDetail
   stop: TourStop
   isNow: boolean
-  disabled: boolean
+  /** The current stop's Open is the view's amber action once the tour has started. */
+  primary: boolean
 }) {
   const sr = stop.serviceRequest
   const phone = stopPhone(stop)
@@ -251,18 +260,19 @@ function StopStation({
               No phone
             </Button>
           )}
+          {/* Stays a working link offline: the deployment view keeps an offline copy too. */}
           <Button
             asChild
-            variant={isNow ? 'primary' : 'secondary'}
+            variant={isNow && primary ? 'primary' : 'secondary'}
             size="touch"
             iconEnd={ChevronRight}
-            aria-disabled={disabled || undefined}
           >
             <Link
               to="/field/tours/$tourId/stops/$stopId"
               params={{ tourId: String(tour.id), stopId: String(stop.id) }}
             >
               {stop.outcome === 'pending' ? 'Open' : 'View'}
+              <span className="sr-only"> stop · {sr.contact.displayName}</span>
             </Link>
           </Button>
         </div>

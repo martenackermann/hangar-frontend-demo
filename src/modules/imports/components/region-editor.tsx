@@ -295,7 +295,7 @@ function RulesTable({ region }: { region: RegionDetail }) {
         <span id={`rules-${region.id}`}>Rules · {region.rules.length}</span>
       </SectionHeading>
       {region.rules.length === 0 && editing !== 'new' ? (
-        <EmptyState icon={CircleAlert} title="No rules for this region.">
+        <EmptyState icon={CircleAlert} title="No rules for this region">
           Requests from its addresses will stay unresolved.
         </EmptyState>
       ) : (

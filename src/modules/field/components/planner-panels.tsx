@@ -29,7 +29,7 @@ export function UnmatchedPanel({ onClose }: { onClose: () => void }) {
       ) : query.isError ? (
         <EmptyState
           icon={TriangleAlert}
-          title="Appointments could not be loaded."
+          title="Appointments could not be loaded"
           actions={<Button onClick={() => void query.refetch()}>Retry</Button>}
         />
       ) : query.data.data.length === 0 ? (
