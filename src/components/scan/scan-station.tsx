@@ -149,14 +149,17 @@ export function ScanStation<T = unknown>({
 
   return (
     <div
+      // minmax(0,1fr) columns: the station never grows wider than its container (390 px phones)
       className={cn(
-        'grid min-h-0',
-        aside && !compact && 'grid-cols-[minmax(0,1fr)_360px] max-xl:grid-cols-1',
+        'grid min-h-0 grid-cols-[minmax(0,1fr)]',
+        aside && !compact && 'grid-cols-[minmax(0,1fr)_360px] max-xl:grid-cols-[minmax(0,1fr)]',
         className,
       )}
     >
       <div className="flex min-h-0 min-w-0 flex-col">
-        <div className={cn('grid gap-3', compact ? 'p-3' : 'p-6 max-md:p-3')}>
+        <div
+          className={cn('grid grid-cols-[minmax(0,1fr)] gap-3', compact ? 'p-3' : 'p-6 max-md:p-3')}
+        >
           {!online && (
             <Banner tone="caution" icon={WifiOff} title="Offline — scanning needs a connection." />
           )}

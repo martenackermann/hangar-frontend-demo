@@ -636,9 +636,7 @@ export function InventoryStationPage({
       )}
 
       {open && canScan ? (
-        // the kit's ScanStation sizes its single-column grids to the focus-lock line (456 px on
-        // a phone); pin them to the available width until the kit does it itself
-        <div className="h-[600px] min-h-0 shrink-0 border-b border-line max-xl:h-auto [&_.grid:not([class*=grid-cols])]:grid-cols-[minmax(0,1fr)]">
+        <div className="h-[600px] min-h-0 shrink-0 border-b border-line max-xl:h-auto">
           <StationScanner
             detail={detail}
             zoneId={search.zone}

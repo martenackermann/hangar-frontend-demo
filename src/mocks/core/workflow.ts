@@ -626,12 +626,12 @@ registerEffect<LeaseReturnRow>(LR, 'resume_communication', ({ update, today }) =
 const AS = 'asset'
 type AssetCtx = ActionContext<AssetRow>
 
-registerEffect<AssetRow>(AS, 'mark_missing', ({ updated, actor, trigger, payload }) => {
+registerEffect<AssetRow>(AS, 'mark_missing', ({ updated, from, actor, trigger, payload }) => {
   // The engine already wrote the status; record the movement (location unchanged).
   db.collection('asset_movements').insert({
     assetId: updated.id,
     action: 'mark_missing',
-    fromStatus: null,
+    fromStatus: from as AssetStatus,
     toStatus: 'missing',
     fromLocationId: updated.locationId,
     toLocationId: updated.locationId,

@@ -348,7 +348,19 @@ export class DemoDatabase {
       clearTimeout(this.#saveTimer)
       this.#saveTimer = undefined
     }
-    this.#save()
+    void this.#save()
+  }
+
+  /**
+   * Write pending changes now and resolve once the storage has them. The browser mock awaits it
+   * before answering a mutating request, so a reload right after a response keeps the change.
+   * No-op (resolved) when nothing is pending.
+   */
+  persist(): Promise<void> {
+    if (this.#saveTimer === undefined) return Promise.resolve()
+    clearTimeout(this.#saveTimer)
+    this.#saveTimer = undefined
+    return this.#save()
   }
 
   snapshot(): Snapshot {
@@ -411,12 +423,12 @@ export class DemoDatabase {
     if (!this.#storage || this.#saveTimer !== undefined) return
     this.#saveTimer = setTimeout(() => {
       this.#saveTimer = undefined
-      this.#save()
+      void this.#save()
     }, 150)
   }
 
-  #save(): void {
-    if (!this.#storage || this.#persistFailed || !this.#fixture) return
+  #save(): Promise<void> {
+    if (!this.#storage || this.#persistFailed || !this.#fixture) return Promise.resolve()
     const payload: PersistedDatabase = {
       manifest: manifestOf(this.#fixture, this.#seeds),
       today: this.#today,
@@ -431,9 +443,10 @@ export class DemoDatabase {
     }
     try {
       const pending = this.#storage.write(payload)
-      if (pending) pending.catch(fail)
+      return pending ? pending.catch(fail) : Promise.resolve()
     } catch (error) {
       fail(error)
+      return Promise.resolve()
     }
   }
 }

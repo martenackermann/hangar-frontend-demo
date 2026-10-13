@@ -7,6 +7,8 @@ dist-ssr/
 dev-dist/
 *.tsbuildinfo
 .vite/
+# tsr generate temp files
+.tanstack/
 
 # tests
 coverage/

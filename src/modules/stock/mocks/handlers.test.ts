@@ -162,7 +162,9 @@ describe('call-off orders', () => {
     })
     expect(sent.status).toBe('sent')
     expect(sent.availableActions).toEqual([])
-    const mail = db.collection('stock_mail_outbox').find((m) => m.entityId === created.id)
+    const mail = db
+      .collection('mail_outbox')
+      .find((m) => m.entity?.type === 'calloff_order' && m.entity.id === created.id)
     expect(mail?.to).toEqual(['partner-orders@example.com'])
     expect(mail?.attachmentFileIds).toHaveLength(2)
     await expectProblem(

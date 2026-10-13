@@ -25,12 +25,25 @@ export function servedEnums(): EnumsResponse {
   return current?.enums ?? ENUM_CATALOG
 }
 
-/** Fetch the fixture as a static asset (kept out of the JS bundle). */
+/**
+ * Fetch the fixture as a static asset (kept out of the JS bundle). A truncated body (seen on a
+ * busy dev server: "JSON at position 2097135") is retried once, bypassing the HTTP cache.
+ */
 export async function loadFixture(): Promise<SeedFixture> {
   const { default: url } = await import('@/mocks/fixtures/seed.json?url')
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`Could not load the demo dataset (${response.status}).`)
-  const fixture = (await response.json()) as SeedFixture
+  let fixture: SeedFixture
+  try {
+    fixture = await fetchFixture(url, 'default')
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error
+    fixture = await fetchFixture(url, 'reload')
+  }
   setFixture(fixture)
   return fixture
+}
+
+async function fetchFixture(url: string, cache: RequestCache): Promise<SeedFixture> {
+  const response = await fetch(url, { cache })
+  if (!response.ok) throw new Error(`Could not load the demo dataset (${response.status}).`)
+  return (await response.json()) as SeedFixture
 }

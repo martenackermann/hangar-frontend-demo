@@ -1517,6 +1517,454 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/stock/matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stock matrix (article × hub) */
+        get: operations["stock-get_matrix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/recalculate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recalculate stock and demand now */
+        post: operations["stock-recalculate_now"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/buffers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit buffers of one hub */
+        patch: operations["stock-patch_buffers"];
+        trace?: never;
+    };
+    "/api/v1/stock/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export the stock matrix (CSV) */
+        post: operations["stock-export_matrix"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calloff-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List call-off orders */
+        get: operations["calloff-orders-list_orders"];
+        put?: never;
+        /** Create a draft call-off order from the stock matrix */
+        post: operations["calloff-orders-create_order"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calloff-orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Call-off order detail */
+        get: operations["calloff-orders-get_order"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit a draft order */
+        patch: operations["calloff-orders-patch_order"];
+        trace?: never;
+    };
+    "/api/v1/calloff-orders/{order_id}/actions/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send the order to Initech Logistics */
+        post: operations["calloff-orders-send_order"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calloff-orders/{order_id}/actions/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a draft order */
+        post: operations["calloff-orders-cancel_order"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calloff-orders/{order_id}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Order document (XLSX or PDF) */
+        get: operations["calloff-orders-order_document"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List assets */
+        get: operations["assets-list_assets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assets/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export assets (CSV, list filters apply) */
+        post: operations["assets-export_assets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assets/by-serial/{serial}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Asset by serial number (or asset tag) */
+        get: operations["assets-asset_by_serial"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assets/{asset_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Asset detail */
+        get: operations["assets-get_asset"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Correct asset metadata (tag, MAC, ITSM ids) */
+        patch: operations["assets-patch_asset"];
+        trace?: never;
+    };
+    "/api/v1/assets/{asset_id}/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Movement ledger of an asset */
+        get: operations["assets-list_movements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deactivations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Deactivation history */
+        get: operations["deactivations-list_batches"];
+        put?: never;
+        /** Deactivate devices from a serial list (CSV/XLSX) */
+        post: operations["deactivations-upload_deactivation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deactivations/sample": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sample upload file (CSV) */
+        get: operations["deactivations-sample"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deactivations/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Result of one deactivation upload */
+        get: operations["deactivations-get_batch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List inventories */
+        get: operations["inventories-list_inventories"];
+        put?: never;
+        /** Open an inventory for a hub or the Campus */
+        post: operations["inventories-open_inventory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventories/{inventory_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inventory detail */
+        get: operations["inventories-get_inventory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventories/{inventory_id}/scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Scans of an inventory */
+        get: operations["inventories-list_scans"];
+        put?: never;
+        /** Scan a serial into an open inventory */
+        post: operations["inventories-scan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventories/{inventory_id}/scans/{scan_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Undo a scan (own scans, or inventory.manage) */
+        delete: operations["inventories-undo_scan"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventories/{inventory_id}/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reconciliation: missing / wrong location / unknown / matched */
+        get: operations["inventories-get_reconciliation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventories/{inventory_id}/actions/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close the inventory (optionally apply corrections) */
+        post: operations["inventories-close_inventory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventories/{inventory_id}/actions/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel the inventory (scans are kept) */
+        post: operations["inventories-cancel_inventory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventories/{inventory_id}/reports/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a closed inventory's report (CSV) */
+        get: operations["inventories-get_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboard/kpis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dashboard KPIs, series and breakdowns */
+        get: operations["dashboard-get_kpis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1835,6 +2283,35 @@ export interface components {
              */
             retirementDate: string;
         };
+        /** AssetListItem */
+        AssetListItem: {
+            /** Id */
+            id: number;
+            /** Serialnumber */
+            serialNumber: string;
+            /** Assettag */
+            assetTag: string | null;
+            article: components["schemas"]["ArticleRef"] | null;
+            /** Model */
+            model: string | null;
+            status: components["schemas"]["AssetStatus"];
+            location: components["schemas"]["LocationRef"];
+            /** Installationplace */
+            installationPlace: string | null;
+            serviceRequest: components["schemas"]["SrRef"] | null;
+            site: components["schemas"]["SiteRef"] | null;
+            assignedContact: components["schemas"]["ContactRef"] | null;
+            /** Checkedinat */
+            checkedInAt: string | null;
+            /**
+             * Statuschangedat
+             * Format: date-time
+             */
+            statusChangedAt: string;
+            source: components["schemas"]["AssetSource"];
+            /** Availableactions */
+            availableActions: string[];
+        };
         /** AssetMovementOut */
         AssetMovementOut: {
             /** Id */
@@ -1862,6 +2339,19 @@ export interface components {
              * Format: date-time
              */
             occurredAt: string;
+        };
+        /** AssetPatch */
+        AssetPatch: {
+            /** Version */
+            version?: number | null;
+            /** Assettag */
+            assetTag?: string | null;
+            /** Macaddress */
+            macAddress?: string | null;
+            /** Externalassetid */
+            externalAssetId?: string | null;
+            /** Ciname */
+            ciName?: string | null;
         };
         /**
          * AssetSource
@@ -1938,6 +2428,15 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** Body_deactivations-upload_deactivation */
+        "Body_deactivations-upload_deactivation": {
+            /**
+             * File
+             * @description CSV or XLSX with a serial_number column
+             */
+            file: string;
+            reason: components["schemas"]["DeactivationReason"];
+        };
         /** Body_imports-detect_import */
         "Body_imports-detect_import": {
             /**
@@ -1990,6 +2489,20 @@ export interface components {
             /** Isenabled */
             isEnabled?: boolean | null;
         };
+        /** BufferEntry */
+        BufferEntry: {
+            /** Articleid */
+            articleId: number;
+            /** Bufferqty */
+            bufferQty: number;
+        };
+        /** BuffersPatch */
+        BuffersPatch: {
+            /** Siteid */
+            siteId: number;
+            /** Buffers */
+            buffers: components["schemas"]["BufferEntry"][];
+        };
         /** BulkFailure */
         BulkFailure: {
             /** Id */
@@ -2022,6 +2535,146 @@ export interface components {
             /** Name */
             name: string;
             region: components["schemas"]["RegionRef"] | null;
+        };
+        /** CallOffCancelBody */
+        CallOffCancelBody: {
+            /** Comment */
+            comment?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CallOffLine */
+        CallOffLine: {
+            /** Id */
+            id: number;
+            article: components["schemas"]["ArticleRef"];
+            /** Demandqty */
+            demandQty: number;
+            /** Stockqty */
+            stockQty: number;
+            /** Bufferqty */
+            bufferQty: number;
+            /** Suggestedqty */
+            suggestedQty: number;
+            /** Quantity */
+            quantity: number;
+            /** Minqty */
+            minQty: number | null;
+            /** Maxqty */
+            maxQty: number | null;
+            /** Warnings */
+            warnings: components["schemas"]["LineWarning"][];
+        };
+        /** CallOffLinePatch */
+        CallOffLinePatch: {
+            /** Articleid */
+            articleId: number;
+            /** Quantity */
+            quantity: number;
+        };
+        /** CallOffOrderCreate */
+        CallOffOrderCreate: {
+            /** Siteid */
+            siteId: number;
+            /**
+             * Deliverydate
+             * Format: date
+             */
+            deliveryDate: string;
+            /** Note */
+            note?: string | null;
+        };
+        /** CallOffOrderOut */
+        CallOffOrderOut: {
+            /** Id */
+            id: number;
+            /** Number */
+            number: string;
+            site: components["schemas"]["SiteRef"];
+            status: components["schemas"]["CallOffOrderStatus"];
+            /**
+             * Deliverydate
+             * Format: date
+             */
+            deliveryDate: string;
+            /** Linecount */
+            lineCount: number;
+            /** Totalquantity */
+            totalQuantity: number;
+            /** Recipientemail */
+            recipientEmail: string;
+            createdBy: components["schemas"]["UserRef"];
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Sentat */
+            sentAt: string | null;
+            sentBy: components["schemas"]["UserRef"] | null;
+            /** Note */
+            note: string | null;
+            /** Lines */
+            lines: components["schemas"]["CallOffLine"][];
+            /** Warnings */
+            warnings: string[];
+            /** Availableactions */
+            availableActions: string[];
+            /** Version */
+            version: number;
+            mailLogEntityRef: components["schemas"]["EntityRef"];
+        };
+        /** CallOffOrderPatch */
+        CallOffOrderPatch: {
+            /** Version */
+            version?: number | null;
+            /** Deliverydate */
+            deliveryDate?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Recipientemail */
+            recipientEmail?: string | null;
+            /** Lines */
+            lines?: components["schemas"]["CallOffLinePatch"][] | null;
+        };
+        /**
+         * CallOffOrderStatus
+         * @enum {string}
+         */
+        CallOffOrderStatus: "draft" | "sent" | "cancelled";
+        /** CallOffOrderSummary */
+        CallOffOrderSummary: {
+            /** Id */
+            id: number;
+            /** Number */
+            number: string;
+            site: components["schemas"]["SiteRef"];
+            status: components["schemas"]["CallOffOrderStatus"];
+            /**
+             * Deliverydate
+             * Format: date
+             */
+            deliveryDate: string;
+            /** Linecount */
+            lineCount: number;
+            /** Totalquantity */
+            totalQuantity: number;
+            /** Recipientemail */
+            recipientEmail: string;
+            createdBy: components["schemas"]["UserRef"];
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Sentat */
+            sentAt: string | null;
+            sentBy: components["schemas"]["UserRef"] | null;
+        };
+        /** CallOffSendBody */
+        CallOffSendBody: {
+            /** Version */
+            version?: number | null;
         };
         /** CodeMessage */
         CodeMessage: {
@@ -2114,6 +2767,164 @@ export interface components {
             vipType: string;
             /** Title */
             title: string | null;
+        };
+        /** DashboardFilters */
+        DashboardFilters: {
+            /** Siteid */
+            siteId: number | null;
+            /** Regionid */
+            regionId: number | null;
+        };
+        /** DashboardKpis */
+        DashboardKpis: {
+            /**
+             * Asof
+             * Format: date-time
+             */
+            asOf: string;
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+            filters: components["schemas"]["DashboardFilters"];
+            tiles: components["schemas"]["DashboardTiles"];
+            /** Stagecounts */
+            stageCounts: components["schemas"]["StageCount"][];
+            series: components["schemas"]["DashboardSeries"];
+            /** Regionload */
+            regionLoad: components["schemas"]["RegionLoad"][];
+            /** Stockalerts */
+            stockAlerts: components["schemas"]["StockAlert"][];
+        };
+        /** DashboardSeries */
+        DashboardSeries: {
+            /** Completionsperday */
+            completionsPerDay: components["schemas"]["DayCount"][];
+            /** Appointmentsperday */
+            appointmentsPerDay: components["schemas"]["DayCount"][];
+            /** Importedperday */
+            importedPerDay: components["schemas"]["DayCount"][];
+        };
+        /** DashboardTiles */
+        DashboardTiles: {
+            /** Openservicerequests */
+            openServiceRequests: number;
+            /** Needsattention */
+            needsAttention: number;
+            /** Appointmentstoday */
+            appointmentsToday: number;
+            /** Appointmentsthisweek */
+            appointmentsThisWeek: number;
+            /** Completedthisweek */
+            completedThisWeek: number;
+            /** Completedlastweek */
+            completedLastWeek: number;
+            /** Escalatedservicerequests */
+            escalatedServiceRequests: number;
+            /** Escalatedleasereturns */
+            escalatedLeaseReturns: number;
+            /** Hardwareunavailable */
+            hardwareUnavailable: number;
+            /** Rescheduleneeded */
+            rescheduleNeeded: number;
+            /** Leasereturnsduenext30Days */
+            leaseReturnsDueNext30Days: number;
+            /** Leasereturnsoverdue */
+            leaseReturnsOverdue: number;
+            /** Stockshortfallarticles */
+            stockShortfallArticles: number;
+            /** Openinventories */
+            openInventories: number;
+            /** Chainmailssenttoday */
+            chainMailsSentToday: number;
+            /** Avgdaysimporttocompletion30D */
+            avgDaysImportToCompletion30d: number | null;
+            /** Lastimportat */
+            lastImportAt: string | null;
+            /** Lastappointmentsyncat */
+            lastAppointmentSyncAt: string | null;
+            /** Laststockcalculationat */
+            lastStockCalculationAt: string | null;
+        };
+        /** DayCount */
+        DayCount: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Count */
+            count: number;
+        };
+        /** DeactivationBatchOut */
+        DeactivationBatchOut: {
+            /** Id */
+            id: number;
+            reason: components["schemas"]["DeactivationReason"];
+            /** Originalfilename */
+            originalFilename: string;
+            /** Totalrows */
+            totalRows: number;
+            /** Deactivatedcount */
+            deactivatedCount: number;
+            /** Alreadydeactivatedcount */
+            alreadyDeactivatedCount: number;
+            /** Rejectedcount */
+            rejectedCount: number;
+            /** Notfoundcount */
+            notFoundCount: number;
+            createdBy: components["schemas"]["UserRef"];
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+        };
+        /** @enum {string} */
+        DeactivationOutcome: "deactivated" | "already_deactivated" | "rejected" | "not_found";
+        /**
+         * DeactivationReason
+         * @enum {string}
+         */
+        DeactivationReason: "returned_to_lessor" | "bought_out" | "disposed";
+        /** DeactivationResult */
+        DeactivationResult: {
+            /** Id */
+            id: number;
+            reason: components["schemas"]["DeactivationReason"];
+            /** Originalfilename */
+            originalFilename: string;
+            /** Totalrows */
+            totalRows: number;
+            /** Deactivatedcount */
+            deactivatedCount: number;
+            /** Alreadydeactivatedcount */
+            alreadyDeactivatedCount: number;
+            /** Rejectedcount */
+            rejectedCount: number;
+            /** Notfoundcount */
+            notFoundCount: number;
+            createdBy: components["schemas"]["UserRef"];
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            notFoundReport: components["schemas"]["DownloadLink"] | null;
+            rejectedReport: components["schemas"]["DownloadLink"] | null;
+            /** Closedleasereturns */
+            closedLeaseReturns: number;
+            /** Sample */
+            sample: components["schemas"]["DeactivationSampleRow"][];
+        };
+        /** DeactivationSampleRow */
+        DeactivationSampleRow: {
+            /** Serialnumber */
+            serialNumber: string;
+            outcome: components["schemas"]["DeactivationOutcome"];
+            /** Detail */
+            detail: string | null;
         };
         /** DeliveryAddress */
         DeliveryAddress: {
@@ -2555,6 +3366,141 @@ export interface components {
             /** Movementid */
             movementId: number;
         };
+        /** InventoryCancelBody */
+        InventoryCancelBody: {
+            /** Comment */
+            comment?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** InventoryCloseBody */
+        InventoryCloseBody: {
+            /**
+             * Countdate
+             * Format: date
+             */
+            countDate: string;
+            /** Applycorrections */
+            applyCorrections: boolean;
+            /** Version */
+            version?: number | null;
+        };
+        /** InventoryCounts */
+        InventoryCounts: {
+            /** Expected */
+            expected: number;
+            /** Matched */
+            matched: number;
+            /** Missing */
+            missing: number;
+            /** Wronglocation */
+            wrongLocation: number;
+            /** Unknown */
+            unknown: number;
+            /** Corrected */
+            corrected: number | null;
+        };
+        /** InventoryCreate */
+        InventoryCreate: {
+            /** Siteid */
+            siteId: number;
+            /** Note */
+            note?: string | null;
+        };
+        /** InventoryDetail */
+        InventoryDetail: {
+            /** Id */
+            id: number;
+            site: components["schemas"]["SiteRef"];
+            status: components["schemas"]["InventoryStatus"];
+            /**
+             * Openedat
+             * Format: date-time
+             */
+            openedAt: string;
+            openedBy: components["schemas"]["UserRef"];
+            /** Closedat */
+            closedAt: string | null;
+            closedBy: components["schemas"]["UserRef"] | null;
+            /** Countdate */
+            countDate: string | null;
+            summary: components["schemas"]["InventoryCounts"];
+            /** Note */
+            note: string | null;
+            /** Applycorrections */
+            applyCorrections: boolean | null;
+            /** Version */
+            version: number;
+            progress: components["schemas"]["InventoryProgress"];
+            /** Zones */
+            zones: components["schemas"]["LocationRef"][];
+            /** Recentscans */
+            recentScans: components["schemas"]["InventoryScanOut"][];
+            /** Availableactions */
+            availableActions: string[];
+        };
+        /** InventoryProgress */
+        InventoryProgress: {
+            /** Scanned */
+            scanned: number;
+            /** Expected */
+            expected: number;
+            /** Percent */
+            percent: number;
+        };
+        /** InventoryScanBody */
+        InventoryScanBody: {
+            /** Serial */
+            serial: string;
+            /** Stocklocationid */
+            stockLocationId?: number | null;
+        };
+        /** InventoryScanOut */
+        InventoryScanOut: {
+            /** Id */
+            id: number;
+            /** Serialnumber */
+            serialNumber: string;
+            result: components["schemas"]["InventoryScanResult"];
+            asset: components["schemas"]["AssetSummary"] | null;
+            scannedLocation: components["schemas"]["LocationRef"] | null;
+            recordedLocation: components["schemas"]["LocationRef"] | null;
+            scannedBy: components["schemas"]["UserRef"];
+            /**
+             * Scannedat
+             * Format: date-time
+             */
+            scannedAt: string;
+        };
+        /**
+         * InventoryScanResult
+         * @enum {string}
+         */
+        InventoryScanResult: "matched" | "wrong_location" | "unknown";
+        /**
+         * InventoryStatus
+         * @enum {string}
+         */
+        InventoryStatus: "open" | "closed" | "cancelled";
+        /** InventorySummary */
+        InventorySummary: {
+            /** Id */
+            id: number;
+            site: components["schemas"]["SiteRef"];
+            status: components["schemas"]["InventoryStatus"];
+            /**
+             * Openedat
+             * Format: date-time
+             */
+            openedAt: string;
+            openedBy: components["schemas"]["UserRef"];
+            /** Closedat */
+            closedAt: string | null;
+            closedBy: components["schemas"]["UserRef"] | null;
+            /** Countdate */
+            countDate: string | null;
+            summary: components["schemas"]["InventoryCounts"];
+        };
         /**
          * ItemSlot
          * @enum {string}
@@ -2707,6 +3653,8 @@ export interface components {
             /** Perpagemax */
             perPageMax: number;
         };
+        /** @enum {string} */
+        LineWarning: "below_min" | "above_max";
         /** LinkedLeaseReturn */
         LinkedLeaseReturn: {
             /** Id */
@@ -2998,6 +3946,30 @@ export interface components {
             data: components["schemas"]["ArticleOut"][];
             meta: components["schemas"]["PageMeta"];
         };
+        /** AssetListItemPage */
+        Page_AssetListItem_: {
+            /** Data */
+            data: components["schemas"]["AssetListItem"][];
+            meta: components["schemas"]["PageMeta"];
+        };
+        /** AssetMovementOutPage */
+        Page_AssetMovementOut_: {
+            /** Data */
+            data: components["schemas"]["AssetMovementOut"][];
+            meta: components["schemas"]["PageMeta"];
+        };
+        /** CallOffOrderSummaryPage */
+        Page_CallOffOrderSummary_: {
+            /** Data */
+            data: components["schemas"]["CallOffOrderSummary"][];
+            meta: components["schemas"]["PageMeta"];
+        };
+        /** DeactivationBatchOutPage */
+        Page_DeactivationBatchOut_: {
+            /** Data */
+            data: components["schemas"]["DeactivationBatchOut"][];
+            meta: components["schemas"]["PageMeta"];
+        };
         /** ImportJobSummaryPage */
         Page_ImportJobSummary_: {
             /** Data */
@@ -3008,6 +3980,18 @@ export interface components {
         Page_ImportRowIssue_: {
             /** Data */
             data: components["schemas"]["ImportRowIssue"][];
+            meta: components["schemas"]["PageMeta"];
+        };
+        /** InventoryScanOutPage */
+        Page_InventoryScanOut_: {
+            /** Data */
+            data: components["schemas"]["InventoryScanOut"][];
+            meta: components["schemas"]["PageMeta"];
+        };
+        /** InventorySummaryPage */
+        Page_InventorySummary_: {
+            /** Data */
+            data: components["schemas"]["InventorySummary"][];
             meta: components["schemas"]["PageMeta"];
         };
         /** OrderClosingQueueItemPage */
@@ -3311,6 +4295,29 @@ export interface components {
              */
             queue: "ok" | "error";
         };
+        /** Reconciliation */
+        Reconciliation: {
+            /** Data */
+            data: components["schemas"]["ReconciliationItem"][];
+            meta: components["schemas"]["PageMeta"];
+            summary: components["schemas"]["InventoryCounts"];
+        };
+        /** @enum {string} */
+        ReconciliationCategory: "matched" | "missing" | "wrong_location" | "unknown";
+        /** ReconciliationItem */
+        ReconciliationItem: {
+            /** Serialnumber */
+            serialNumber: string;
+            asset: components["schemas"]["AssetSummary"] | null;
+            category: components["schemas"]["ReconciliationCategory"];
+            recordedLocation: components["schemas"]["LocationRef"] | null;
+            scannedLocation: components["schemas"]["LocationRef"] | null;
+            scannedBy: components["schemas"]["UserRef"] | null;
+            /** Scannedat */
+            scannedAt: string | null;
+            /** Correctable */
+            correctable: boolean;
+        };
         /** RegionDetail */
         RegionDetail: {
             /** Id */
@@ -3338,6 +4345,18 @@ export interface components {
             rules: components["schemas"]["RegionRuleOut"][];
             /** Bookinglinkexample */
             bookingLinkExample: string | null;
+        };
+        /** RegionLoad */
+        RegionLoad: {
+            region: components["schemas"]["RegionRef"];
+            /** Open */
+            open: number;
+            /** Booked */
+            booked: number;
+            /** Completedthisweek */
+            completedThisWeek: number;
+            /** Escalated */
+            escalated: number;
         };
         /** RegionOut */
         RegionOut: {
@@ -3611,6 +4630,28 @@ export interface components {
             /** Applied */
             applied: boolean;
             entity?: components["schemas"]["AssetSummary"] | null;
+            undo?: components["schemas"]["UndoLink"] | null;
+            progress?: components["schemas"]["ScanProgress"] | null;
+            /**
+             * Canregister
+             * @default false
+             */
+            canRegister: boolean;
+            /** Suggestedslots */
+            suggestedSlots?: components["schemas"]["ItemSlot"][];
+        };
+        /** ScanResult[InventoryScanOut] */
+        ScanResult_InventoryScanOut_: {
+            verdict: components["schemas"]["ScanVerdict"];
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+            /** Scannedvalue */
+            scannedValue: string;
+            /** Applied */
+            applied: boolean;
+            entity?: components["schemas"]["InventoryScanOut"] | null;
             undo?: components["schemas"]["UndoLink"] | null;
             progress?: components["schemas"]["ScanProgress"] | null;
             /**
@@ -4020,6 +5061,12 @@ export interface components {
             /** Number */
             number: string;
         };
+        /** StageCount */
+        StageCount: {
+            stage: components["schemas"]["PipelineStage"];
+            /** Count */
+            count: number;
+        };
         /**
          * StagingPatch
          * @description ``PATCH /service-requests/{id}/staging``.
@@ -4034,6 +5081,104 @@ export interface components {
             addedSoftware?: string[] | null;
             /** Version */
             version?: number | null;
+        };
+        /** StockAlert */
+        StockAlert: {
+            article: components["schemas"]["ArticleRef"];
+            site: components["schemas"]["SiteRef"];
+            /** Stock */
+            stock: number;
+            /** Demand */
+            demand: number;
+            /** Buffer */
+            buffer: number;
+            /** Orderqty */
+            orderQty: number;
+        };
+        /** StockArticleRef */
+        StockArticleRef: {
+            /** Id */
+            id: number;
+            /** Number */
+            number: string;
+            /** Name */
+            name: string;
+            /** Modelnumber */
+            modelNumber: string;
+            /** Internaldescription */
+            internalDescription: string;
+            category: components["schemas"]["ArticleCategory"];
+            /** Isactive */
+            isActive: boolean;
+        };
+        /** StockCell */
+        StockCell: {
+            /** Siteid */
+            siteId: number;
+            /** Goodsin */
+            goodsIn: number;
+            /** Staging */
+            staging: number;
+            /** Goodsout */
+            goodsOut: number;
+            /** Stock */
+            stock: number;
+            /** Demand */
+            demand: number;
+            /** Buffer */
+            buffer: number;
+            /** Orderqty */
+            orderQty: number;
+            /** Minqty */
+            minQty: number | null;
+            /** Maxqty */
+            maxQty: number | null;
+            /** Belowmin */
+            belowMin: boolean;
+            /** Abovemax */
+            aboveMax: boolean;
+            /** Lastorderdate */
+            lastOrderDate: string | null;
+            /** Lastorderedqty */
+            lastOrderedQty: number | null;
+        };
+        /** StockCellList */
+        StockCellList: {
+            /** Data */
+            data: components["schemas"]["StockCellWithArticle"][];
+        };
+        /** StockCellWithArticle */
+        StockCellWithArticle: {
+            /** Siteid */
+            siteId: number;
+            /** Goodsin */
+            goodsIn: number;
+            /** Staging */
+            staging: number;
+            /** Goodsout */
+            goodsOut: number;
+            /** Stock */
+            stock: number;
+            /** Demand */
+            demand: number;
+            /** Buffer */
+            buffer: number;
+            /** Orderqty */
+            orderQty: number;
+            /** Minqty */
+            minQty: number | null;
+            /** Maxqty */
+            maxQty: number | null;
+            /** Belowmin */
+            belowMin: boolean;
+            /** Abovemax */
+            aboveMax: boolean;
+            /** Lastorderdate */
+            lastOrderDate: string | null;
+            /** Lastorderedqty */
+            lastOrderedQty: number | null;
+            /** Articleid */
+            articleId: number;
         };
         /** StockHint */
         StockHint: {
@@ -4059,6 +5204,41 @@ export interface components {
             /** Sortorder */
             sortOrder: number;
             site: components["schemas"]["SiteRef"] | null;
+        };
+        /** StockMatrix */
+        StockMatrix: {
+            /** Calculatedat */
+            calculatedAt: string | null;
+            /** Sites */
+            sites: components["schemas"]["SiteRef"][];
+            /** Rows */
+            rows: components["schemas"]["StockRow"][];
+            meta: components["schemas"]["StockMatrixMeta"];
+        };
+        /** StockMatrixMeta */
+        StockMatrixMeta: {
+            /** Unmatcheddemand */
+            unmatchedDemand: components["schemas"]["UnmatchedDemand"][];
+            /** Unresolveddemand */
+            unresolvedDemand: number;
+            /** Recalculating */
+            recalculating: boolean;
+        };
+        /** StockRow */
+        StockRow: {
+            article: components["schemas"]["StockArticleRef"];
+            /** Cells */
+            cells: components["schemas"]["StockCell"][];
+            totals: components["schemas"]["StockRowTotals"];
+        };
+        /** StockRowTotals */
+        StockRowTotals: {
+            /** Stock */
+            stock: number;
+            /** Demand */
+            demand: number;
+            /** Orderqty */
+            orderQty: number;
         };
         /** StopContact */
         StopContact: {
@@ -4549,6 +5729,15 @@ export interface components {
             body?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** UnmatchedDemand */
+        UnmatchedDemand: {
+            /** Requestedtype */
+            requestedType: string;
+            /** Siteid */
+            siteId: number | null;
+            /** Count */
+            count: number;
         };
         /** UserCreate */
         UserCreate: {
@@ -11064,6 +12253,2076 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "stock-get_matrix": {
+        parameters: {
+            query?: {
+                q?: string | null;
+                onlyShortfall?: boolean;
+                includeInactive?: boolean;
+                /** @description Comma-separated ids. */
+                siteId?: string[] | null;
+                /** @description Comma-separated: laptop, desktop, tablet, docking_station, monitor, headset, keyboard, mouse, webcam, bag, accessory. */
+                category?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockMatrix"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "stock-recalculate_now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "stock-patch_buffers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BuffersPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockCellList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "stock-export_matrix": {
+        parameters: {
+            query?: {
+                q?: string | null;
+                onlyShortfall?: boolean;
+                includeInactive?: boolean;
+                /** @description Comma-separated ids. */
+                siteId?: string[] | null;
+                /** @description Comma-separated: laptop, desktop, tablet, docking_station, monitor, headset, keyboard, mouse, webcam, bag, accessory. */
+                category?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadLink"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "calloff-orders-list_orders": {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+                /** @description 1-based page number. */
+                page?: number;
+                /** @description Items per page (1–200). */
+                perPage?: number;
+                /** @description Comma-separated sort keys, prefix '-' for descending. Allowed: createdAt, deliveryDate. Default: -createdAt. */
+                sort?: string | null;
+                /** @description Comma-separated ids. */
+                siteId?: string[] | null;
+                /** @description Comma-separated: draft, sent, cancelled. */
+                status?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_CallOffOrderSummary_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "calloff-orders-create_order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallOffOrderCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallOffOrderOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "calloff-orders-get_order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallOffOrderOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "calloff-orders-patch_order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallOffOrderPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallOffOrderOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "calloff-orders-send_order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CallOffSendBody"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallOffOrderOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "calloff-orders-cancel_order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CallOffCancelBody"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallOffOrderOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "calloff-orders-order_document": {
+        parameters: {
+            query?: {
+                format?: "xlsx" | "pdf";
+            };
+            header?: never;
+            path: {
+                order_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadLink"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "assets-list_assets": {
+        parameters: {
+            query?: {
+                /** @description 1-based page number. */
+                page?: number;
+                /** @description Items per page (1–200). */
+                perPage?: number;
+                /** @description Comma-separated sort keys, prefix '-' for descending. Allowed: serialNumber, assetTag, status, checkedInAt, statusChangedAt. Default: -statusChangedAt. */
+                sort?: string | null;
+                q?: string | null;
+                serviceRequestId?: number | null;
+                installationPlace?: string | null;
+                hasInstallationPlace?: boolean | null;
+                checkedInFrom?: string | null;
+                checkedInTo?: string | null;
+                /** @description Comma-separated: available, assigned, prepared, provided, in_use, collected, missing, deactivated_returned, deactivated_bought_out, deactivated_disposed. */
+                status?: string[] | null;
+                /** @description Comma-separated ids. */
+                siteId?: string[] | null;
+                /** @description Comma-separated ids. */
+                locationId?: string[] | null;
+                /** @description Comma-separated: goods_in, staging, goods_out, return, in_transit, in_use, off_fleet. */
+                locationType?: string[] | null;
+                /** @description Comma-separated ids. */
+                articleId?: string[] | null;
+                /** @description Comma-separated: laptop, desktop, tablet, docking_station, monitor, headset, keyboard, mouse, webcam, bag, accessory. */
+                category?: string[] | null;
+                /** @description Comma-separated: import_new, import_status_sync, technician_scan, manual, seed. */
+                source?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_AssetListItem_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "assets-export_assets": {
+        parameters: {
+            query?: {
+                /** @description Comma-separated sort keys, prefix '-' for descending. Allowed: serialNumber, assetTag, status, checkedInAt, statusChangedAt. Default: -statusChangedAt. */
+                sort?: string | null;
+                q?: string | null;
+                serviceRequestId?: number | null;
+                installationPlace?: string | null;
+                hasInstallationPlace?: boolean | null;
+                checkedInFrom?: string | null;
+                checkedInTo?: string | null;
+                /** @description Comma-separated: available, assigned, prepared, provided, in_use, collected, missing, deactivated_returned, deactivated_bought_out, deactivated_disposed. */
+                status?: string[] | null;
+                /** @description Comma-separated ids. */
+                siteId?: string[] | null;
+                /** @description Comma-separated ids. */
+                locationId?: string[] | null;
+                /** @description Comma-separated: goods_in, staging, goods_out, return, in_transit, in_use, off_fleet. */
+                locationType?: string[] | null;
+                /** @description Comma-separated ids. */
+                articleId?: string[] | null;
+                /** @description Comma-separated: laptop, desktop, tablet, docking_station, monitor, headset, keyboard, mouse, webcam, bag, accessory. */
+                category?: string[] | null;
+                /** @description Comma-separated: import_new, import_status_sync, technician_scan, manual, seed. */
+                source?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadLink"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "assets-asset_by_serial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serial: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "assets-get_asset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "assets-patch_asset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssetPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "assets-list_movements": {
+        parameters: {
+            query?: {
+                /** @description 1-based page number. */
+                page?: number;
+                /** @description Items per page (1–200). */
+                perPage?: number;
+                /** @description Comma-separated sort keys, prefix '-' for descending. Allowed: occurredAt. Default: -occurredAt. */
+                sort?: string | null;
+            };
+            header?: never;
+            path: {
+                asset_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_AssetMovementOut_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "deactivations-list_batches": {
+        parameters: {
+            query?: {
+                /** @description 1-based page number. */
+                page?: number;
+                /** @description Items per page (1–200). */
+                perPage?: number;
+                /** @description Comma-separated sort keys, prefix '-' for descending. Allowed: createdAt. Default: -createdAt. */
+                sort?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_DeactivationBatchOut_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "deactivations-upload_deactivation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_deactivations-upload_deactivation"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeactivationResult"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "deactivations-sample": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadLink"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "deactivations-get_batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeactivationResult"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "inventories-list_inventories": {
+        parameters: {
+            query?: {
+                /** @description 1-based page number. */
+                page?: number;
+                /** @description Items per page (1–200). */
+                perPage?: number;
+                /** @description Comma-separated sort keys, prefix '-' for descending. Allowed: openedAt. Default: -openedAt. */
+                sort?: string | null;
+                /** @description Comma-separated ids. */
+                siteId?: string[] | null;
+                /** @description Comma-separated: open, closed, cancelled. */
+                status?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_InventorySummary_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "inventories-open_inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InventoryCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "inventories-get_inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inventory_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "inventories-list_scans": {
+        parameters: {
+            query?: {
+                scannedById?: number | null;
+                q?: string | null;
+                /** @description 1-based page number. */
+                page?: number;
+                /** @description Items per page (1–200). */
+                perPage?: number;
+                /** @description Comma-separated sort keys, prefix '-' for descending. Allowed: scannedAt. Default: -scannedAt. */
+                sort?: string | null;
+                /** @description Comma-separated: matched, wrong_location, unknown. */
+                result?: string[] | null;
+            };
+            header?: never;
+            path: {
+                inventory_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_InventoryScanOut_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "inventories-scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inventory_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InventoryScanBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanResult_InventoryScanOut_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "inventories-undo_scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inventory_id: number;
+                scan_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "inventories-get_reconciliation": {
+        parameters: {
+            query?: {
+                category?: components["schemas"]["ReconciliationCategory"] | null;
+                /** @description 1-based page number. */
+                page?: number;
+                /** @description Items per page (1–200). */
+                perPage?: number;
+            };
+            header?: never;
+            path: {
+                inventory_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Reconciliation"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "inventories-close_inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inventory_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InventoryCloseBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "inventories-cancel_inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inventory_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InventoryCancelBody"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "inventories-get_report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inventory_id: number;
+                kind: "missing" | "wrong_location" | "unknown";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadLink"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    "dashboard-get_kpis": {
+        parameters: {
+            query?: {
+                siteId?: number | null;
+                regionId?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardKpis"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

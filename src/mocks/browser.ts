@@ -1,4 +1,5 @@
 import { createStore, get, set } from 'idb-keyval'
+import { getResponse, http, type RequestHandler } from 'msw'
 import { setupWorker } from 'msw/browser'
 import { env } from '@/lib/env'
 import { loadFixture } from './core/fixture'
@@ -48,7 +49,7 @@ export async function startMockWorker(): Promise<void> {
   window.addEventListener('pagehide', () => db.flush())
 
   const apiPrefix = new URL(env.apiUrl, window.location.origin).href
-  const worker = setupWorker(...handlers)
+  const worker = setupWorker(persistBeforeResponding(apiPrefix, handlers), ...handlers)
   await worker.start({
     serviceWorker: { url: import.meta.env.DEV ? '/mockServiceWorker.js' : '/sw.js' },
     quiet: !import.meta.env.DEV,
@@ -57,4 +58,18 @@ export async function startMockWorker(): Promise<void> {
     },
   })
   console.info(`[demo] Mock API ready${seeded ? ' (fresh demo data loaded)' : ''}.`)
+}
+
+/**
+ * Mutating API calls answer only after the demo database is written to IndexedDB, so reloading
+ * (or closing the tab) right after a response never loses the change. Reads fall through to
+ * the normal handlers untouched.
+ */
+function persistBeforeResponding(apiPrefix: string, all: RequestHandler[]): RequestHandler {
+  return http.all(`${apiPrefix}/*`, async ({ request }) => {
+    if (request.method === 'GET' || request.method === 'HEAD') return undefined
+    const response = await getResponse(all, request)
+    await db.persist()
+    return response
+  })
 }
