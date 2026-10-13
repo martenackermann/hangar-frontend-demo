@@ -9,8 +9,11 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
-/** Feature modules under src/modules. Keep in sync when a module is added (CONVENTIONS.md). */
-const MODULES = ['core', 'requests', 'imports', 'staging', 'field', 'stock']
+/**
+ * Feature slices under src/modules (H1-H5). The registries glob exactly these folders
+ * (SPEC_RESOLUTIONS #19); keep in sync if a slice is ever added (CONVENTIONS.md).
+ */
+const MODULES = ['requests', 'imports', 'staging', 'field', 'stock']
 
 /**
  * Module boundaries: a module may import another module only through its public
@@ -103,6 +106,11 @@ export default defineConfig([
         'error',
         { checksVoidReturn: { attributes: false } },
       ],
+      // `x || undefined` on optional booleans is intentional (aria attributes, flags).
+      '@typescript-eslint/prefer-nullish-coalescing': [
+        'error',
+        { ignorePrimitives: { boolean: true } },
+      ],
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
     },
@@ -112,6 +120,13 @@ export default defineConfig([
     // splitting moves the components into their own chunks, so Fast Refresh still works.
     name: 'hangar/routes',
     files: ['src/routes/**/*.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
+    // The UI kit co-locates variants/helpers with its components (buttonVariants, StageTrack
+    // helpers, VERDICT_STYLES…); those files fall back to a full reload on edit. Slices keep the rule.
+    name: 'hangar/foundation-kit',
+    files: ['src/components/**/*.tsx', 'src/lib/**/*.tsx'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },
   {
@@ -138,5 +153,25 @@ export default defineConfig([
     languageOptions: { globals: globals.serviceworker },
   },
   ...moduleBoundaries,
+  {
+    // The foundation never imports a slice directly: slices plug in through the
+    // import.meta.glob registries (nav, drawer tabs, action dialogs, commands, mocks).
+    name: 'hangar/foundation-boundary',
+    files: ['src/{lib,components,mocks,test,styles}/**/*.{ts,tsx}', 'src/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/modules/**'],
+              message:
+                'Foundation code must not import slices; use the registries in src/lib/registry and src/lib/nav (CONVENTIONS.md).',
+            },
+          ],
+        },
+      ],
+    },
+  },
   prettier,
 ])

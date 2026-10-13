@@ -1,96 +1,103 @@
 import { http, HttpResponse } from 'msw'
-import type { Client } from 'openapi-fetch'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getAuth, signIn } from '@/lib/auth/store'
+import { getAuth, setSession } from '@/lib/auth/store'
 import { apiPath, problems } from '@/mocks/http'
 import { server } from '@/mocks/node'
-import { api, setUnauthorizedHandler, unwrap } from './client'
+import { PERSONA_EMAILS, signInAs } from '@/test/utils'
+import { api, setUnauthorizedHandler, toQueryString } from './client'
 import { ApiError } from './errors'
-
-/** The generated schema is still a placeholder, so type the client for a test endpoint. */
-interface TestPaths {
-  '/things/{id}': {
-    parameters: { query?: never; header?: never; path: { id: string }; cookie?: never }
-    get: {
-      parameters: { query?: never; header?: never; path: { id: string }; cookie?: never }
-      requestBody?: never
-      responses: {
-        200: {
-          headers: Record<string, unknown>
-          content: { 'application/json': { id: string; seenAuth: string | null } }
-        }
-        404: { headers: Record<string, unknown>; content: { 'application/problem+json': unknown } }
-      }
-    }
-  }
-}
-const client = api as unknown as Client<TestPaths>
-
-const user = {
-  id: 'u1',
-  email: 'dana.dispatcher@example.com',
-  name: 'Dana Dispatcher',
-  roles: ['dispatcher'],
-  permissions: ['requests:read'],
-}
+import type { Me, Page, ServiceRequestDetail } from './types'
 
 describe('api client', () => {
   afterEach(() => setUnauthorizedHandler(undefined))
 
-  it('sends the bearer token and returns data via unwrap()', async () => {
-    server.use(
-      http.get(apiPath('/things/:id'), ({ params, request }) =>
-        HttpResponse.json({
-          id: String(params.id),
-          seenAuth: request.headers.get('Authorization'),
-        }),
-      ),
-    )
-    signIn('abc123', user)
+  it('serializes query params as comma lists and drops empty values', () => {
+    expect(
+      toQueryString({
+        status: ['invited', 'escalated'],
+        page: 2,
+        q: '',
+        vip: undefined,
+        paused: false,
+      }),
+    ).toBe('?status=invited,escalated&page=2&paused=false')
+  })
 
-    const thing = await unwrap(client.GET('/things/{id}', { params: { path: { id: '7' } } }))
-
-    expect(thing).toEqual({ id: '7', seenAuth: 'Bearer abc123' })
+  it('signs in a persona against the mock API and sends the bearer token', async () => {
+    const login = await signInAs(PERSONA_EMAILS.dispatcher)
+    expect(login.user.role).toBe('dispatcher')
+    const me = await api.get<Me>('/me')
+    expect(me.email).toBe(PERSONA_EMAILS.dispatcher)
+    expect(me.permissions).toContain('sr.comms')
   })
 
   it('throws a normalised ApiError for problem+json responses', async () => {
-    server.use(http.get(apiPath('/things/:id'), () => problems.notFound('Thing', 9)))
-
-    const promise = unwrap(client.GET('/things/{id}', { params: { path: { id: '9' } } }))
-
+    await signInAs(PERSONA_EMAILS.viewer)
+    const promise = api.get('/service-requests/999999')
     await expect(promise).rejects.toBeInstanceOf(ApiError)
     await expect(promise).rejects.toMatchObject({
       status: 404,
+      code: 'not_found',
       title: 'Not found',
-      detail: 'Thing 9 not found.',
     })
   })
 
   it('signs out and calls the unauthorized handler on 401', async () => {
-    server.use(http.get(apiPath('/things/:id'), () => problems.unauthorized()))
+    server.use(http.get(apiPath('/me'), () => problems.unauthenticated()))
     const onUnauthorized = vi.fn()
     setUnauthorizedHandler(onUnauthorized)
-    signIn('expired', user)
-
-    await expect(
-      unwrap(client.GET('/things/{id}', { params: { path: { id: '1' } } })),
-    ).rejects.toMatchObject({ status: 401 })
-
+    setSession({
+      accessToken: 'demo.1.expired',
+      tokenType: 'Bearer',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      user: {
+        id: 1,
+        email: 'x@example.com',
+        firstName: 'X',
+        lastName: 'Y',
+        displayName: 'X Y',
+        role: 'viewer',
+        permissions: [],
+        homeSite: null,
+        isDemoPersona: true,
+      },
+    })
+    await expect(api.get('/me')).rejects.toMatchObject({ status: 401 })
     expect(onUnauthorized).toHaveBeenCalledOnce()
-    expect(getAuth()).toEqual({ accessToken: null, user: null })
+    expect(getAuth().accessToken).toBeNull()
   })
 
   it('turns network failures into status-0 ApiErrors', async () => {
-    server.use(http.get(apiPath('/things/:id'), () => HttpResponse.error()))
-
-    await expect(
-      unwrap(client.GET('/things/{id}', { params: { path: { id: '1' } } })),
-    ).rejects.toMatchObject({ status: 0, isNetworkError: true })
+    server.use(http.get(apiPath('/sites'), () => HttpResponse.error()))
+    await expect(api.get('/sites')).rejects.toMatchObject({ status: 0, isNetworkError: true })
   })
 
   it('answers unknown endpoints with 501 instead of hitting the network', async () => {
-    const response = await fetch(apiPath('/definitely-not-mocked'))
-    expect(response.status).toBe(501)
-    expect(response.headers.get('Content-Type')).toContain('application/problem+json')
+    await signInAs(PERSONA_EMAILS.viewer)
+    await expect(api.get('/definitely-not-mocked')).rejects.toMatchObject({ status: 501 })
+  })
+
+  it('runs a workflow action and returns the updated detail', async () => {
+    await signInAs(PERSONA_EMAILS.dispatcher)
+    server.use(
+      http.get(apiPath('/service-requests'), () =>
+        HttpResponse.json<Page<{ id: number }>>({
+          data: [],
+          meta: { page: 1, perPage: 25, total: 0, totalPages: 1 },
+        }),
+      ),
+    )
+    const { db } = await import('@/mocks/db')
+    const booked = db
+      .collection('service_requests')
+      .find((sr) => sr.status === 'appointment_booked')
+    expect(booked).toBeDefined()
+    const detail = await api.post<ServiceRequestDetail>(
+      `/service-requests/${booked?.id}/actions/claim`,
+      {},
+    )
+    expect(detail.status).toBe('personalization_in_progress')
+    expect(detail.editor?.email).toBe(PERSONA_EMAILS.dispatcher)
+    expect(detail.availableActions).toContain('release')
   })
 })

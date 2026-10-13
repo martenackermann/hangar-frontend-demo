@@ -1,6 +1,6 @@
 /**
- * Public surface of the `staging` module: query keys, query options, mutation hooks and
- * API types. Other modules may import from this file (and nav.ts) only.
- * Patterns: CONVENTIONS.md, "Queries & mutations". Owner: slice H3 (Staging & Fulfilment).
+ * Public surface of the `staging` module (H3 Staging & Fulfilment): query keys, query options,
+ * mutation hooks and types other modules may import (CONVENTIONS.md "Queries & mutations").
+ * Shared workflow keys (`srKeys`, `leaseKeys`, `assetKeys`) live in `@/lib/api/keys`.
  */
 export {}

@@ -1,35 +1,23 @@
-import { createRootRouteWithContext, Outlet, useMatches } from '@tanstack/react-router'
-import { Toaster } from 'sonner'
-import { AppShell } from '@/components/app/app-shell'
+import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { Devtools } from '@/components/app/devtools'
-import { PUBLIC_PATHS, requireAuth } from '@/lib/auth/guards'
+import { Toaster } from '@/components/ui/toast'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import type { RouterContext } from '@/router'
 
+/**
+ * Root: providers only. The authenticated shell is the pathless `_app` layout
+ * (SCREENS.md §11); `/login` renders without it.
+ */
 export const Route = createRootRouteWithContext<RouterContext>()({
-  // Secure by default: every route except PUBLIC_PATHS needs a session.
-  // Modules add authorisation with `beforeLoad: requirePermission('...')`.
-  beforeLoad: ({ location }) => {
-    if (!PUBLIC_PATHS.has(location.pathname)) requireAuth(location)
-  },
-  component: RootLayout,
+  component: Root,
 })
 
-function RootLayout() {
-  const bare = useMatches({
-    select: (matches) => matches.some((match) => match.staticData.layout === 'bare'),
-  })
-
+function Root() {
   return (
-    <>
-      {bare ? (
-        <Outlet />
-      ) : (
-        <AppShell>
-          <Outlet />
-        </AppShell>
-      )}
-      <Toaster position="bottom-right" />
+    <TooltipProvider>
+      <Outlet />
+      <Toaster />
       <Devtools />
-    </>
+    </TooltipProvider>
   )
 }

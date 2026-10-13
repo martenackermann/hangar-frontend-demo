@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark" data-density="compact">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -7,11 +7,29 @@
       name="description"
       content="Hangar - IT-hardware rollout &amp; logistics operations console (demo)."
     />
-    <!-- Placeholder colour; phase 2b replaces it with the design token value. -->
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#0f1215" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Hangar</title>
+    <script>
+      // Apply theme + density before first paint (no flash). Mirrors src/lib/prefs/store.ts.
+      ;(function () {
+        try {
+          var raw = localStorage.getItem('hangar.prefs.v1')
+          var prefs = raw ? JSON.parse(raw) : {}
+          var phone = window.matchMedia('(max-width: 767px)').matches
+          var theme = prefs.theme || (phone ? 'system' : 'dark')
+          document.documentElement.dataset.theme = theme
+          document.documentElement.dataset.density = prefs.density || 'compact'
+          var light =
+            theme === 'light' ||
+            (theme === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches)
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute('content', light ? '#edeff2' : '#0f1215')
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

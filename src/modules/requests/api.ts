@@ -1,6 +1,6 @@
 /**
- * Public surface of the `requests` module: query keys, query options, mutation hooks and
- * API types. Other modules may import from this file (and nav.ts) only.
- * Patterns: CONVENTIONS.md, "Queries & mutations". Owner: slice H1 (Requests & Comms).
+ * Public surface of the `requests` module (H1 Requests & Comms): query keys, query options,
+ * mutation hooks and types other modules may import (CONVENTIONS.md "Queries & mutations").
+ * Shared workflow keys (`srKeys`, `leaseKeys`, `assetKeys`) live in `@/lib/api/keys`.
  */
 export {}

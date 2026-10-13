@@ -16,7 +16,11 @@ pnpm dev:demo     # http://localhost:5173, runs fully in the browser (mock API)
 pnpm dev          # against hangar-backend-demo at http://localhost:8100/api/v1
 ```
 
-Demo mode stores its data in your browser. Use _Reset demo data_ to start over.
+Demo mode stores its data in your browser. Use _Reset demo data_ (⌘K, as Ada Admin) to
+start over. Sign in with a persona card on the login page: Dana Dispatcher, Theo Technician,
+Vic Viewer or Ada Admin (all use the demo-only password `demo1234`).
+
+Screenshots of the shell and login: [docs/screenshots/foundation](./docs/screenshots/foundation).
 
 ## Stack
 

@@ -1,10 +1,11 @@
 /**
  * Normalised API error. Every failed API call surfaces as an `ApiError`, whatever the
- * server sent: RFC 9457 problem+json, FastAPI's default `{ detail }` shapes, plain text,
- * or nothing at all (network failure, status 0).
+ * server sent: RFC 9457 problem+json as specified in API.md §1.4 (`code`, `errors`, `guard`,
+ * `allowedActions`, `currentVersion`), FastAPI's default `{ detail }` shapes, plain text, or
+ * nothing at all (network failure, status 0).
  *
  * `fieldErrors` keys are dot paths matching react-hook-form field names
- * (`items.0.serial`). Errors that belong to no field use the key `root`.
+ * (`lines.2.quantity`). Errors that belong to no field use the key `root`.
  */
 export type FieldErrors = Record<string, string[]>
 
@@ -15,7 +16,15 @@ export interface ApiErrorInit {
   title: string
   detail?: string | undefined
   type?: string | undefined
+  /** Machine code (API.md §1.4), e.g. `guard_failed`, `version_conflict`. */
+  code?: string | undefined
   fieldErrors?: FieldErrors | undefined
+  /** 409 guard_failed: which guard and its message. */
+  guard?: { code: string; message: string } | undefined
+  /** 409 transition_not_allowed: actions available from the current status. */
+  allowedActions?: string[] | undefined
+  /** 409 version_conflict. */
+  currentVersion?: number | undefined
   body?: unknown
 }
 
@@ -24,7 +33,11 @@ export class ApiError extends Error {
   readonly title: string
   readonly detail: string | undefined
   readonly type: string | undefined
+  readonly code: string | undefined
   readonly fieldErrors: FieldErrors
+  readonly guard: { code: string; message: string } | undefined
+  readonly allowedActions: string[] | undefined
+  readonly currentVersion: number | undefined
   /** The raw parsed response body, for debugging. */
   readonly body: unknown
 
@@ -35,8 +48,17 @@ export class ApiError extends Error {
     this.title = init.title
     this.detail = init.detail
     this.type = init.type
+    this.code = init.code
     this.fieldErrors = init.fieldErrors ?? {}
+    this.guard = init.guard
+    this.allowedActions = init.allowedActions
+    this.currentVersion = init.currentVersion
     this.body = init.body
+  }
+
+  /** 409 version_conflict: show "This record changed. Reload" (SCREENS.md §0). */
+  get isVersionConflict(): boolean {
+    return this.code === 'version_conflict'
   }
 
   get isNetworkError(): boolean {
@@ -168,12 +190,22 @@ export function toApiError(
     // FastAPI default validation error: { detail: [{ loc, msg, type }] }
     if (Array.isArray(body.detail)) collectFieldErrors(body.detail, fieldErrors)
 
+    const guard =
+      isRecord(body.guard) && typeof body.guard.code === 'string'
+        ? { code: body.guard.code, message: asString(body.guard.message) ?? body.guard.code }
+        : undefined
     return new ApiError({
       status,
       title: asString(body.title) ?? fallbackTitle,
-      detail: asString(body.detail) ?? asString(body.message),
+      detail: asString(body.detail) ?? asString(body.message) ?? guard?.message,
       type: asString(body.type),
+      code: asString(body.code),
       fieldErrors,
+      guard,
+      allowedActions: Array.isArray(body.allowedActions)
+        ? body.allowedActions.filter((a): a is string => typeof a === 'string')
+        : undefined,
+      currentVersion: typeof body.currentVersion === 'number' ? body.currentVersion : undefined,
       body,
     })
   }

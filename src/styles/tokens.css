@@ -1,0 +1,389 @@
+/* Copied verbatim from _spec/hangar/tokens.css (design system v1). Do not edit by hand:
+   change the spec, then copy it again. App-level additions live in app.css. */
+/* ==========================================================================
+   Hangar — design tokens (v1)
+   --------------------------------------------------------------------------
+   Dark-first graphite with a signal-amber accent. Every colour resolves
+   through light-dark(<light>, <dark>), so switching theme is a single
+   color-scheme switch on <html>:
+
+     <html data-theme="dark">     default (graphite)
+     <html data-theme="light">    daylight / warehouse floor
+     <html data-theme="system">   follow the OS
+
+   Density is a second switch:  <html data-density="compact|comfortable">
+
+   This file works two ways:
+     1. Plain CSS — browsers ignore the Tailwind-only at-rules at the bottom.
+     2. Tailwind CSS v4 entry —  @import "tailwindcss"; @import "./tokens.css";
+        The @theme inline block maps every token onto utilities
+        (bg-surface, text-fg-2, border-line, text-tone-critical-fg, h-row …).
+
+   Fonts (self-hosted via Fontsource):
+     import "@fontsource-variable/archivo/wdth.css";                 // wght 100–900, wdth 62–125
+     import "@fontsource-variable/atkinson-hyperlegible-mono";        // wght 200–800
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* ---- Ground & surfaces ------------------------------------------------ */
+  --hg-canvas:        light-dark(#EDEFF2, #0F1215);   /* app ground behind panels      */
+  --hg-surface:       light-dark(#FFFFFF, #14181C);   /* tables, board columns, panels */
+  --hg-raised:        light-dark(#FFFFFF, #1A1F24);   /* drawer, cards, sticky bars    */
+  --hg-overlay:       light-dark(#FFFFFF, #1D2328);   /* menus, popovers, palette      */
+  --hg-sunken:        light-dark(#F5F6F8, #0C0F12);   /* input wells, kbd, scan field  */
+  --hg-hover:         light-dark(#F1F3F5, #1C2227);
+  --hg-pressed:       light-dark(#E5E8EC, #242B32);
+  --hg-scrim:         light-dark(rgb(15 18 21 / 0.32), rgb(5 6 8 / 0.62));
+
+  /* ---- Hairlines --------------------------------------------------------- */
+  --hg-line-subtle:   light-dark(#E7EAED, #1F252B);   /* row dividers                  */
+  --hg-line:          light-dark(#D6DBE0, #2A3138);   /* panel + component borders     */
+  --hg-line-strong:   light-dark(#858F9A, #5C6672);   /* input borders — ≥3:1 on surface */
+
+  /* ---- Ink --------------------------------------------------------------- */
+  --hg-fg:            light-dark(#0F1215, #E6E9ED);   /* 18.8 / 14.7 : 1 on surface    */
+  --hg-fg-2:          light-dark(#3D4651, #AEB6C0);   /*  9.6 /  8.7 : 1               */
+  --hg-fg-3:          light-dark(#5B6571, #8A939E);   /*  5.9 /  5.7 : 1  (min for text) */
+  --hg-fg-disabled:   light-dark(#A1A9B2, #545D67);   /* disabled only — exempt         */
+  --hg-fg-on-accent:  #1B1300;                        /* 10.2 : 1 on amber              */
+  --hg-fg-inverse:    light-dark(#F4F5F7, #0F1215);
+
+  /* ---- Signal amber: "you / now / act" — never a status ----------------- */
+  --hg-accent:        #FFB224;                                  /* fills: primary button, scan field, current node */
+  --hg-accent-hover:  light-dark(#F5A30F, #FFC452);
+  --hg-accent-press:  light-dark(#E39200, #F0A010);
+  --hg-accent-text:   light-dark(#8A5300, #FFB224);             /* amber as text/icon: 6.3 / 9.9 : 1 */
+  --hg-accent-wash:   light-dark(#FFF4E0, #2C271D);             /* selected rows, active chips        */
+  --hg-accent-wash-strong: light-dark(#FFE7B8, #3A311D);        /* cursor row, drag target            */
+  --hg-accent-line:   light-dark(#D18A00, #FFB224);             /* selection outline                  */
+  --hg-focus:         light-dark(#B06F00, #FFB224);             /* focus ring: 4.1 / 9.9 : 1          */
+
+  /* ---- Status tones ------------------------------------------------------
+     Each tone = mark (ticks, dots, icons, bars), -fg (text, ≥4.5:1 on its
+     wash and on surface), -wash (badge / banner background).
+     Order along the pipeline is CVD-validated on adjacent pairs:
+     outreach → booked → workshop → transit → done (dataviz validator,
+     worst adjacent ΔE ≥ 9.9 CVD / ≥ 15.9 normal, both themes).
+     Colour is never the only carrier: every status ships icon + label,
+     SR statuses also carry their position on the StageTrack.            */
+  --hg-tone-intake:          light-dark(#8A939E, #7A8591);
+  --hg-tone-intake-fg:       light-dark(#47505B, #AEB6C0);
+  --hg-tone-intake-wash:     light-dark(#F3F4F5, #24292F);
+
+  --hg-tone-outreach:        light-dark(#2F74E0, #3D8BFD);   /* waiting on the employee  */
+  --hg-tone-outreach-fg:     light-dark(#1D5FC7, #7CB6FF);
+  --hg-tone-outreach-wash:   light-dark(#EAF1FC, #1B2A40);
+
+  --hg-tone-booked:          light-dark(#0E8F82, #1BA595);   /* appointment / tour fixed */
+  --hg-tone-booked-fg:       light-dark(#0A7469, #4FD4C4);
+  --hg-tone-booked-wash:     light-dark(#E7F4F3, #152F2F);
+
+  --hg-tone-workshop:        light-dark(#7D5CF0, #9277F7);   /* in our hands: staging    */
+  --hg-tone-workshop-fg:     light-dark(#6541D1, #BBA6FF);
+  --hg-tone-workshop-wash:   light-dark(#F2EFFE, #28273F);
+
+  --hg-tone-transit:         light-dark(#C2489C, #D457AE);   /* left the hub             */
+  --hg-tone-transit-fg:      light-dark(#A82D7A, #F28FD2);
+  --hg-tone-transit-wash:    light-dark(#F9EDF5, #332233);
+
+  --hg-tone-done:            light-dark(#1E9150, #2FAE66);   /* deployed / OK            */
+  --hg-tone-done-fg:         light-dark(#1B7340, #6AD496);
+  --hg-tone-done-wash:       light-dark(#E9F4EE, #183028);
+
+  --hg-tone-caution:         light-dark(#E5602A, #F26B2E);   /* needs attention soon     */
+  --hg-tone-caution-fg:      light-dark(#AD4410, #FF9A5C);
+  --hg-tone-caution-wash:    light-dark(#FCEFEA, #38251F);
+
+  --hg-tone-critical:        light-dark(#DC3B42, #E5484D);   /* blocked / wrong / failed */
+  --hg-tone-critical-fg:     light-dark(#BE2530, #FF7272);
+  --hg-tone-critical-wash:   light-dark(#FCEBEC, #352024);
+
+  /* ---- Data viz ---------------------------------------------------------- */
+  --hg-viz-grid:      light-dark(#E7EAED, #22282F);   /* hairline gridlines            */
+  --hg-viz-axis:      light-dark(#C3C9D0, #39414A);
+  --hg-viz-muted:     light-dark(#9AA3AD, #5E6874);   /* sparkline de-emphasis line    */
+  --hg-viz-now:       var(--hg-accent);               /* current period / last point   */
+  /* Shortage heat (stock matrix): 0 = covered … 4 = critical shortage.
+     Semantic heat ramp, always shipped with the number in the cell + legend. */
+  --hg-heat-0:        light-dark(#FFFFFF, #14181C);
+  --hg-heat-1:        light-dark(#FCEFEA, #33241F);
+  --hg-heat-2:        light-dark(#F9DCD0, #522F21);
+  --hg-heat-3:        light-dark(#F5C4C6, #5F292E);
+  --hg-heat-4:        light-dark(#EFA7AA, #813135);
+  --hg-heat-surplus:  light-dark(#EAF1FC, #1B2A40);   /* stock > 2× demand + buffer    */
+  /* Categorical series (hub comparisons). Fixed order, never cycled:
+     Riverton, Hillford, Eastgate, Campus. */
+  --hg-series-1:      light-dark(#2A78D6, #3987E5);
+  --hg-series-2:      light-dark(#1BAF7A, #199E70);
+  --hg-series-3:      light-dark(#6250D6, #9085E9);
+  --hg-series-4:      light-dark(#E87BA4, #D55181);
+
+  /* ---- Rail (graphite in both themes — the committed shell) ------------- */
+  --hg-rail-bg:       light-dark(#171B20, #0B0D10);
+  --hg-rail-hover:    light-dark(#20262C, #151A1E);
+  --hg-rail-active:   light-dark(#2A3138, #1C2228);
+  --hg-rail-line:     light-dark(#262C33, #181D22);
+  --hg-rail-fg:       #E6E9ED;
+  --hg-rail-fg-2:     #A3ACB6;
+  --hg-rail-fg-3:     #7A838E;                         /* 4.5:1 on both rail grounds    */
+
+  /* ---- Typography -------------------------------------------------------- */
+  --hg-font-sans: "Archivo Variable", "Archivo", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --hg-font-mono: "Atkinson Hyperlegible Mono Variable", "Atkinson Hyperlegible Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --hg-stretch-normal:    100%;
+  --hg-stretch-condensed: 87.5%;     /* = font-stretch: semi-condensed; headers, labels, KPI figures */
+
+  --hg-text-2xs: 0.6875rem;  --hg-leading-2xs: 1rem;      /* 11/16  kbd, micro meta     */
+  --hg-text-xs:  0.75rem;    --hg-leading-xs:  1rem;      /* 12/16  badges, captions    */
+  --hg-text-sm:  0.8125rem;  --hg-leading-sm:  1.25rem;   /* 13/20  base UI, tables     */
+  --hg-text-md:  0.875rem;   --hg-leading-md:  1.25rem;   /* 14/20  inputs, drawer prose */
+  --hg-text-lg:  1rem;       --hg-leading-lg:  1.5rem;    /* 16/24  section titles      */
+  --hg-text-xl:  1.25rem;    --hg-leading-xl:  1.75rem;   /* 20/28  page titles         */
+  --hg-text-2xl: 1.5rem;     --hg-leading-2xl: 2rem;      /* 24/32  KPI values          */
+  --hg-text-3xl: 2rem;       --hg-leading-3xl: 2.5rem;    /* 32/40  scan field, verdict */
+  --hg-text-4xl: 3rem;       --hg-leading-4xl: 3.5rem;    /* 48/56  scan count (station) */
+
+  --hg-weight-regular: 400;
+  --hg-weight-medium: 500;
+  --hg-weight-semibold: 600;
+  --hg-weight-bold: 700;
+  --hg-tracking-tight: -0.012em;   /* ≥ 20px only */
+  --hg-mono-scale: 0.96;           /* mono runs 4% smaller to sit on the sans x-height */
+
+  /* ---- Space, size, density (4px grid) ---------------------------------- */
+  --hg-space: 4px;
+  --hg-h-badge:   20px;
+  --hg-h-sm:      24px;
+  --hg-h-md:      28px;
+  --hg-h-lg:      32px;
+  --hg-h-xl:      40px;
+  --hg-h-touch:   48px;
+  --hg-h-scan:    80px;
+
+  --hg-row-h:        32px;   /* table + list rows */
+  --hg-row-px:       8px;    /* cell inline padding */
+  --hg-control-h:    28px;   /* toolbar / filter controls */
+  --hg-table-text:   var(--hg-text-sm);
+  --hg-table-leading: var(--hg-leading-sm);
+
+  /* ---- Shape & depth ----------------------------------------------------- */
+  --hg-radius-2xs: 2px;   /* stage ticks, meters */
+  --hg-radius-xs:  3px;   /* badges, chips, kbd, checkbox */
+  --hg-radius-sm:  4px;   /* buttons, inputs, cards */
+  --hg-radius-md:  6px;   /* popovers, menus, toasts */
+  --hg-radius-lg:  8px;   /* dialogs, palette, mobile sheets */
+  --hg-radius-full: 999px;
+
+  --hg-shadow-color: light-dark(rgb(15 18 21 / 0.12), rgb(0 0 0 / 0.45));
+  --hg-shadow-popover: 0 4px 10px -2px var(--hg-shadow-color), 0 1px 2px var(--hg-shadow-color);
+  --hg-shadow-drawer:  -8px 0 16px -8px var(--hg-shadow-color);
+  --hg-shadow-dialog:  0 12px 20px -6px var(--hg-shadow-color), 0 2px 4px var(--hg-shadow-color);
+  --hg-shadow-bar:     0 6px 14px -4px var(--hg-shadow-color), 0 1px 3px var(--hg-shadow-color);
+
+  /* ---- Motion: state, never decoration ---------------------------------- */
+  --hg-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --hg-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --hg-dur-instant: 80ms;    /* hover, press, checkbox */
+  --hg-dur-fast:    140ms;   /* popover, tooltip, menu */
+  --hg-dur-base:    200ms;   /* drawer, toast, bulk bar */
+  --hg-dur-verdict: 320ms;   /* scan verdict flash */
+
+  /* ---- Layout ------------------------------------------------------------ */
+  --hg-rail-w:           232px;
+  --hg-rail-w-collapsed: 56px;
+  --hg-topbar-h:         44px;
+  --hg-drawer-w:         480px;
+  --hg-drawer-w-wide:    560px;
+
+  --hg-z-sticky:  10;
+  --hg-z-rail:    20;
+  --hg-z-drawer:  30;
+  --hg-z-popover: 40;
+  --hg-z-toast:   50;
+  --hg-z-palette: 60;
+}
+
+:root[data-theme="light"]  { color-scheme: light; }
+:root[data-theme="dark"]   { color-scheme: dark; }
+:root[data-theme="system"] { color-scheme: light dark; }
+
+:root[data-density="comfortable"] {
+  --hg-row-h:         40px;
+  --hg-row-px:        12px;
+  --hg-control-h:     32px;
+  --hg-table-text:    var(--hg-text-md);
+  --hg-table-leading: var(--hg-leading-md);
+}
+
+/* ---- Browser surfaces: the parts nobody draws ---------------------------- */
+@layer base {
+  html {
+    font-family: var(--hg-font-sans);
+    font-size: 100%;
+    background: var(--hg-canvas);
+    color: var(--hg-fg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: var(--hg-line) transparent;
+    accent-color: var(--hg-accent);
+    caret-color: var(--hg-accent-text);
+  }
+  ::selection { background: var(--hg-accent-wash-strong); color: var(--hg-fg); }
+  :focus-visible { outline: 2px solid var(--hg-focus); outline-offset: 1px; }
+  code, kbd, samp, .hg-mono {
+    font-family: var(--hg-font-mono);
+    font-size: calc(1em * var(--hg-mono-scale));
+    font-variant-ligatures: none;
+  }
+  .hg-num { font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  }
+}
+
+/* ==========================================================================
+   Tailwind CSS v4 mapping (ignored by browsers when used as plain CSS)
+   ========================================================================== */
+@theme inline {
+  --color-*: initial;                 /* tokens only — no stock palette */
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+
+  --color-canvas:  var(--hg-canvas);
+  --color-surface: var(--hg-surface);
+  --color-raised:  var(--hg-raised);
+  --color-overlay: var(--hg-overlay);
+  --color-sunken:  var(--hg-sunken);
+  --color-hover:   var(--hg-hover);
+  --color-pressed: var(--hg-pressed);
+  --color-scrim:   var(--hg-scrim);
+
+  --color-line-subtle: var(--hg-line-subtle);
+  --color-line:        var(--hg-line);
+  --color-line-strong: var(--hg-line-strong);
+
+  --color-fg:          var(--hg-fg);
+  --color-fg-2:        var(--hg-fg-2);
+  --color-fg-3:        var(--hg-fg-3);
+  --color-fg-disabled: var(--hg-fg-disabled);
+  --color-fg-on-accent: var(--hg-fg-on-accent);
+  --color-fg-inverse:  var(--hg-fg-inverse);
+
+  --color-accent:        var(--hg-accent);
+  --color-accent-hover:  var(--hg-accent-hover);
+  --color-accent-press:  var(--hg-accent-press);
+  --color-accent-text:   var(--hg-accent-text);
+  --color-accent-wash:   var(--hg-accent-wash);
+  --color-accent-wash-strong: var(--hg-accent-wash-strong);
+  --color-accent-line:   var(--hg-accent-line);
+  --color-focus:         var(--hg-focus);
+
+  --color-tone-intake:        var(--hg-tone-intake);
+  --color-tone-intake-fg:     var(--hg-tone-intake-fg);
+  --color-tone-intake-wash:   var(--hg-tone-intake-wash);
+  --color-tone-outreach:      var(--hg-tone-outreach);
+  --color-tone-outreach-fg:   var(--hg-tone-outreach-fg);
+  --color-tone-outreach-wash: var(--hg-tone-outreach-wash);
+  --color-tone-booked:        var(--hg-tone-booked);
+  --color-tone-booked-fg:     var(--hg-tone-booked-fg);
+  --color-tone-booked-wash:   var(--hg-tone-booked-wash);
+  --color-tone-workshop:      var(--hg-tone-workshop);
+  --color-tone-workshop-fg:   var(--hg-tone-workshop-fg);
+  --color-tone-workshop-wash: var(--hg-tone-workshop-wash);
+  --color-tone-transit:       var(--hg-tone-transit);
+  --color-tone-transit-fg:    var(--hg-tone-transit-fg);
+  --color-tone-transit-wash:  var(--hg-tone-transit-wash);
+  --color-tone-done:          var(--hg-tone-done);
+  --color-tone-done-fg:       var(--hg-tone-done-fg);
+  --color-tone-done-wash:     var(--hg-tone-done-wash);
+  --color-tone-caution:       var(--hg-tone-caution);
+  --color-tone-caution-fg:    var(--hg-tone-caution-fg);
+  --color-tone-caution-wash:  var(--hg-tone-caution-wash);
+  --color-tone-critical:      var(--hg-tone-critical);
+  --color-tone-critical-fg:   var(--hg-tone-critical-fg);
+  --color-tone-critical-wash: var(--hg-tone-critical-wash);
+
+  --color-viz-grid:  var(--hg-viz-grid);
+  --color-viz-axis:  var(--hg-viz-axis);
+  --color-viz-muted: var(--hg-viz-muted);
+  --color-viz-now:   var(--hg-viz-now);
+  --color-heat-0: var(--hg-heat-0);
+  --color-heat-1: var(--hg-heat-1);
+  --color-heat-2: var(--hg-heat-2);
+  --color-heat-3: var(--hg-heat-3);
+  --color-heat-4: var(--hg-heat-4);
+  --color-heat-surplus: var(--hg-heat-surplus);
+  --color-series-1: var(--hg-series-1);
+  --color-series-2: var(--hg-series-2);
+  --color-series-3: var(--hg-series-3);
+  --color-series-4: var(--hg-series-4);
+
+  --color-rail:        var(--hg-rail-bg);
+  --color-rail-hover:  var(--hg-rail-hover);
+  --color-rail-active: var(--hg-rail-active);
+  --color-rail-line:   var(--hg-rail-line);
+  --color-rail-fg:     var(--hg-rail-fg);
+  --color-rail-fg-2:   var(--hg-rail-fg-2);
+  --color-rail-fg-3:   var(--hg-rail-fg-3);
+
+  --font-sans: var(--hg-font-sans);
+  --font-mono: var(--hg-font-mono);
+
+  --text-2xs: var(--hg-text-2xs);  --text-2xs--line-height: var(--hg-leading-2xs);
+  --text-xs:  var(--hg-text-xs);   --text-xs--line-height:  var(--hg-leading-xs);
+  --text-sm:  var(--hg-text-sm);   --text-sm--line-height:  var(--hg-leading-sm);
+  --text-md:  var(--hg-text-md);   --text-md--line-height:  var(--hg-leading-md);
+  --text-lg:  var(--hg-text-lg);   --text-lg--line-height:  var(--hg-leading-lg);
+  --text-xl:  var(--hg-text-xl);   --text-xl--line-height:  var(--hg-leading-xl);
+  --text-2xl: var(--hg-text-2xl);  --text-2xl--line-height: var(--hg-leading-2xl);
+  --text-3xl: var(--hg-text-3xl);  --text-3xl--line-height: var(--hg-leading-3xl);
+  --text-4xl: var(--hg-text-4xl);  --text-4xl--line-height: var(--hg-leading-4xl);
+  --text-table: var(--hg-table-text); --text-table--line-height: var(--hg-table-leading);
+
+  --spacing: 0.25rem;               /* 4px grid: p-1 = 4px, h-8 = 32px */
+  --spacing-row:     var(--hg-row-h);
+  --spacing-cell:    var(--hg-row-px);
+  --spacing-control: var(--hg-control-h);
+  --spacing-badge:   var(--hg-h-badge);
+  --spacing-touch:   var(--hg-h-touch);
+  --spacing-scan:    var(--hg-h-scan);
+  --spacing-rail:    var(--hg-rail-w);
+  --spacing-rail-collapsed: var(--hg-rail-w-collapsed);
+  --spacing-topbar:  var(--hg-topbar-h);
+  --spacing-drawer:  var(--hg-drawer-w);
+
+  --radius-2xs: var(--hg-radius-2xs);
+  --radius-xs:  var(--hg-radius-xs);
+  --radius-sm:  var(--hg-radius-sm);
+  --radius-md:  var(--hg-radius-md);
+  --radius-lg:  var(--hg-radius-lg);
+
+  --shadow-popover: var(--hg-shadow-popover);
+  --shadow-drawer:  var(--hg-shadow-drawer);
+  --shadow-dialog:  var(--hg-shadow-dialog);
+  --shadow-bar:     var(--hg-shadow-bar);
+
+  --ease-out:    var(--hg-ease-out);
+  --ease-in-out: var(--hg-ease-in-out);
+
+  --breakpoint-sm:  40rem;   /* 640  — phones landscape          */
+  --breakpoint-md:  48rem;   /* 768  — tablets; rail becomes sheet below */
+  --breakpoint-lg:  64rem;   /* 1024 — rail collapsed by default   */
+  --breakpoint-xl:  80rem;   /* 1280 — docked drawer (split view)  */
+  --breakpoint-2xl: 90rem;   /* 1440 — reference desktop           */
+
+  --animate-verdict: hg-verdict var(--hg-dur-verdict) var(--hg-ease-out);
+  --animate-spin: hg-spin 0.9s linear infinite;
+}
+
+@keyframes hg-verdict {
+  from { filter: brightness(1.6) saturate(1.2); transform: scale(1.006); }
+  to   { filter: none; transform: none; }
+}
+@keyframes hg-spin { to { transform: rotate(360deg); } }
+
+@custom-variant comfortable (&:where([data-density="comfortable"], [data-density="comfortable"] *));
+@custom-variant theme-light (&:where([data-theme="light"], [data-theme="light"] *));
+@custom-variant theme-dark  (&:where([data-theme="dark"], [data-theme="dark"] *));

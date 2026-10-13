@@ -1,40 +1,28 @@
 import { HttpResponse } from 'msw'
+import type { Page } from '@/lib/api/types'
+import { problems } from './http'
 
 /**
- * Shared list behaviour for mock endpoints: paging, sorting, free-text search and filters,
- * so every slice's mock list endpoint behaves like the real API.
+ * List endpoints (API.md §1.2–1.3): `?page=1&perPage=25`, `?sort=field,-field2` (ties by id
+ * asc; unknown field → 422 `errors.sort`), comma-separated multi-value filters, `q` free text.
+ * Response envelope `{ data, meta: { page, perPage, total, totalPages } }`.
  *
- * Query string (PLACEHOLDER (phase 2a), aligned with API.md in phase 2b):
- *   ?page=1&pageSize=25&sort=-openedAt,number&q=text&status=a&status=b   (or status=a,b)
- * Response envelope (PLACEHOLDER, see `Page<T>`): { items, total, page, pageSize }
+ *   http.get(apiPath('/service-requests'), ({ request }) =>
+ *     listResponse(rows, request, {
+ *       sortable: { number: (r) => r.number, importedAt: (r) => r.importedAt },
+ *       defaultSort: '-importedAt',
+ *       search: (r, q) => r.number.includes(q.toUpperCase()),
+ *       filters: { status: filterIn((r) => r.status) },
+ *       map: (r) => toListItem(r),
+ *     }))
  */
 
-export interface SortSpec {
+export interface SortField {
   field: string
   direction: 'asc' | 'desc'
 }
 
-export interface ListParams {
-  page: number
-  pageSize: number
-  sort: SortSpec[]
-  q: string | undefined
-  /** All query params, for module-specific filters. */
-  searchParams: URLSearchParams
-}
-
-export interface ListParamOptions {
-  defaultPageSize?: number
-  maxPageSize?: number
-  defaultSort?: SortSpec[]
-}
-
-function positiveInt(value: string | null, fallback: number): number {
-  const parsed = Number(value)
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
-}
-
-export function parseSortParam(value: string | null): SortSpec[] {
+export function parseSortParam(value: string | null): SortField[] {
   if (!value) return []
   return value
     .split(',')
@@ -47,29 +35,7 @@ export function parseSortParam(value: string | null): SortSpec[] {
     )
 }
 
-export function parseListParams(
-  input: Request | URL | string,
-  options: ListParamOptions = {},
-): ListParams {
-  const url =
-    input instanceof Request ? new URL(input.url) : input instanceof URL ? input : new URL(input)
-  const { searchParams } = url
-  const maxPageSize = options.maxPageSize ?? 200
-  const sort = parseSortParam(searchParams.get('sort'))
-  const q = searchParams.get('q')?.trim()
-  return {
-    page: positiveInt(searchParams.get('page'), 1),
-    pageSize: Math.min(
-      positiveInt(searchParams.get('pageSize'), options.defaultPageSize ?? 25),
-      maxPageSize,
-    ),
-    sort: sort.length > 0 ? sort : (options.defaultSort ?? []),
-    q: q === '' ? undefined : q,
-    searchParams,
-  }
-}
-
-/** Repeated (`?s=a&s=b`) and comma separated (`?s=a,b`) values of one query param. */
+/** Comma-separated (canonical) and repeated values of one query param. */
 export function multiValue(searchParams: URLSearchParams, name: string): string[] {
   return searchParams
     .getAll(name)
@@ -78,50 +44,63 @@ export function multiValue(searchParams: URLSearchParams, name: string): string[
     .filter(Boolean)
 }
 
-type Accessor<T> = (record: T) => unknown
-
-/** Filter predicate for one query param; receives the param's values (never empty). */
-export type FilterFn<T> = (record: T, values: string[]) => boolean
-
-export interface ListQueryOptions<T> {
-  /** Fields searched by `q` (case-insensitive substring). */
-  searchFields?: readonly (keyof T | Accessor<T>)[]
-  /** Query param name -> predicate. Params absent from the URL are ignored. */
-  filters?: Record<string, FilterFn<T>>
-  /** Sort field -> value accessor; default: the record property of the same name. */
-  sortAccessors?: Record<string, Accessor<T>>
+export function boolValue(searchParams: URLSearchParams, name: string): boolean | undefined {
+  const value = searchParams.get(name)
+  return value === 'true' ? true : value === 'false' ? false : undefined
 }
 
-/** `status=a,b` matches records whose `status` is a or b. */
-export function filterIn<T>(field: keyof T): FilterFn<T> {
-  return (record, values) => values.includes(toText(record[field]))
+export interface PageParams {
+  page: number
+  perPage: number
 }
 
-/** Boolean flag filter: `vip=true` / `vip=false`. */
-export function filterBoolean<T>(field: keyof T): FilterFn<T> {
-  return (record, values) => values.includes(String(Boolean(record[field])))
+function positiveInt(value: string | null, fallback: number): number {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
 }
 
-/** Date range filter on an ISO date field: `openedFrom` / `openedTo` style (inclusive). */
-export function filterDateFrom<T>(field: keyof T): FilterFn<T> {
-  return (record, [from]) => !from || toText(record[field]) >= from
+export function parsePage(searchParams: URLSearchParams, defaultPerPage = 25): PageParams {
+  return {
+    page: positiveInt(searchParams.get('page'), 1),
+    perPage: Math.min(positiveInt(searchParams.get('perPage'), defaultPerPage), 200),
+  }
 }
-export function filterDateTo<T>(field: keyof T): FilterFn<T> {
-  return (record, [to]) => !to || toText(record[field]).slice(0, to.length) <= to
+
+export function paginate<T>(items: readonly T[], { page, perPage }: PageParams): Page<T> {
+  const total = items.length
+  const totalPages = Math.max(1, Math.ceil(total / perPage))
+  const start = (page - 1) * perPage
+  return { data: items.slice(start, start + perPage), meta: { page, perPage, total, totalPages } }
+}
+
+/** A filter: query param values (non-empty) → predicate. */
+export type FilterFn<T> = (row: T, values: string[]) => boolean
+
+/** `status=a,b` matches rows whose accessor value is a or b. */
+export function filterIn<T>(get: (row: T) => string | number | null | undefined): FilterFn<T> {
+  return (row, values) => values.includes(String(get(row)))
+}
+
+/** Boolean flag filter (`campus=true`). */
+export function filterBool<T>(get: (row: T) => boolean): FilterFn<T> {
+  return (row, [value]) => (value === 'true' ? get(row) : value === 'false' ? !get(row) : true)
+}
+
+/** Inclusive date range on an ISO date/timestamp (compare the `YYYY-MM-DD` part). */
+export function filterFrom<T>(get: (row: T) => string | null | undefined): FilterFn<T> {
+  return (row, [from]) => {
+    const value = get(row)
+    return !from || (value !== null && value !== undefined && value.slice(0, 10) >= from)
+  }
+}
+export function filterTo<T>(get: (row: T) => string | null | undefined): FilterFn<T> {
+  return (row, [to]) => {
+    const value = get(row)
+    return !to || (value !== null && value !== undefined && value.slice(0, 10) <= to)
+  }
 }
 
 const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' })
-
-/** Text form of a field value for search and string comparison. */
-export function toText(value: unknown): string {
-  if (value === null || value === undefined) return ''
-  if (typeof value === 'string') return value
-  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
-    return String(value)
-  }
-  if (value instanceof Date) return value.toISOString()
-  return JSON.stringify(value)
-}
 
 export function compareValues(a: unknown, b: unknown): number {
   const aEmpty = a === null || a === undefined || a === ''
@@ -129,97 +108,88 @@ export function compareValues(a: unknown, b: unknown): number {
   if (aEmpty || bEmpty) return aEmpty === bEmpty ? 0 : aEmpty ? 1 : -1 // empties last
   if (typeof a === 'number' && typeof b === 'number') return a - b
   if (typeof a === 'boolean' && typeof b === 'boolean') return Number(a) - Number(b)
-  if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime()
-  return collator.compare(toText(a), toText(b))
+  return collator.compare(sortText(a), sortText(b))
 }
 
-function readField<T>(record: T, field: keyof T | Accessor<T>): unknown {
-  return typeof field === 'function' ? field(record) : record[field]
+function sortText(value: unknown): string {
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint')
+    return String(value)
+  return JSON.stringify(value) ?? ''
 }
 
-/** Filter, search and sort (no paging). */
-export function applyListQuery<T>(
-  items: readonly T[],
-  params: Pick<ListParams, 'q' | 'sort' | 'searchParams'>,
-  options: ListQueryOptions<T> = {},
-): T[] {
-  let result = [...items]
+export interface ListOptions<T, R> {
+  /** Sortable fields → accessor. Unknown sort fields → 422. */
+  sortable?: Record<string, (row: T) => unknown>
+  /** Applied when `?sort` is absent, e.g. `-importedAt`. */
+  defaultSort?: string
+  /** Free text `q`. */
+  search?: (row: T, q: string) => boolean
+  /** Query param → predicate. */
+  filters?: Record<string, FilterFn<T>>
+  defaultPerPage?: number
+  /** Row → response item (DTO, availableActions, …). */
+  map?: (row: T) => R
+  /** Id accessor for the stable tie-break (default `row.id`). */
+  id?: (row: T) => number
+}
 
+/** Filter + search + sort (no paging). Returns a 422 response for an unknown sort field. */
+export function queryRows<T>(
+  rows: readonly T[],
+  request: Request,
+  options: Omit<ListOptions<T, unknown>, 'map' | 'defaultPerPage'> = {},
+): T[] | Response {
+  const { searchParams } = new URL(request.url)
+  let result = [...rows]
   for (const [param, predicate] of Object.entries(options.filters ?? {})) {
-    const values = multiValue(params.searchParams, param)
-    if (values.length > 0) result = result.filter((record) => predicate(record, values))
+    const values = multiValue(searchParams, param)
+    if (values.length > 0) result = result.filter((row) => predicate(row, values))
   }
+  const q = searchParams.get('q')?.trim()
+  if (q && options.search) result = result.filter((row) => options.search?.(row, q) ?? true)
 
-  if (params.q && options.searchFields?.length) {
-    const needle = params.q.toLowerCase()
-    const fields = options.searchFields
-    result = result.filter((record) =>
-      fields.some((field) => toText(readField(record, field)).toLowerCase().includes(needle)),
+  const sort = parseSortParam(searchParams.get('sort') ?? options.defaultSort ?? null)
+  const unknown = sort.filter((s) => !options.sortable?.[s.field])
+  if (unknown.length > 0 && searchParams.get('sort')) {
+    return problems.validation(
+      { sort: [`Unknown sort field: ${unknown.map((s) => s.field).join(', ')}`] },
+      undefined,
+      request,
     )
   }
-
-  if (params.sort.length > 0) {
-    const accessors = params.sort.map(({ field, direction }) => ({
-      read:
-        options.sortAccessors?.[field] ??
-        ((record: T) => (record as Record<string, unknown>)[field]),
-      sign: direction === 'desc' ? -1 : 1,
+  const getId = options.id ?? ((row: T) => (row as { id: number }).id)
+  const accessors = sort
+    .filter((s) => options.sortable?.[s.field])
+    .map((s) => ({
+      read: options.sortable?.[s.field] ?? (() => null),
+      sign: s.direction === 'desc' ? -1 : 1,
     }))
-    result.sort((a, b) => {
-      for (const { read, sign } of accessors) {
-        const valueA = read(a)
-        const valueB = read(b)
-        const emptyA = valueA === null || valueA === undefined || valueA === ''
-        const emptyB = valueB === null || valueB === undefined || valueB === ''
-        // Empty values sort last regardless of direction.
-        const diff =
-          emptyA || emptyB ? compareValues(valueA, valueB) : sign * compareValues(valueA, valueB)
-        if (diff !== 0) return diff
-      }
-      return 0
-    })
-  }
-
+  result.sort((a, b) => {
+    for (const { read, sign } of accessors) {
+      const va = read(a)
+      const vb = read(b)
+      const empty = (v: unknown) => v === null || v === undefined || v === ''
+      const diff = empty(va) || empty(vb) ? compareValues(va, vb) : sign * compareValues(va, vb)
+      if (diff !== 0) return diff
+    }
+    return getId(a) - getId(b)
+  })
   return result
 }
 
-/** List response envelope. PLACEHOLDER (phase 2a): aligned with API.md in phase 2b. */
-export interface Page<T> {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-}
-
-export function paginate<T>(items: readonly T[], page: number, pageSize: number): Page<T> {
-  const start = (page - 1) * pageSize
-  return { items: items.slice(start, start + pageSize), total: items.length, page, pageSize }
-}
-
-export interface ListResponseOptions<T, R> extends ListQueryOptions<T>, ListParamOptions {
-  /** Map each record of the returned page (e.g. add `availableActions`, embed relations). */
-  map?: (record: T) => R
-}
-
-/**
- * One-liner list endpoint:
- *
- *   http.get(apiPath('/service-requests'), ({ request }) =>
- *     listResponse(db.collection('serviceRequests').all(), request, {
- *       searchFields: ['number', 'requesterName'],
- *       filters: { status: filterIn('status') },
- *       defaultSort: [{ field: 'openedAt', direction: 'desc' }],
- *       map: (sr) => ({ ...sr, availableActions: srMachine.availableActions(sr, ctx) }),
- *     }))
- */
+/** One-liner list endpoint returning the `Page<R>` envelope. */
 export function listResponse<T, R = T>(
-  items: readonly T[],
+  rows: readonly T[],
   request: Request,
-  options: ListResponseOptions<T, R> = {},
+  options: ListOptions<T, R> = {},
 ) {
-  const params = parseListParams(request, options)
-  const rows = applyListQuery(items, params, options)
-  const page = paginate(rows, params.page, params.pageSize)
-  const map = options.map ?? ((record: T) => record as unknown as R)
-  return HttpResponse.json<Page<R>>({ ...page, items: page.items.map(map) })
+  const queried = queryRows(rows, request, options)
+  if (queried instanceof Response) return queried
+  const page = paginate(
+    queried,
+    parsePage(new URL(request.url).searchParams, options.defaultPerPage),
+  )
+  const map = options.map ?? ((row: T) => row as unknown as R)
+  return HttpResponse.json({ data: page.data.map(map), meta: page.meta })
 }

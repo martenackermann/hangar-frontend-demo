@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest'
+import type { Page } from '@/lib/api/types'
 import {
-  applyListQuery,
+  filterFrom,
   filterIn,
   listResponse,
+  multiValue,
   paginate,
-  parseListParams,
-  type Page,
+  parsePage,
+  queryRows,
 } from './list'
-import { defineMachine, SYSTEM_CONTEXT } from './transitions'
 
 interface Ticket {
-  id: string
+  id: number
   number: string
   status: 'open' | 'claimed' | 'done'
   site: string
@@ -18,113 +19,90 @@ interface Ticket {
 }
 
 const tickets: Ticket[] = [
-  { id: '1', number: 'SR0000010', status: 'open', site: 'Riverton', openedAt: '2026-10-01' },
-  { id: '2', number: 'SR0000002', status: 'claimed', site: 'Hillford', openedAt: '2026-10-03' },
-  { id: '3', number: 'SR0000003', status: 'open', site: 'Eastgate', openedAt: null },
-  { id: '4', number: 'SR0000004', status: 'done', site: 'Riverton', openedAt: '2026-10-02' },
+  {
+    id: 1,
+    number: 'SR0000010',
+    status: 'open',
+    site: 'Riverton',
+    openedAt: '2026-10-01T08:00:00Z',
+  },
+  {
+    id: 2,
+    number: 'SR0000002',
+    status: 'claimed',
+    site: 'Hillford',
+    openedAt: '2026-10-03T08:00:00Z',
+  },
+  { id: 3, number: 'SR0000003', status: 'open', site: 'Eastgate', openedAt: null },
+  {
+    id: 4,
+    number: 'SR0000004',
+    status: 'done',
+    site: 'Riverton',
+    openedAt: '2026-10-02T08:00:00Z',
+  },
 ]
 
-const url = (query: string) => `http://localhost:8100/api/v1/tickets?${query}`
+const request = (query: string) => new Request(`http://localhost:8100/api/v1/tickets?${query}`)
 
-describe('mock list helpers', () => {
-  it('parses paging, sorting and search with sane defaults and limits', () => {
-    const params = parseListParams(url('page=2&pageSize=500&sort=-openedAt,number&q=%20sr%20'))
-    expect(params).toMatchObject({
-      page: 2,
-      pageSize: 200,
-      q: 'sr',
-      sort: [
-        { field: 'openedAt', direction: 'desc' },
-        { field: 'number', direction: 'asc' },
-      ],
-    })
-    expect(parseListParams(url('page=-1&pageSize=abc'))).toMatchObject({ page: 1, pageSize: 25 })
+const options = {
+  sortable: { number: (t: Ticket) => t.number, openedAt: (t: Ticket) => t.openedAt },
+  search: (t: Ticket, q: string) => t.site.toLowerCase().includes(q.toLowerCase()),
+  filters: {
+    status: filterIn((t: Ticket) => t.status),
+    openedFrom: filterFrom((t: Ticket) => t.openedAt),
+  },
+}
+
+function ids(query: string): number[] | Response {
+  const result = queryRows(tickets, request(query), options)
+  return result instanceof Response ? result : result.map((t) => t.id)
+}
+
+describe('mock list helpers (API.md §1.2–1.3)', () => {
+  it('reads comma-separated and repeated multi-values', () => {
+    const params = new URL(request('status=a,b&status=c').url).searchParams
+    expect(multiValue(params, 'status')).toEqual(['a', 'b', 'c'])
   })
 
-  it('filters (repeated and comma separated values), searches and sorts', () => {
-    const query = (q: string) =>
-      applyListQuery(tickets, parseListParams(url(q)), {
-        searchFields: ['number', 'site'],
-        filters: { status: filterIn('status') },
-      }).map((t) => t.id)
-
-    expect(query('status=open&status=done')).toEqual(['1', '3', '4'])
-    expect(query('status=open,claimed&q=river')).toEqual(['1'])
-    expect(query('sort=number')).toEqual(['2', '3', '4', '1'])
-    // empty values sort last in both directions
-    expect(query('sort=-openedAt')).toEqual(['2', '4', '1', '3'])
-    expect(query('sort=openedAt')).toEqual(['1', '4', '2', '3'])
+  it('filters, searches and sorts with ties broken by id', () => {
+    expect(ids('status=open,done')).toEqual([1, 3, 4])
+    expect(ids('status=open&q=river')).toEqual([1])
+    expect(ids('sort=number')).toEqual([2, 3, 4, 1])
+    expect(ids('sort=-openedAt')).toEqual([2, 4, 1, 3]) // empty values last
+    expect(ids('openedFrom=2026-10-02')).toEqual([2, 4])
   })
 
-  it('paginates and builds the list response envelope', async () => {
-    expect(paginate(tickets, 2, 3)).toEqual({ items: [tickets[3]], total: 4, page: 2, pageSize: 3 })
-
-    const response = listResponse(tickets, new Request(url('pageSize=2&sort=number')), {
-      map: (t) => ({ id: t.id, number: t.number }),
-    })
-    const body = (await response.json()) as Page<{ id: string; number: string }>
-    expect(body).toEqual({
-      items: [
-        { id: '2', number: 'SR0000002' },
-        { id: '3', number: 'SR0000003' },
-      ],
-      total: 4,
-      page: 1,
-      pageSize: 2,
-    })
-  })
-})
-
-describe('defineMachine', () => {
-  const machine = defineMachine<Ticket, 'status'>()({
-    statusKey: 'status',
-    transitions: {
-      claim: { from: ['open'], to: 'claimed', permission: 'staging:write' },
-      complete: {
-        from: ['claimed'],
-        to: 'done',
-        guard: (t) => (t.site === 'Hillford' ? 'Hillford is closed today.' : null),
-      },
-      reopen: { from: '*', to: 'open', effect: () => ({ openedAt: '2026-10-13' }) },
-    },
-  })
-  const open = tickets[0]!
-  const claimed = tickets[1]!
-
-  it('lists the actions available for a record and user', () => {
-    expect(machine.availableActions(open, SYSTEM_CONTEXT)).toEqual(['claim', 'reopen'])
-    expect(machine.availableActions(open, { can: () => false })).toEqual(['reopen'])
-    expect(machine.availableActions(claimed, SYSTEM_CONTEXT)).toEqual(['reopen'])
-  })
-
-  it('applies transitions or explains why not', async () => {
-    expect(machine.apply(open, 'claim', SYSTEM_CONTEXT)).toEqual({
-      ok: true,
-      patch: { status: 'claimed' },
-    })
-    expect(machine.apply(claimed, 'reopen', SYSTEM_CONTEXT)).toEqual({
-      ok: true,
-      patch: { status: 'open', openedAt: '2026-10-13' },
-    })
-
-    const forbidden = machine.apply(open, 'claim', { can: () => false })
-    expect(forbidden).toMatchObject({ ok: false, status: 403 })
-
-    const wrongState = machine.apply(open, 'complete', SYSTEM_CONTEXT)
-    expect(wrongState).toMatchObject({ ok: false, status: 409 })
-    if (!wrongState.ok) {
-      expect(wrongState.response.status).toBe(409)
-      expect(await wrongState.response.json()).toMatchObject({
-        title: 'Invalid transition',
-        detail: 'Cannot complete from status "open".',
-      })
+  it('rejects unknown sort fields with 422', async () => {
+    const result = ids('sort=bogus')
+    expect(result).toBeInstanceOf(Response)
+    const body = (await (result as Response).json()) as {
+      code: string
+      errors: Record<string, string[]>
     }
+    expect(body.code).toBe('validation_error')
+    expect(body.errors.sort?.[0]).toContain('bogus')
+  })
 
-    expect(machine.apply(claimed, 'complete', SYSTEM_CONTEXT)).toMatchObject({
-      ok: false,
-      status: 409,
-      detail: 'Hillford is closed today.',
+  it('paginates into the { data, meta } envelope', async () => {
+    expect(parsePage(new URL(request('page=0&perPage=500').url).searchParams)).toEqual({
+      page: 1,
+      perPage: 200,
     })
-    expect(machine.apply(open, 'explode', SYSTEM_CONTEXT)).toMatchObject({ ok: false, status: 422 })
+    expect(paginate(tickets, { page: 2, perPage: 3 })).toEqual({
+      data: [tickets[3]],
+      meta: { page: 2, perPage: 3, total: 4, totalPages: 2 },
+    })
+    expect(paginate(tickets, { page: 9, perPage: 3 }).data).toEqual([])
+
+    const response = listResponse(tickets, request('perPage=2&sort=number'), {
+      ...options,
+      map: (t) => ({ id: t.id }),
+    })
+    const body = (await response.json()) as Page<{ id: number }>
+    expect(body).toEqual({
+      data: [{ id: 2 }, { id: 3 }],
+      meta: { page: 1, perPage: 2, total: 4, totalPages: 2 },
+    })
   })
 })

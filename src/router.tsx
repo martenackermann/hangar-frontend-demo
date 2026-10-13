@@ -1,8 +1,9 @@
-import { createRouter } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
-import { NotFound, PendingPage, RouteError } from '@/components/feedback/route-error'
+import { createRouter } from '@tanstack/react-router'
+import { NotFoundPage, PendingPage, RouteError } from '@/components/app/error-pages'
 import { setUnauthorizedHandler } from '@/lib/api/client'
 import { createQueryClient } from '@/lib/query/client'
+import { parseSearch, stringifySearch } from '@/lib/search/params'
 import { routeTree } from './routeTree.gen'
 
 export interface RouterContext {
@@ -13,12 +14,15 @@ export function createAppRouter(queryClient: QueryClient) {
   return createRouter({
     routeTree,
     context: { queryClient } satisfies RouterContext,
+    // Readable URLs: comma lists, no JSON (SCREENS.md §0, SPEC_RESOLUTIONS #39).
+    parseSearch,
+    stringifySearch,
     // Loaders always run; TanStack Query decides whether cached data is fresh enough.
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,
     defaultErrorComponent: RouteError,
-    defaultNotFoundComponent: NotFound,
+    defaultNotFoundComponent: NotFoundPage,
     defaultPendingComponent: PendingPage,
   })
 }
@@ -39,9 +43,7 @@ declare module '@tanstack/react-router' {
     router: typeof router
   }
   interface StaticDataRouteOption {
-    /** `bare` renders the route without the app shell (login, print views). */
-    layout?: 'app' | 'bare'
-    /** Page title for the document title / breadcrumbs (phase 2b). */
+    /** Page title for breadcrumbs and `<title>`. */
     title?: string
   }
 }

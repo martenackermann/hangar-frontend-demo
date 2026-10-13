@@ -1,8 +1,9 @@
 import type { RequestHandler } from 'msw'
 
 /**
- * Mock API handlers of the `staging` module (demo mode + Vitest). Collected automatically
- * by src/mocks/handlers.ts. Use apiPath(), listResponse(), problems.* and defineMachine()
- * from @/mocks/* so the mock behaves like the real API. Owner: slice H3 (Staging & Fulfilment).
+ * Mock endpoints of H3 Staging & Fulfilment (API.md), collected by src/mocks/handlers.ts and placed
+ * before the core handlers. Build them with `apiPath`, `authed`, `listResponse`, `problems.*`,
+ * the core read models (`srListItem`, `srDetail`, …) and `applyAction` — see CONVENTIONS.md
+ * "Mock API".
  */
 export const handlers: RequestHandler[] = []

@@ -1,16 +1,83 @@
 /*
- * PLACEHOLDER stylesheet (phase 2a).
- * Phase 2b replaces the theme block with the design tokens from _spec/hangar/tokens.css
- * and adds the @fontsource imports chosen in DESIGN.md.
+ * Hangar app stylesheet: Tailwind v4 + the design tokens (DESIGN.md §15).
+ * tokens.css is a verbatim copy of _spec/hangar/tokens.css and disables the stock
+ * Tailwind palette, so only token utilities exist (bg-surface, text-fg-2, h-row, ...).
+ * App-level additions below: base element styles, touch density, forced colours,
+ * a few component classes that are awkward as utilities (scrollbars, skeleton shimmer).
  */
 @import 'tailwindcss';
+@import './tokens.css';
 
-@theme {
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+@theme inline {
+  --animate-shimmer: hg-shimmer 1.4s linear infinite;
+  --animate-fresh: hg-fresh 1.6s var(--hg-ease-out);
+  --animate-row-in: hg-row-in 0.9s var(--hg-ease-out);
+  --animate-fade-in: hg-fade-in var(--hg-dur-fast) var(--hg-ease-out);
+  --animate-pop-in: hg-pop-in var(--hg-dur-fast) var(--hg-ease-out);
+  --animate-slide-up: hg-slide-up var(--hg-dur-base) var(--hg-ease-out);
+  --animate-slide-in-right: hg-slide-in-right var(--hg-dur-base) var(--hg-ease-in-out);
+}
+
+@keyframes hg-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes hg-fresh {
+  from {
+    background-color: var(--hg-accent-wash-strong);
+  }
+}
+@keyframes hg-row-in {
+  from {
+    background-color: var(--hg-accent-wash);
+  }
+}
+@keyframes hg-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes hg-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.99);
+  }
+}
+@keyframes hg-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes hg-slide-in-right {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+
+/* Touch devices: comfortable density and 44 px targets regardless of the toggle (DESIGN.md §5). */
+@media (pointer: coarse) {
+  :root {
+    --hg-row-h: 40px;
+    --hg-row-px: 12px;
+    --hg-control-h: 32px;
+    --hg-table-text: var(--hg-text-md);
+    --hg-table-leading: var(--hg-leading-md);
+  }
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--hg-line);
+  }
+
   html,
   body,
   #root {
@@ -18,6 +85,124 @@
   }
 
   body {
-    @apply bg-white text-slate-900 antialiased;
+    margin: 0;
+    background: var(--hg-canvas);
+    color: var(--hg-fg);
+    font-size: var(--hg-text-sm);
+    line-height: var(--hg-leading-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--hg-line);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--hg-line-strong);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--hg-fg-3);
+  }
+}
+
+@layer components {
+  /* Identifiers: significant-digit ink (DESIGN.md §4.2). */
+  .hg-mono {
+    font-family: var(--hg-font-mono);
+    font-size: calc(1em * var(--hg-mono-scale));
+    font-variant-ligatures: none;
+  }
+
+  /* Skeleton bars: shimmer only on first load, never on refetch. */
+  .hg-skeleton {
+    border-radius: var(--hg-radius-2xs);
+    background: linear-gradient(
+      90deg,
+      var(--hg-pressed) 0%,
+      var(--hg-hover) 50%,
+      var(--hg-pressed) 100%
+    );
+    background-size: 200% 100%;
+    animation: hg-shimmer 1.4s linear infinite;
+  }
+
+  /* Hide scrollbars on horizontally scrolling chip/tab strips. */
+  .hg-no-scrollbar {
+    scrollbar-width: none;
+  }
+  .hg-no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Graphite rail scrollbars. */
+  .hg-rail-scroll {
+    scrollbar-color: var(--hg-rail-active) transparent;
+  }
+
+  /* Tone families as CSS variables: `hg-tone-booked` sets --t / --t-fg / --t-wash. */
+  .hg-tone-intake {
+    --t: var(--hg-tone-intake);
+    --t-fg: var(--hg-tone-intake-fg);
+    --t-wash: var(--hg-tone-intake-wash);
+  }
+  .hg-tone-outreach {
+    --t: var(--hg-tone-outreach);
+    --t-fg: var(--hg-tone-outreach-fg);
+    --t-wash: var(--hg-tone-outreach-wash);
+  }
+  .hg-tone-booked {
+    --t: var(--hg-tone-booked);
+    --t-fg: var(--hg-tone-booked-fg);
+    --t-wash: var(--hg-tone-booked-wash);
+  }
+  .hg-tone-workshop {
+    --t: var(--hg-tone-workshop);
+    --t-fg: var(--hg-tone-workshop-fg);
+    --t-wash: var(--hg-tone-workshop-wash);
+  }
+  .hg-tone-transit {
+    --t: var(--hg-tone-transit);
+    --t-fg: var(--hg-tone-transit-fg);
+    --t-wash: var(--hg-tone-transit-wash);
+  }
+  .hg-tone-done {
+    --t: var(--hg-tone-done);
+    --t-fg: var(--hg-tone-done-fg);
+    --t-wash: var(--hg-tone-done-wash);
+  }
+  .hg-tone-caution {
+    --t: var(--hg-tone-caution);
+    --t-fg: var(--hg-tone-caution-fg);
+    --t-wash: var(--hg-tone-caution-wash);
+  }
+  .hg-tone-critical {
+    --t: var(--hg-tone-critical);
+    --t-fg: var(--hg-tone-critical-fg);
+    --t-wash: var(--hg-tone-critical-wash);
+  }
+}
+
+/* Windows high contrast: badges, ticks and meters keep visible borders (DESIGN.md §14). */
+@media (forced-colors: active) {
+  .hg-badge,
+  .hg-track > i,
+  .hg-meter {
+    border: 1px solid CanvasText;
   }
 }

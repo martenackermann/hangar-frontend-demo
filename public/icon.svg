@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22">
+  <!-- Full-bleed app icon (PWA, touch icon); scripts/generate-icons.ts renders the PNGs. -->
+  <rect width="22" height="22" fill="#FFB224"/>
+  <path d="M4.5 17.5V11a6.5 6.5 0 0 1 13 0v6.5" fill="none" stroke="#1B1300" stroke-width="2"/>
+  <path d="M8.5 17.5v-4h5v4" fill="none" stroke="#1B1300" stroke-width="1.6"/>
+  <path d="M3 17.5h16" stroke="#1B1300" stroke-width="1.6"/>
+</svg>

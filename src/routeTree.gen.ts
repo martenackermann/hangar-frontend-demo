@@ -9,32 +9,41 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as FieldRouteRouteImport } from './routes/field/route'
-import { Route as ImportsRouteRouteImport } from './routes/imports/route'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as RequestsRouteRouteImport } from './routes/requests/route'
-import { Route as StagingRouteRouteImport } from './routes/staging/route'
-import { Route as StockRouteRouteImport } from './routes/stock/route'
-import { Route as FieldIndexRouteImport } from './routes/field/index'
-import { Route as ImportsIndexRouteImport } from './routes/imports/index'
-import { Route as RequestsIndexRouteImport } from './routes/requests/index'
-import { Route as StagingIndexRouteImport } from './routes/staging/index'
-import { Route as StockIndexRouteImport } from './routes/stock/index'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppSplatRouteImport } from './routes/_app/$'
+import { Route as AppCommunicationsRouteImport } from './routes/_app/communications'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppLeaseReturnsRouteImport } from './routes/_app/lease-returns'
+import { Route as AppPipelineRouteImport } from './routes/_app/pipeline'
+import { Route as AppServiceRequestsRouteImport } from './routes/_app/service-requests'
+import { Route as AppAdminArticlesRouteImport } from './routes/_app/admin/articles'
+import { Route as AppAdminCalendarsRouteImport } from './routes/_app/admin/calendars'
+import { Route as AppAdminDispatchSettingsRouteImport } from './routes/_app/admin/dispatch-settings'
+import { Route as AppAdminRegionsRouteImport } from './routes/_app/admin/regions'
+import { Route as AppAdminUsersRouteImport } from './routes/_app/admin/users'
+import { Route as AppAdminVipListRouteImport } from './routes/_app/admin/vip-list'
+import { Route as AppFieldMyTourRouteImport } from './routes/_app/field/my-tour'
+import { Route as AppFieldTourPlannerRouteImport } from './routes/_app/field/tour-planner'
+import { Route as AppStockAssetsRouteImport } from './routes/_app/stock/assets'
+import { Route as AppStockDeactivationRouteImport } from './routes/_app/stock/deactivation'
+import { Route as AppStockMatrixRouteImport } from './routes/_app/stock/matrix'
+import { Route as AppWarehouseInstallationPlacesRouteImport } from './routes/_app/warehouse/installation-places'
+import { Route as AppWarehouseOrderClosingRouteImport } from './routes/_app/warehouse/order-closing'
+import { Route as AppWarehouseParcelShippingRouteImport } from './routes/_app/warehouse/parcel-shipping'
+import { Route as AppWarehousePersonalizationRouteImport } from './routes/_app/warehouse/personalization'
+import { Route as AppWarehousePickingRouteImport } from './routes/_app/warehouse/picking'
+import { Route as AppDataImportsIndexRouteImport } from './routes/_app/data/imports.index'
+import { Route as AppDataImportsImportIdRouteImport } from './routes/_app/data/imports.$importId'
+import { Route as AppStockCallOffOrdersIndexRouteImport } from './routes/_app/stock/call-off-orders.index'
+import { Route as AppStockCallOffOrdersOrderIdRouteImport } from './routes/_app/stock/call-off-orders.$orderId'
+import { Route as AppStockInventoryIndexRouteImport } from './routes/_app/stock/inventory.index'
+import { Route as AppStockInventoryInventoryIdRouteImport } from './routes/_app/stock/inventory.$inventoryId'
+import { Route as AppFieldToursTourIdStopsStopIdRouteImport } from './routes/_app/field/tours.$tourId.stops.$stopId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FieldRouteRoute = FieldRouteRouteImport.update({
-  id: '/field',
-  path: '/field',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImportsRouteRoute = ImportsRouteRouteImport.update({
-  id: '/imports',
-  path: '/imports',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -42,150 +51,382 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RequestsRouteRoute = RequestsRouteRouteImport.update({
-  id: '/requests',
-  path: '/requests',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StagingRouteRoute = StagingRouteRouteImport.update({
-  id: '/staging',
-  path: '/staging',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StockRouteRoute = StockRouteRouteImport.update({
-  id: '/stock',
-  path: '/stock',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FieldIndexRoute = FieldIndexRouteImport.update({
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => FieldRouteRoute,
+  getParentRoute: () => AppRoute,
 } as any)
-const ImportsIndexRoute = ImportsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ImportsRouteRoute,
+const AppSplatRoute = AppSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => AppRoute,
 } as any)
-const RequestsIndexRoute = RequestsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => RequestsRouteRoute,
+const AppCommunicationsRoute = AppCommunicationsRouteImport.update({
+  id: '/communications',
+  path: '/communications',
+  getParentRoute: () => AppRoute,
 } as any)
-const StagingIndexRoute = StagingIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => StagingRouteRoute,
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
 } as any)
-const StockIndexRoute = StockIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => StockRouteRoute,
+const AppLeaseReturnsRoute = AppLeaseReturnsRouteImport.update({
+  id: '/lease-returns',
+  path: '/lease-returns',
+  getParentRoute: () => AppRoute,
 } as any)
+const AppPipelineRoute = AppPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppServiceRequestsRoute = AppServiceRequestsRouteImport.update({
+  id: '/service-requests',
+  path: '/service-requests',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminArticlesRoute = AppAdminArticlesRouteImport.update({
+  id: '/admin/articles',
+  path: '/admin/articles',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminCalendarsRoute = AppAdminCalendarsRouteImport.update({
+  id: '/admin/calendars',
+  path: '/admin/calendars',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminDispatchSettingsRoute =
+  AppAdminDispatchSettingsRouteImport.update({
+    id: '/admin/dispatch-settings',
+    path: '/admin/dispatch-settings',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppAdminRegionsRoute = AppAdminRegionsRouteImport.update({
+  id: '/admin/regions',
+  path: '/admin/regions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminVipListRoute = AppAdminVipListRouteImport.update({
+  id: '/admin/vip-list',
+  path: '/admin/vip-list',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFieldMyTourRoute = AppFieldMyTourRouteImport.update({
+  id: '/field/my-tour',
+  path: '/field/my-tour',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFieldTourPlannerRoute = AppFieldTourPlannerRouteImport.update({
+  id: '/field/tour-planner',
+  path: '/field/tour-planner',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStockAssetsRoute = AppStockAssetsRouteImport.update({
+  id: '/stock/assets',
+  path: '/stock/assets',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStockDeactivationRoute = AppStockDeactivationRouteImport.update({
+  id: '/stock/deactivation',
+  path: '/stock/deactivation',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStockMatrixRoute = AppStockMatrixRouteImport.update({
+  id: '/stock/matrix',
+  path: '/stock/matrix',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWarehouseInstallationPlacesRoute =
+  AppWarehouseInstallationPlacesRouteImport.update({
+    id: '/warehouse/installation-places',
+    path: '/warehouse/installation-places',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppWarehouseOrderClosingRoute =
+  AppWarehouseOrderClosingRouteImport.update({
+    id: '/warehouse/order-closing',
+    path: '/warehouse/order-closing',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppWarehouseParcelShippingRoute =
+  AppWarehouseParcelShippingRouteImport.update({
+    id: '/warehouse/parcel-shipping',
+    path: '/warehouse/parcel-shipping',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppWarehousePersonalizationRoute =
+  AppWarehousePersonalizationRouteImport.update({
+    id: '/warehouse/personalization',
+    path: '/warehouse/personalization',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppWarehousePickingRoute = AppWarehousePickingRouteImport.update({
+  id: '/warehouse/picking',
+  path: '/warehouse/picking',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDataImportsIndexRoute = AppDataImportsIndexRouteImport.update({
+  id: '/data/imports/',
+  path: '/data/imports/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDataImportsImportIdRoute = AppDataImportsImportIdRouteImport.update({
+  id: '/data/imports/$importId',
+  path: '/data/imports/$importId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStockCallOffOrdersIndexRoute =
+  AppStockCallOffOrdersIndexRouteImport.update({
+    id: '/stock/call-off-orders/',
+    path: '/stock/call-off-orders/',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppStockCallOffOrdersOrderIdRoute =
+  AppStockCallOffOrdersOrderIdRouteImport.update({
+    id: '/stock/call-off-orders/$orderId',
+    path: '/stock/call-off-orders/$orderId',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppStockInventoryIndexRoute = AppStockInventoryIndexRouteImport.update({
+  id: '/stock/inventory/',
+  path: '/stock/inventory/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStockInventoryInventoryIdRoute =
+  AppStockInventoryInventoryIdRouteImport.update({
+    id: '/stock/inventory/$inventoryId',
+    path: '/stock/inventory/$inventoryId',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppFieldToursTourIdStopsStopIdRoute =
+  AppFieldToursTourIdStopsStopIdRouteImport.update({
+    id: '/field/tours/$tourId/stops/$stopId',
+    path: '/field/tours/$tourId/stops/$stopId',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/field': typeof FieldRouteRouteWithChildren
-  '/imports': typeof ImportsRouteRouteWithChildren
-  '/requests': typeof RequestsRouteRouteWithChildren
-  '/staging': typeof StagingRouteRouteWithChildren
-  '/stock': typeof StockRouteRouteWithChildren
+  '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
-  '/field/': typeof FieldIndexRoute
-  '/imports/': typeof ImportsIndexRoute
-  '/requests/': typeof RequestsIndexRoute
-  '/staging/': typeof StagingIndexRoute
-  '/stock/': typeof StockIndexRoute
+  '/$': typeof AppSplatRoute
+  '/communications': typeof AppCommunicationsRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/lease-returns': typeof AppLeaseReturnsRoute
+  '/pipeline': typeof AppPipelineRoute
+  '/service-requests': typeof AppServiceRequestsRoute
+  '/admin/articles': typeof AppAdminArticlesRoute
+  '/admin/calendars': typeof AppAdminCalendarsRoute
+  '/admin/dispatch-settings': typeof AppAdminDispatchSettingsRoute
+  '/admin/regions': typeof AppAdminRegionsRoute
+  '/admin/users': typeof AppAdminUsersRoute
+  '/admin/vip-list': typeof AppAdminVipListRoute
+  '/field/my-tour': typeof AppFieldMyTourRoute
+  '/field/tour-planner': typeof AppFieldTourPlannerRoute
+  '/stock/assets': typeof AppStockAssetsRoute
+  '/stock/deactivation': typeof AppStockDeactivationRoute
+  '/stock/matrix': typeof AppStockMatrixRoute
+  '/warehouse/installation-places': typeof AppWarehouseInstallationPlacesRoute
+  '/warehouse/order-closing': typeof AppWarehouseOrderClosingRoute
+  '/warehouse/parcel-shipping': typeof AppWarehouseParcelShippingRoute
+  '/warehouse/personalization': typeof AppWarehousePersonalizationRoute
+  '/warehouse/picking': typeof AppWarehousePickingRoute
+  '/data/imports/$importId': typeof AppDataImportsImportIdRoute
+  '/stock/call-off-orders/$orderId': typeof AppStockCallOffOrdersOrderIdRoute
+  '/stock/inventory/$inventoryId': typeof AppStockInventoryInventoryIdRoute
+  '/data/imports/': typeof AppDataImportsIndexRoute
+  '/stock/call-off-orders/': typeof AppStockCallOffOrdersIndexRoute
+  '/stock/inventory/': typeof AppStockInventoryIndexRoute
+  '/field/tours/$tourId/stops/$stopId': typeof AppFieldToursTourIdStopsStopIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/field': typeof FieldIndexRoute
-  '/imports': typeof ImportsIndexRoute
-  '/requests': typeof RequestsIndexRoute
-  '/staging': typeof StagingIndexRoute
-  '/stock': typeof StockIndexRoute
+  '/$': typeof AppSplatRoute
+  '/communications': typeof AppCommunicationsRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/lease-returns': typeof AppLeaseReturnsRoute
+  '/pipeline': typeof AppPipelineRoute
+  '/service-requests': typeof AppServiceRequestsRoute
+  '/': typeof AppIndexRoute
+  '/admin/articles': typeof AppAdminArticlesRoute
+  '/admin/calendars': typeof AppAdminCalendarsRoute
+  '/admin/dispatch-settings': typeof AppAdminDispatchSettingsRoute
+  '/admin/regions': typeof AppAdminRegionsRoute
+  '/admin/users': typeof AppAdminUsersRoute
+  '/admin/vip-list': typeof AppAdminVipListRoute
+  '/field/my-tour': typeof AppFieldMyTourRoute
+  '/field/tour-planner': typeof AppFieldTourPlannerRoute
+  '/stock/assets': typeof AppStockAssetsRoute
+  '/stock/deactivation': typeof AppStockDeactivationRoute
+  '/stock/matrix': typeof AppStockMatrixRoute
+  '/warehouse/installation-places': typeof AppWarehouseInstallationPlacesRoute
+  '/warehouse/order-closing': typeof AppWarehouseOrderClosingRoute
+  '/warehouse/parcel-shipping': typeof AppWarehouseParcelShippingRoute
+  '/warehouse/personalization': typeof AppWarehousePersonalizationRoute
+  '/warehouse/picking': typeof AppWarehousePickingRoute
+  '/data/imports/$importId': typeof AppDataImportsImportIdRoute
+  '/stock/call-off-orders/$orderId': typeof AppStockCallOffOrdersOrderIdRoute
+  '/stock/inventory/$inventoryId': typeof AppStockInventoryInventoryIdRoute
+  '/data/imports': typeof AppDataImportsIndexRoute
+  '/stock/call-off-orders': typeof AppStockCallOffOrdersIndexRoute
+  '/stock/inventory': typeof AppStockInventoryIndexRoute
+  '/field/tours/$tourId/stops/$stopId': typeof AppFieldToursTourIdStopsStopIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/field': typeof FieldRouteRouteWithChildren
-  '/imports': typeof ImportsRouteRouteWithChildren
-  '/requests': typeof RequestsRouteRouteWithChildren
-  '/staging': typeof StagingRouteRouteWithChildren
-  '/stock': typeof StockRouteRouteWithChildren
+  '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
-  '/field/': typeof FieldIndexRoute
-  '/imports/': typeof ImportsIndexRoute
-  '/requests/': typeof RequestsIndexRoute
-  '/staging/': typeof StagingIndexRoute
-  '/stock/': typeof StockIndexRoute
+  '/_app/$': typeof AppSplatRoute
+  '/_app/communications': typeof AppCommunicationsRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/lease-returns': typeof AppLeaseReturnsRoute
+  '/_app/pipeline': typeof AppPipelineRoute
+  '/_app/service-requests': typeof AppServiceRequestsRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/admin/articles': typeof AppAdminArticlesRoute
+  '/_app/admin/calendars': typeof AppAdminCalendarsRoute
+  '/_app/admin/dispatch-settings': typeof AppAdminDispatchSettingsRoute
+  '/_app/admin/regions': typeof AppAdminRegionsRoute
+  '/_app/admin/users': typeof AppAdminUsersRoute
+  '/_app/admin/vip-list': typeof AppAdminVipListRoute
+  '/_app/field/my-tour': typeof AppFieldMyTourRoute
+  '/_app/field/tour-planner': typeof AppFieldTourPlannerRoute
+  '/_app/stock/assets': typeof AppStockAssetsRoute
+  '/_app/stock/deactivation': typeof AppStockDeactivationRoute
+  '/_app/stock/matrix': typeof AppStockMatrixRoute
+  '/_app/warehouse/installation-places': typeof AppWarehouseInstallationPlacesRoute
+  '/_app/warehouse/order-closing': typeof AppWarehouseOrderClosingRoute
+  '/_app/warehouse/parcel-shipping': typeof AppWarehouseParcelShippingRoute
+  '/_app/warehouse/personalization': typeof AppWarehousePersonalizationRoute
+  '/_app/warehouse/picking': typeof AppWarehousePickingRoute
+  '/_app/data/imports/$importId': typeof AppDataImportsImportIdRoute
+  '/_app/stock/call-off-orders/$orderId': typeof AppStockCallOffOrdersOrderIdRoute
+  '/_app/stock/inventory/$inventoryId': typeof AppStockInventoryInventoryIdRoute
+  '/_app/data/imports/': typeof AppDataImportsIndexRoute
+  '/_app/stock/call-off-orders/': typeof AppStockCallOffOrdersIndexRoute
+  '/_app/stock/inventory/': typeof AppStockInventoryIndexRoute
+  '/_app/field/tours/$tourId/stops/$stopId': typeof AppFieldToursTourIdStopsStopIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/field'
-    | '/imports'
-    | '/requests'
-    | '/staging'
-    | '/stock'
     | '/login'
-    | '/field/'
-    | '/imports/'
-    | '/requests/'
-    | '/staging/'
-    | '/stock/'
+    | '/$'
+    | '/communications'
+    | '/dashboard'
+    | '/lease-returns'
+    | '/pipeline'
+    | '/service-requests'
+    | '/admin/articles'
+    | '/admin/calendars'
+    | '/admin/dispatch-settings'
+    | '/admin/regions'
+    | '/admin/users'
+    | '/admin/vip-list'
+    | '/field/my-tour'
+    | '/field/tour-planner'
+    | '/stock/assets'
+    | '/stock/deactivation'
+    | '/stock/matrix'
+    | '/warehouse/installation-places'
+    | '/warehouse/order-closing'
+    | '/warehouse/parcel-shipping'
+    | '/warehouse/personalization'
+    | '/warehouse/picking'
+    | '/data/imports/$importId'
+    | '/stock/call-off-orders/$orderId'
+    | '/stock/inventory/$inventoryId'
+    | '/data/imports/'
+    | '/stock/call-off-orders/'
+    | '/stock/inventory/'
+    | '/field/tours/$tourId/stops/$stopId'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/login' | '/field' | '/imports' | '/requests' | '/staging' | '/stock'
+    | '/login'
+    | '/$'
+    | '/communications'
+    | '/dashboard'
+    | '/lease-returns'
+    | '/pipeline'
+    | '/service-requests'
+    | '/'
+    | '/admin/articles'
+    | '/admin/calendars'
+    | '/admin/dispatch-settings'
+    | '/admin/regions'
+    | '/admin/users'
+    | '/admin/vip-list'
+    | '/field/my-tour'
+    | '/field/tour-planner'
+    | '/stock/assets'
+    | '/stock/deactivation'
+    | '/stock/matrix'
+    | '/warehouse/installation-places'
+    | '/warehouse/order-closing'
+    | '/warehouse/parcel-shipping'
+    | '/warehouse/personalization'
+    | '/warehouse/picking'
+    | '/data/imports/$importId'
+    | '/stock/call-off-orders/$orderId'
+    | '/stock/inventory/$inventoryId'
+    | '/data/imports'
+    | '/stock/call-off-orders'
+    | '/stock/inventory'
+    | '/field/tours/$tourId/stops/$stopId'
   id:
     | '__root__'
-    | '/'
-    | '/field'
-    | '/imports'
-    | '/requests'
-    | '/staging'
-    | '/stock'
+    | '/_app'
     | '/login'
-    | '/field/'
-    | '/imports/'
-    | '/requests/'
-    | '/staging/'
-    | '/stock/'
+    | '/_app/$'
+    | '/_app/communications'
+    | '/_app/dashboard'
+    | '/_app/lease-returns'
+    | '/_app/pipeline'
+    | '/_app/service-requests'
+    | '/_app/'
+    | '/_app/admin/articles'
+    | '/_app/admin/calendars'
+    | '/_app/admin/dispatch-settings'
+    | '/_app/admin/regions'
+    | '/_app/admin/users'
+    | '/_app/admin/vip-list'
+    | '/_app/field/my-tour'
+    | '/_app/field/tour-planner'
+    | '/_app/stock/assets'
+    | '/_app/stock/deactivation'
+    | '/_app/stock/matrix'
+    | '/_app/warehouse/installation-places'
+    | '/_app/warehouse/order-closing'
+    | '/_app/warehouse/parcel-shipping'
+    | '/_app/warehouse/personalization'
+    | '/_app/warehouse/picking'
+    | '/_app/data/imports/$importId'
+    | '/_app/stock/call-off-orders/$orderId'
+    | '/_app/stock/inventory/$inventoryId'
+    | '/_app/data/imports/'
+    | '/_app/stock/call-off-orders/'
+    | '/_app/stock/inventory/'
+    | '/_app/field/tours/$tourId/stops/$stopId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  FieldRouteRoute: typeof FieldRouteRouteWithChildren
-  ImportsRouteRoute: typeof ImportsRouteRouteWithChildren
-  RequestsRouteRoute: typeof RequestsRouteRouteWithChildren
-  StagingRouteRoute: typeof StagingRouteRouteWithChildren
-  StockRouteRoute: typeof StockRouteRouteWithChildren
+  AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/field': {
-      id: '/field'
-      path: '/field'
-      fullPath: '/field'
-      preLoaderRoute: typeof FieldRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/imports': {
-      id: '/imports'
-      path: '/imports'
-      fullPath: '/imports'
-      preLoaderRoute: typeof ImportsRouteRouteImport
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -195,132 +436,289 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/requests': {
-      id: '/requests'
-      path: '/requests'
-      fullPath: '/requests'
-      preLoaderRoute: typeof RequestsRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/staging': {
-      id: '/staging'
-      path: '/staging'
-      fullPath: '/staging'
-      preLoaderRoute: typeof StagingRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/stock': {
-      id: '/stock'
-      path: '/stock'
-      fullPath: '/stock'
-      preLoaderRoute: typeof StockRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/field/': {
-      id: '/field/'
+    '/_app/': {
+      id: '/_app/'
       path: '/'
-      fullPath: '/field/'
-      preLoaderRoute: typeof FieldIndexRouteImport
-      parentRoute: typeof FieldRouteRoute
+      fullPath: '/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/imports/': {
-      id: '/imports/'
-      path: '/'
-      fullPath: '/imports/'
-      preLoaderRoute: typeof ImportsIndexRouteImport
-      parentRoute: typeof ImportsRouteRoute
+    '/_app/$': {
+      id: '/_app/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof AppSplatRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/requests/': {
-      id: '/requests/'
-      path: '/'
-      fullPath: '/requests/'
-      preLoaderRoute: typeof RequestsIndexRouteImport
-      parentRoute: typeof RequestsRouteRoute
+    '/_app/communications': {
+      id: '/_app/communications'
+      path: '/communications'
+      fullPath: '/communications'
+      preLoaderRoute: typeof AppCommunicationsRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/staging/': {
-      id: '/staging/'
-      path: '/'
-      fullPath: '/staging/'
-      preLoaderRoute: typeof StagingIndexRouteImport
-      parentRoute: typeof StagingRouteRoute
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/stock/': {
-      id: '/stock/'
-      path: '/'
-      fullPath: '/stock/'
-      preLoaderRoute: typeof StockIndexRouteImport
-      parentRoute: typeof StockRouteRoute
+    '/_app/lease-returns': {
+      id: '/_app/lease-returns'
+      path: '/lease-returns'
+      fullPath: '/lease-returns'
+      preLoaderRoute: typeof AppLeaseReturnsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/pipeline': {
+      id: '/_app/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof AppPipelineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/service-requests': {
+      id: '/_app/service-requests'
+      path: '/service-requests'
+      fullPath: '/service-requests'
+      preLoaderRoute: typeof AppServiceRequestsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/articles': {
+      id: '/_app/admin/articles'
+      path: '/admin/articles'
+      fullPath: '/admin/articles'
+      preLoaderRoute: typeof AppAdminArticlesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/calendars': {
+      id: '/_app/admin/calendars'
+      path: '/admin/calendars'
+      fullPath: '/admin/calendars'
+      preLoaderRoute: typeof AppAdminCalendarsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/dispatch-settings': {
+      id: '/_app/admin/dispatch-settings'
+      path: '/admin/dispatch-settings'
+      fullPath: '/admin/dispatch-settings'
+      preLoaderRoute: typeof AppAdminDispatchSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/regions': {
+      id: '/_app/admin/regions'
+      path: '/admin/regions'
+      fullPath: '/admin/regions'
+      preLoaderRoute: typeof AppAdminRegionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/users': {
+      id: '/_app/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AppAdminUsersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/vip-list': {
+      id: '/_app/admin/vip-list'
+      path: '/admin/vip-list'
+      fullPath: '/admin/vip-list'
+      preLoaderRoute: typeof AppAdminVipListRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/field/my-tour': {
+      id: '/_app/field/my-tour'
+      path: '/field/my-tour'
+      fullPath: '/field/my-tour'
+      preLoaderRoute: typeof AppFieldMyTourRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/field/tour-planner': {
+      id: '/_app/field/tour-planner'
+      path: '/field/tour-planner'
+      fullPath: '/field/tour-planner'
+      preLoaderRoute: typeof AppFieldTourPlannerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/stock/assets': {
+      id: '/_app/stock/assets'
+      path: '/stock/assets'
+      fullPath: '/stock/assets'
+      preLoaderRoute: typeof AppStockAssetsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/stock/deactivation': {
+      id: '/_app/stock/deactivation'
+      path: '/stock/deactivation'
+      fullPath: '/stock/deactivation'
+      preLoaderRoute: typeof AppStockDeactivationRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/stock/matrix': {
+      id: '/_app/stock/matrix'
+      path: '/stock/matrix'
+      fullPath: '/stock/matrix'
+      preLoaderRoute: typeof AppStockMatrixRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/warehouse/installation-places': {
+      id: '/_app/warehouse/installation-places'
+      path: '/warehouse/installation-places'
+      fullPath: '/warehouse/installation-places'
+      preLoaderRoute: typeof AppWarehouseInstallationPlacesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/warehouse/order-closing': {
+      id: '/_app/warehouse/order-closing'
+      path: '/warehouse/order-closing'
+      fullPath: '/warehouse/order-closing'
+      preLoaderRoute: typeof AppWarehouseOrderClosingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/warehouse/parcel-shipping': {
+      id: '/_app/warehouse/parcel-shipping'
+      path: '/warehouse/parcel-shipping'
+      fullPath: '/warehouse/parcel-shipping'
+      preLoaderRoute: typeof AppWarehouseParcelShippingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/warehouse/personalization': {
+      id: '/_app/warehouse/personalization'
+      path: '/warehouse/personalization'
+      fullPath: '/warehouse/personalization'
+      preLoaderRoute: typeof AppWarehousePersonalizationRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/warehouse/picking': {
+      id: '/_app/warehouse/picking'
+      path: '/warehouse/picking'
+      fullPath: '/warehouse/picking'
+      preLoaderRoute: typeof AppWarehousePickingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/data/imports/': {
+      id: '/_app/data/imports/'
+      path: '/data/imports'
+      fullPath: '/data/imports/'
+      preLoaderRoute: typeof AppDataImportsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/data/imports/$importId': {
+      id: '/_app/data/imports/$importId'
+      path: '/data/imports/$importId'
+      fullPath: '/data/imports/$importId'
+      preLoaderRoute: typeof AppDataImportsImportIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/stock/call-off-orders/': {
+      id: '/_app/stock/call-off-orders/'
+      path: '/stock/call-off-orders'
+      fullPath: '/stock/call-off-orders/'
+      preLoaderRoute: typeof AppStockCallOffOrdersIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/stock/call-off-orders/$orderId': {
+      id: '/_app/stock/call-off-orders/$orderId'
+      path: '/stock/call-off-orders/$orderId'
+      fullPath: '/stock/call-off-orders/$orderId'
+      preLoaderRoute: typeof AppStockCallOffOrdersOrderIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/stock/inventory/': {
+      id: '/_app/stock/inventory/'
+      path: '/stock/inventory'
+      fullPath: '/stock/inventory/'
+      preLoaderRoute: typeof AppStockInventoryIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/stock/inventory/$inventoryId': {
+      id: '/_app/stock/inventory/$inventoryId'
+      path: '/stock/inventory/$inventoryId'
+      fullPath: '/stock/inventory/$inventoryId'
+      preLoaderRoute: typeof AppStockInventoryInventoryIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/field/tours/$tourId/stops/$stopId': {
+      id: '/_app/field/tours/$tourId/stops/$stopId'
+      path: '/field/tours/$tourId/stops/$stopId'
+      fullPath: '/field/tours/$tourId/stops/$stopId'
+      preLoaderRoute: typeof AppFieldToursTourIdStopsStopIdRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
-interface FieldRouteRouteChildren {
-  FieldIndexRoute: typeof FieldIndexRoute
+interface AppRouteChildren {
+  AppSplatRoute: typeof AppSplatRoute
+  AppCommunicationsRoute: typeof AppCommunicationsRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppLeaseReturnsRoute: typeof AppLeaseReturnsRoute
+  AppPipelineRoute: typeof AppPipelineRoute
+  AppServiceRequestsRoute: typeof AppServiceRequestsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppAdminArticlesRoute: typeof AppAdminArticlesRoute
+  AppAdminCalendarsRoute: typeof AppAdminCalendarsRoute
+  AppAdminDispatchSettingsRoute: typeof AppAdminDispatchSettingsRoute
+  AppAdminRegionsRoute: typeof AppAdminRegionsRoute
+  AppAdminUsersRoute: typeof AppAdminUsersRoute
+  AppAdminVipListRoute: typeof AppAdminVipListRoute
+  AppFieldMyTourRoute: typeof AppFieldMyTourRoute
+  AppFieldTourPlannerRoute: typeof AppFieldTourPlannerRoute
+  AppStockAssetsRoute: typeof AppStockAssetsRoute
+  AppStockDeactivationRoute: typeof AppStockDeactivationRoute
+  AppStockMatrixRoute: typeof AppStockMatrixRoute
+  AppWarehouseInstallationPlacesRoute: typeof AppWarehouseInstallationPlacesRoute
+  AppWarehouseOrderClosingRoute: typeof AppWarehouseOrderClosingRoute
+  AppWarehouseParcelShippingRoute: typeof AppWarehouseParcelShippingRoute
+  AppWarehousePersonalizationRoute: typeof AppWarehousePersonalizationRoute
+  AppWarehousePickingRoute: typeof AppWarehousePickingRoute
+  AppDataImportsImportIdRoute: typeof AppDataImportsImportIdRoute
+  AppStockCallOffOrdersOrderIdRoute: typeof AppStockCallOffOrdersOrderIdRoute
+  AppStockInventoryInventoryIdRoute: typeof AppStockInventoryInventoryIdRoute
+  AppDataImportsIndexRoute: typeof AppDataImportsIndexRoute
+  AppStockCallOffOrdersIndexRoute: typeof AppStockCallOffOrdersIndexRoute
+  AppStockInventoryIndexRoute: typeof AppStockInventoryIndexRoute
+  AppFieldToursTourIdStopsStopIdRoute: typeof AppFieldToursTourIdStopsStopIdRoute
 }
 
-const FieldRouteRouteChildren: FieldRouteRouteChildren = {
-  FieldIndexRoute: FieldIndexRoute,
+const AppRouteChildren: AppRouteChildren = {
+  AppSplatRoute: AppSplatRoute,
+  AppCommunicationsRoute: AppCommunicationsRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppLeaseReturnsRoute: AppLeaseReturnsRoute,
+  AppPipelineRoute: AppPipelineRoute,
+  AppServiceRequestsRoute: AppServiceRequestsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppAdminArticlesRoute: AppAdminArticlesRoute,
+  AppAdminCalendarsRoute: AppAdminCalendarsRoute,
+  AppAdminDispatchSettingsRoute: AppAdminDispatchSettingsRoute,
+  AppAdminRegionsRoute: AppAdminRegionsRoute,
+  AppAdminUsersRoute: AppAdminUsersRoute,
+  AppAdminVipListRoute: AppAdminVipListRoute,
+  AppFieldMyTourRoute: AppFieldMyTourRoute,
+  AppFieldTourPlannerRoute: AppFieldTourPlannerRoute,
+  AppStockAssetsRoute: AppStockAssetsRoute,
+  AppStockDeactivationRoute: AppStockDeactivationRoute,
+  AppStockMatrixRoute: AppStockMatrixRoute,
+  AppWarehouseInstallationPlacesRoute: AppWarehouseInstallationPlacesRoute,
+  AppWarehouseOrderClosingRoute: AppWarehouseOrderClosingRoute,
+  AppWarehouseParcelShippingRoute: AppWarehouseParcelShippingRoute,
+  AppWarehousePersonalizationRoute: AppWarehousePersonalizationRoute,
+  AppWarehousePickingRoute: AppWarehousePickingRoute,
+  AppDataImportsImportIdRoute: AppDataImportsImportIdRoute,
+  AppStockCallOffOrdersOrderIdRoute: AppStockCallOffOrdersOrderIdRoute,
+  AppStockInventoryInventoryIdRoute: AppStockInventoryInventoryIdRoute,
+  AppDataImportsIndexRoute: AppDataImportsIndexRoute,
+  AppStockCallOffOrdersIndexRoute: AppStockCallOffOrdersIndexRoute,
+  AppStockInventoryIndexRoute: AppStockInventoryIndexRoute,
+  AppFieldToursTourIdStopsStopIdRoute: AppFieldToursTourIdStopsStopIdRoute,
 }
 
-const FieldRouteRouteWithChildren = FieldRouteRoute._addFileChildren(
-  FieldRouteRouteChildren,
-)
-
-interface ImportsRouteRouteChildren {
-  ImportsIndexRoute: typeof ImportsIndexRoute
-}
-
-const ImportsRouteRouteChildren: ImportsRouteRouteChildren = {
-  ImportsIndexRoute: ImportsIndexRoute,
-}
-
-const ImportsRouteRouteWithChildren = ImportsRouteRoute._addFileChildren(
-  ImportsRouteRouteChildren,
-)
-
-interface RequestsRouteRouteChildren {
-  RequestsIndexRoute: typeof RequestsIndexRoute
-}
-
-const RequestsRouteRouteChildren: RequestsRouteRouteChildren = {
-  RequestsIndexRoute: RequestsIndexRoute,
-}
-
-const RequestsRouteRouteWithChildren = RequestsRouteRoute._addFileChildren(
-  RequestsRouteRouteChildren,
-)
-
-interface StagingRouteRouteChildren {
-  StagingIndexRoute: typeof StagingIndexRoute
-}
-
-const StagingRouteRouteChildren: StagingRouteRouteChildren = {
-  StagingIndexRoute: StagingIndexRoute,
-}
-
-const StagingRouteRouteWithChildren = StagingRouteRoute._addFileChildren(
-  StagingRouteRouteChildren,
-)
-
-interface StockRouteRouteChildren {
-  StockIndexRoute: typeof StockIndexRoute
-}
-
-const StockRouteRouteChildren: StockRouteRouteChildren = {
-  StockIndexRoute: StockIndexRoute,
-}
-
-const StockRouteRouteWithChildren = StockRouteRoute._addFileChildren(
-  StockRouteRouteChildren,
-)
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  FieldRouteRoute: FieldRouteRouteWithChildren,
-  ImportsRouteRoute: ImportsRouteRouteWithChildren,
-  RequestsRouteRoute: RequestsRouteRouteWithChildren,
-  StagingRouteRoute: StagingRouteRouteWithChildren,
-  StockRouteRoute: StockRouteRouteWithChildren,
+  AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport

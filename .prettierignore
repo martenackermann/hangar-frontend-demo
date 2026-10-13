@@ -7,3 +7,5 @@ pnpm-lock.yaml
 src/routeTree.gen.ts
 src/lib/api/schema.d.ts
 public/mockServiceWorker.js
+src/styles/tokens.css
+src/mocks/fixtures/seed.json

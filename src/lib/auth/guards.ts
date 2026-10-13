@@ -1,11 +1,9 @@
 import { redirect, type ParsedLocation } from '@tanstack/react-router'
+import type { Me } from '@/lib/api/types'
 import type { Permission } from './permissions'
 import { can, isAuthenticated } from './store'
 
-/** Routes reachable without a session. Everything else is guarded by the root route. */
-export const PUBLIC_PATHS: ReadonlySet<string> = new Set(['/login'])
-
-/** Thrown by `requirePermission`; the default route error component renders a 403 panel. */
+/** Thrown by `requirePermission`; the shell renders the 403 page (SCREENS.md §2.2). */
 export class ForbiddenError extends Error {
   readonly permissions: readonly Permission[]
 
@@ -20,13 +18,22 @@ export function isForbiddenError(error: unknown): error is ForbiddenError {
   return error instanceof ForbiddenError
 }
 
-/** Only allow same-origin relative redirect targets (no open redirects). */
-export function safeRedirectTarget(target: string | undefined): string {
-  if (!target?.startsWith('/') || target.startsWith('//')) return '/'
+/** Only allow same-origin relative redirect targets (no open redirects, no loops). */
+export function safeRedirectTarget(target: string | undefined): string | undefined {
+  if (!target?.startsWith('/') || target.startsWith('//') || target.startsWith('/login')) {
+    return undefined
+  }
   return target
 }
 
-/** Redirects to /login (remembering the current location) when there is no session. */
+/** Home per role (SCREENS.md §1.2): technicians land on My tour, everyone else on Pipeline. */
+export function homePathFor(
+  me: Pick<Me, 'role'> | null | undefined,
+): '/field/my-tour' | '/pipeline' {
+  return me?.role === 'technician' ? '/field/my-tour' : '/pipeline'
+}
+
+/** Redirects to /login (remembering the current location) when there is no valid session. */
 export function requireAuth(location: ParsedLocation): void {
   if (isAuthenticated()) return
   // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect
@@ -34,15 +41,27 @@ export function requireAuth(location: ParsedLocation): void {
 }
 
 /**
- * Route guard for `beforeLoad`:
+ * Route guard for `beforeLoad` (the `_app` layout already requires a session):
  *
- *   export const Route = createFileRoute('/requests')({
- *     beforeLoad: requirePermission('requests:read'),
+ *   export const Route = createFileRoute('/_app/service-requests')({
+ *     beforeLoad: requirePermission('sr.read'),
  *   })
+ *
+ * Several keys = all required.
  */
 export function requirePermission(...permissions: [Permission, ...Permission[]]) {
   return ({ location }: { location: ParsedLocation }): void => {
     requireAuth(location)
     if (!can(permissions)) throw new ForbiddenError(permissions)
+  }
+}
+
+/** Guard for screens reachable with either permission (e.g. read-only variants). */
+export function requireAnyPermission(...permissions: [Permission, ...Permission[]]) {
+  return ({ location }: { location: ParsedLocation }): void => {
+    requireAuth(location)
+    if (!permissions.some((permission) => can(permission))) {
+      throw new ForbiddenError(permissions)
+    }
   }
 }

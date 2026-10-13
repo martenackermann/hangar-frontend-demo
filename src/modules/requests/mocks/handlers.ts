@@ -1,8 +1,9 @@
 import type { RequestHandler } from 'msw'
 
 /**
- * Mock API handlers of the `requests` module (demo mode + Vitest). Collected automatically
- * by src/mocks/handlers.ts. Use apiPath(), listResponse(), problems.* and defineMachine()
- * from @/mocks/* so the mock behaves like the real API. Owner: slice H1 (Requests & Comms).
+ * Mock endpoints of H1 Requests & Comms (API.md), collected by src/mocks/handlers.ts and placed
+ * before the core handlers. Build them with `apiPath`, `authed`, `listResponse`, `problems.*`,
+ * the core read models (`srListItem`, `srDetail`, …) and `applyAction` — see CONVENTIONS.md
+ * "Mock API".
  */
 export const handlers: RequestHandler[] = []

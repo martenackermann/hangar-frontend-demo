@@ -21,7 +21,8 @@ const LazyDevtools = import.meta.env.DEV
   : null
 
 export function Devtools() {
-  if (!LazyDevtools) return null
+  // Hidden under browser automation (Playwright e2e/screenshots) so the toggles never overlap the UI.
+  if (!LazyDevtools || navigator.webdriver) return null
   return (
     <Suspense fallback={null}>
       <LazyDevtools />

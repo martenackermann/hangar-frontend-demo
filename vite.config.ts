@@ -2,8 +2,36 @@ import { fileURLToPath, URL } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+/** Preload the two latin font files (DESIGN.md §15) once their hashed names are known. */
+function preloadFonts(): Plugin {
+  const pattern =
+    /(archivo-latin-wdth-normal|atkinson-hyperlegible-mono-latin-wght-normal)-[\w-]+\.woff2$/
+  return {
+    name: 'hangar:preload-fonts',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_html, ctx) {
+        return Object.keys(ctx.bundle ?? {})
+          .filter((file) => pattern.test(file))
+          .map((file) => ({
+            tag: 'link',
+            attrs: {
+              rel: 'preload',
+              href: `/${file}`,
+              as: 'font',
+              type: 'font/woff2',
+              crossorigin: '',
+            },
+            injectTo: 'head' as const,
+          }))
+      },
+    },
+  }
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
@@ -16,6 +44,7 @@ export default defineConfig(({ mode }) => {
       tanstackRouter({ target: 'react', autoCodeSplitting: true }),
       react(),
       tailwindcss(),
+      preloadFonts(),
       VitePWA({
         registerType: 'autoUpdate',
         injectRegister: 'auto',
@@ -32,9 +61,9 @@ export default defineConfig(({ mode }) => {
           start_url: '/',
           scope: '/',
           display: 'standalone',
-          // Placeholder colours; phase 2b replaces them with design tokens.
-          theme_color: '#0f172a',
-          background_color: '#0f172a',
+          // Graphite canvas (DESIGN.md §2.1, dark theme = default).
+          theme_color: '#0f1215',
+          background_color: '#0f1215',
           icons: [
             { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
             { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
@@ -47,7 +76,8 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,wasm}'],
+          // json: the demo fixture (seed.json) so demo mode works offline after the first visit.
+          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,wasm,json}'],
           globIgnores: ['mockServiceWorker.js', 'msw-bridge.js'],
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
           navigateFallback: '/index.html',
@@ -75,6 +105,9 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       sourcemap: true,
+      // The only chunk above 500 kB is the demo mock layer (MSW + faker + workflow engine),
+      // loaded lazily and only in demo builds.
+      chunkSizeWarningLimit: 1000,
     },
   }
 })

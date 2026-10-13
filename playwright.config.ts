@@ -21,7 +21,19 @@ export default defineConfig({
     baseURL: externalBaseUrl ?? 'http://localhost:5173',
     trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /screenshots\.spec\.ts/,
+    },
+    // `pnpm screenshots`: refreshes docs/screenshots/foundation (not part of test:e2e)
+    {
+      name: 'screenshots',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /screenshots\.spec\.ts/,
+    },
+  ],
   webServer: externalBaseUrl
     ? undefined
     : {

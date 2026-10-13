@@ -1,24 +1,25 @@
 /**
- * Render the PWA / touch icons from public/favicon.svg with Playwright's Chromium.
- *   node scripts/generate-icons.ts
- * Phase 2b: replace favicon.svg with the designed mark, update BACKGROUND, rerun.
+ * Render the PWA / touch icons from public/icon.svg (full-bleed artwork) with Playwright's
+ * Chromium:  pnpm icons:gen
+ * The favicon is public/favicon.svg (same mark, rounded corners) and is used as is.
  */
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { chromium } from '@playwright/test'
 
-const BACKGROUND = '#0f172a'
+/** Signal amber: the icon tile colour (DESIGN.md §2.2). */
+const BACKGROUND = '#FFB224'
 const publicDir = fileURLToPath(new URL('../public/', import.meta.url))
 
 const targets = [
   { file: 'pwa-192x192.png', size: 192, inset: 0 },
   { file: 'pwa-512x512.png', size: 512, inset: 0 },
-  // Maskable icons need the mark inside the central 80% "safe zone".
-  { file: 'pwa-maskable-512x512.png', size: 512, inset: 0.12 },
-  { file: 'apple-touch-icon.png', size: 180, inset: 0.08 },
+  // Maskable icons need the mark inside the central 80 % "safe zone".
+  { file: 'pwa-maskable-512x512.png', size: 512, inset: 0.14 },
+  { file: 'apple-touch-icon.png', size: 180, inset: 0.06 },
 ]
 
-const svg = await readFile(`${publicDir}favicon.svg`, 'utf8')
+const svg = await readFile(`${publicDir}icon.svg`, 'utf8')
 const browser = await chromium.launch()
 try {
   const page = await browser.newPage()
