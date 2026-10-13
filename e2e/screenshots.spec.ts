@@ -70,6 +70,7 @@ test.describe('desktop', () => {
     await shot(page, 'import-detail-dark')
 
     await page.goto('/pipeline')
+    await expect(page.getByRole('region', { name: /^Imported, / })).toBeVisible()
     await page.keyboard.press('ControlOrMeta+k')
     const palette = page.getByRole('dialog', { name: 'Command palette' })
     await expect(palette).toBeVisible()
