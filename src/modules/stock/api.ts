@@ -115,6 +115,22 @@ export const stockQueries = {
       placeholderData: keepPreviousData,
       refetchInterval: 60_000,
     }),
+  /**
+   * Open VIP requests in the dashboard's scope. The dashboard counts VIP requests, the pipeline
+   * hides them by default, so the Open requests tile states how many of its total are VIP.
+   */
+  dashboardVipOpen: (params: { siteId?: number; regionId?: number }) =>
+    queryOptions({
+      queryKey: dashboardKeys.scope('vip-open', cleanQuery(params)),
+      queryFn: ({ signal }) =>
+        api.get<Page<unknown>>('/service-requests', {
+          query: { ...cleanQuery(params), vip: 'only', perPage: 1 },
+          signal,
+        }),
+      select: (page) => page.meta.total,
+      placeholderData: keepPreviousData,
+      refetchInterval: 60_000,
+    }),
   calloffList: (params: CallOffListParams) =>
     queryOptions({
       queryKey: calloffKeys.list(cleanQuery(params)),
