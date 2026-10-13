@@ -97,6 +97,7 @@ export function CalendarsPage() {
       cell: (row) =>
         canEdit ? (
           <Switch
+            variant="neutral"
             checked={row.isEnabled}
             onCheckedChange={(isEnabled) => update(row, { isEnabled })}
             aria-label={`${row.name} enabled`}

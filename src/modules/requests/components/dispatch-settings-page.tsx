@@ -147,6 +147,7 @@ function SwitchField({
       name={name}
       render={({ field }) => (
         <Switch
+          variant="neutral"
           checked={field.value}
           onCheckedChange={field.onChange}
           label={label}

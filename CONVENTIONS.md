@@ -43,21 +43,21 @@ Dashboard (`stock`).
 
 ## 2. Commands
 
-| Command                          | What it does                                                                                    |
-| -------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `pnpm dev:demo`                  | Dev server on :5173 with the MSW mock API and in-browser database. No backend needed.           |
-| `pnpm dev`                       | Dev server against the real API (`VITE_API_URL`, default `http://localhost:8100/api/v1`).       |
-| `pnpm build` / `pnpm build:demo` | Route gen + `tsc -b` + production build (the demo build is what Vercel deploys).                |
-| `pnpm lint` / `pnpm format`      | ESLint (zero warnings) + Prettier check / auto-fix.                                             |
-| `pnpm typecheck`                 | Route gen + `tsc -b --noEmit`.                                                                  |
-| `pnpm test` / `pnpm test:watch`  | Vitest (jsdom, MSW node server, demo DB from `seed.json`).                                      |
-| `pnpm test:e2e`                  | Playwright (Chromium) against `pnpm dev:demo`; `E2E_BASE_URL=…` targets a running server.       |
-| `pnpm screenshots`               | Refreshes `docs/screenshots/foundation/` (shell + login, both themes). Not part of `test:e2e`.  |
-| `pnpm routes:gen`                | Regenerate `src/routeTree.gen.ts`.                                                              |
-| `pnpm api:types`                 | Regenerate `src/lib/api/schema.d.ts` from `../hangar-backend-demo/openapi.json`.                |
-| `pnpm seed:handmade`             | Fallback only: write the old hand-made `seed.json` (when the backend is unavailable).           |
-| `pnpm seed:import`               | Replace `seed.json` with the backend export (`uv run hangar seed --export-json`, needs its DB). |
-| `pnpm icons:gen`                 | Render the PWA icons from `public/icon.svg`.                                                    |
+| Command                          | What it does                                                                                           |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `pnpm dev:demo`                  | Dev server on :5173 with the MSW mock API and in-browser database. No backend needed.                  |
+| `pnpm dev`                       | Dev server against the real API (`VITE_API_URL`, default `http://localhost:8100/api/v1`).              |
+| `pnpm build` / `pnpm build:demo` | Route gen + `tsc -b` + production build (the demo build is what Vercel deploys).                       |
+| `pnpm lint` / `pnpm format`      | ESLint (zero warnings) + Prettier check / auto-fix.                                                    |
+| `pnpm typecheck`                 | Route gen + `tsc -b --noEmit`.                                                                         |
+| `pnpm test` / `pnpm test:watch`  | Vitest (jsdom, MSW node server, demo DB from `seed.json`).                                             |
+| `pnpm test:e2e`                  | Playwright (Chromium) against `pnpm dev:demo`; `E2E_BASE_URL=…` targets a running server.              |
+| `pnpm screenshots`               | Regenerates the README set in `docs/screenshots/` (`e2e/screenshots.spec.ts`). Not part of `test:e2e`. |
+| `pnpm routes:gen`                | Regenerate `src/routeTree.gen.ts`.                                                                     |
+| `pnpm api:types`                 | Regenerate `src/lib/api/schema.d.ts` from `../hangar-backend-demo/openapi.json`.                       |
+| `pnpm seed:handmade`             | Fallback only: write the old hand-made `seed.json` (when the backend is unavailable).                  |
+| `pnpm seed:import`               | Replace `seed.json` with the backend export (`uv run hangar seed --export-json`, needs its DB).        |
+| `pnpm icons:gen`                 | Render the PWA icons from `public/icon.svg`.                                                           |
 
 All demo personas use the password `demo1234`. It is a demo value, not a real credential.
 
@@ -600,3 +600,16 @@ way.
 | 403 (`ForbiddenError`) is not logged to the console                                                   | Expected control flow; keeps the e2e console check meaningful          |
 | `react-refresh/only-export-components` off for `src/components` and `src/lib`                         | Kit files keep variants and helpers next to their components           |
 | Devtools hidden under browser automation                                                              | Screenshots and e2e runs without overlays                              |
+
+### Release decisions (2026-10-13)
+
+Taken while preparing the public demo, without a human in the loop.
+
+| Decision                                                                                                                                                                                                           | Why                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| No frozen clock in the demo. Dates shift to today by whole weeks; the appointment sync state reports the last scheduled hourly run (hh:05) unless a manual sync is newer                                           | A static demo has no scheduler; a permanent "Sync overdue" would be false                          |
+| Operational dates are absolute (`Wed 14 Oct · 09:30`) in tables, cards and drawers; relative wording only for ages (`4d` in stage) and tooltips                                                                    | Dispatchers plan by day and time; ages are the one place where "how long" matters more than "when" |
+| Dispatchers land on the pipeline on phones too (the board scrolls sideways, the KPI strip is one swipeable row); technicians land on My tour                                                                       | One home per role on every device                                                                  |
+| Configuration switches (calendars, dispatch settings) use `Switch variant="neutral"`; amber stays for switches that scope the current view                                                                         | One amber element per view (DESIGN §1)                                                             |
+| Pipeline and dashboard share their KPI definitions: open = non-terminal requests (VIP excluded unless a tile says "incl. VIP"), deployed = last 7 days, lead time = median import → deployed over the last 30 days | The two screens showed different numbers for the same words                                        |
+| The README screenshots come from one opt-in Playwright script; no test writes into the repository                                                                                                                  | `pnpm test:e2e` leaves `git status` clean                                                          |
