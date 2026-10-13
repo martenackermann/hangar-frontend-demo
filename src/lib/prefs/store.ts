@@ -1,8 +1,8 @@
 import { createStore, useSelector } from '@tanstack/react-store'
 
 /**
- * Per-device UI preferences (DESIGN.md §15 "useUiPrefs"): theme, density, rail, sound,
- * single-key shortcuts. Persisted in localStorage; theme and density are written to
+ * Per-device UI preferences (DESIGN.md §15 "useUiPrefs"): theme, density, rail, scan sound and
+ * vibration, single-key shortcuts. Persisted in localStorage; theme and density are written to
  * <html data-theme / data-density>. index.html applies them before first paint.
  */
 export type Theme = 'dark' | 'light' | 'system'
@@ -15,6 +15,8 @@ export interface UiPrefs {
   railCollapsed: boolean | null
   /** Scan station sound cues (F2). */
   sound: boolean
+  /** Scan station vibration on phones (SCREENS.md §10). */
+  vibration: boolean
   /** Single-key shortcuts (WCAG 2.1.4 lets users turn them off). */
   singleKeyShortcuts: boolean
 }
@@ -26,6 +28,7 @@ const DEFAULTS: UiPrefs = {
   density: 'compact',
   railCollapsed: null,
   sound: true,
+  vibration: true,
   singleKeyShortcuts: true,
 }
 
