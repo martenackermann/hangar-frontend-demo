@@ -38,29 +38,28 @@ test('Theo scans into the open inventory; Dana closes it with corrections', asyn
   await page.waitForTimeout(900)
   await input.fill(serial)
   await input.press('Enter')
-  await expect(page.getByRole('status').filter({ hasText: 'Already scanned' })).toContainText(
-    serial,
-  )
+  // warnings are announced in the assertive region (role=alert), OK in the polite one
+  await expect(page.getByRole('alert').filter({ hasText: 'Already scanned' })).toContainText(serial)
 
   // an unknown serial is recorded for the unknown report
   await input.fill('ZZE2E00001')
   await input.press('Enter')
-  await expect(page.getByRole('status').filter({ hasText: 'ZZE2E00001' })).toContainText(
-    'Recorded as unexpected',
+  await expect(page.getByRole('alert').filter({ hasText: 'ZZE2E00001' })).toContainText(
+    /recorded as unexpected/i,
   )
 
   // Theo cannot close; Dana can
-  await expect(page.getByRole('button', { name: 'Close inventory' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Finish & verify' })).toHaveCount(0)
   const url = page.url()
   await signIn(page, persona('dana'))
   await page.goto(url)
-  await page.getByRole('button', { name: 'Close inventory' }).click()
+  await page.getByRole('button', { name: 'Finish & verify' }).click()
   const dialog = page.getByRole('dialog', { name: /^Close inventory / })
   await dialog.getByRole('checkbox').check()
   await dialog.getByRole('button', { name: 'Close inventory' }).click()
   await expect(page.getByText(/^Inventory .+ closed$/)).toBeVisible()
   await expect(page.getByText(/Corrections applied: \d+ asset records updated\./)).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Close inventory' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Finish & verify' })).toHaveCount(0)
 })
 
 test('Vic sees inventories without scanning', async ({ page }) => {

@@ -1,24 +1,50 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Lock, LockOpen, MapPin, Search, Volume2, VolumeX, WifiOff } from 'lucide-react'
+import {
+  Camera,
+  CircleCheck,
+  ListChecks,
+  Lock,
+  LockOpen,
+  MapPin,
+  OctagonX,
+  Search,
+  TriangleAlert,
+  WifiOff,
+} from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
+import { CameraScanner } from '@/components/scan/camera-scanner'
+import { ScanAnnouncer } from '@/components/scan/scan-announcer'
 import { ScanInput, type ScanInputHandle } from '@/components/scan/scan-input'
+import {
+  keepFocus,
+  ScanCueToggles,
+  ScanDock,
+  ScanSessionBar,
+  SoundCueLegend,
+} from '@/components/scan/scan-layout'
 import { ScanList } from '@/components/scan/scan-list'
-import { useOnline } from '@/components/scan/scan-station'
+import {
+  canUndoLast,
+  PendingAnnouncer,
+  pendingText,
+  useOnline,
+} from '@/components/scan/scan-station'
 import { useScanSession } from '@/components/scan/use-scan-session'
-import { VerdictBanner } from '@/components/scan/verdict-banner'
-import { Button, IconButton } from '@/components/ui/button'
-import { Banner, EmptyState, FlagBadge, Skeleton } from '@/components/ui/feedback'
+import { ScanFailedBanner, VerdictBanner } from '@/components/scan/verdict-banner'
+import { Button } from '@/components/ui/button'
+import { Banner, EmptyState, Skeleton } from '@/components/ui/feedback'
 import { Icon } from '@/components/ui/icon'
 import { SearchInput } from '@/components/ui/input'
 import { Kbd } from '@/components/ui/kbd'
-import { Page, PageHeader } from '@/components/ui/page'
+import { Page } from '@/components/ui/page'
 import { notify } from '@/components/ui/toast'
 import { useHubs } from '@/lib/api/core'
 import type { AssetSummary, ScanResult } from '@/lib/api/types'
 import { requirePermission } from '@/lib/auth/guards'
-import { setPrefs, usePrefs } from '@/lib/prefs/store'
+import { formatNumber } from '@/lib/format'
+import { setPrefs } from '@/lib/prefs/store'
 import { boolParam, idParam, stringParam } from '@/lib/search/params'
 import { useShortcut } from '@/lib/shortcuts'
 import { cn } from '@/lib/utils'
@@ -31,7 +57,8 @@ import { placeOf, SCAN_PAIR } from '@/modules/staging/scan-values'
  * Installation places (SCREENS.md §5.1, SPEC §6.16): scan station with a two-value flow. The
  * single field tells places (`B4-12`, optional `LOC:` prefix) from serials; once both are known
  * exactly one `POST /scan/installation-place` is sent. A sticky place (`L`, or `Alt+L` while the
- * field holds the focus) stays set for every following serial.
+ * field holds the focus) stays set for every following serial. Scan mode layout (DESIGN.md
+ * §9.3): graphite session bar, station + aside, phone dock (Undo · Camera scan · Finish).
  */
 const searchSchema = z.object({
   siteId: idParam(),
@@ -53,8 +80,9 @@ function InstallationPlacesPage() {
   const siteId = useHubId(search.siteId)
   const site = hubs.find((hub) => hub.id === siteId)
   const online = useOnline()
-  const sound = usePrefs((prefs) => prefs.sound)
   const inputRef = useRef<ScanInputHandle>(null)
+  const [active, setActive] = useState(false)
+  const [cameraOpen, setCameraOpen] = useState(false)
   const [pendingSerial, setPendingSerial] = useState<string | null>(null)
   const [pendingPlace, setPendingPlace] = useState<string | null>(null)
   const locked = search.lock ? placeOf(search.lock) : null
@@ -110,6 +138,20 @@ function InstallationPlacesPage() {
     setPendingPlace(null)
   }
 
+  const { ok, warning, error } = session.counters
+  const canFinish = session.entries.length > 0 && session.pending === 0
+  const finish = () => {
+    if (!canFinish) return
+    const total = session.entries.length
+    session.reset()
+    setPendingSerial(null)
+    setPendingPlace(null)
+    if (locked) patch({ lock: undefined })
+    notify.success('Session finished', {
+      description: `${formatNumber(total)} scan${total === 1 ? '' : 's'}: ${ok} OK, ${warning} warning${warning === 1 ? '' : 's'}, ${error} error${error === 1 ? '' : 's'}.`,
+    })
+  }
+
   useShortcut('l', toggleLock, { description: 'Lock / unlock the place', group: 'Scan station' })
   useShortcut('alt+l', toggleLock, { allowInInput: true, group: 'Scan station' })
   useShortcut('mod+z', () => session.undoLast(), {
@@ -117,8 +159,8 @@ function InstallationPlacesPage() {
     group: 'Scan station',
     allowInInput: true,
   })
-  useShortcut('f2', () => setPrefs({ sound: !sound }), {
-    description: 'Sound on/off',
+  useShortcut('f3', () => setCameraOpen(true), {
+    description: 'Camera scan',
     group: 'Scan station',
     allowInInput: true,
   })
@@ -134,121 +176,178 @@ function InstallationPlacesPage() {
 
   return (
     <Page>
-      <PageHeader
+      <ScanSessionBar
         title="Installation places"
         meta={site ? `${site.name} · staging` : undefined}
+        active={active}
         actions={
-          <HubSelect
-            value={siteId}
-            onChange={(next) => {
-              patch({ siteId: next })
-              inputRef.current?.focus()
-            }}
-          />
+          <Button
+            variant="primary"
+            icon={ListChecks}
+            onClick={finish}
+            disabled={!canFinish}
+            className="max-md:hidden"
+          >
+            Finish session
+          </Button>
         }
       />
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] border-t border-line max-xl:grid-cols-1">
-        <div className="flex min-h-0 min-w-0 flex-col">
-          <div className="grid gap-3 p-6 max-md:p-3">
-            {!online && (
-              <Banner
-                tone="caution"
-                icon={WifiOff}
-                title="Offline — scanning needs a connection."
-              />
-            )}
-            <ScanInput
-              ref={inputRef}
-              label="Scan serial or place"
-              onSubmit={onValue}
-              disabled={!online || siteId === undefined}
-              disabledReason="Offline — scanning needs a connection."
-              tools={
-                <IconButton
-                  icon={sound ? Volume2 : VolumeX}
-                  label={sound ? 'Sound on' : 'Sound off'}
-                  shortcut="f2"
-                  size="sm"
-                  onClick={() => setPrefs({ sound: !sound })}
+      {/* xl: the grid fills the area and the list scrolls; below, the area scrolls as a whole */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="grid grid-cols-[minmax(0,1fr)_360px] max-xl:grid-cols-[minmax(0,1fr)] xl:h-full">
+          <div className="flex min-w-0 flex-col xl:min-h-0">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-3 p-6 max-md:p-3">
+              {!online && (
+                <Banner
+                  tone="caution"
+                  icon={WifiOff}
+                  title="Offline — scanning needs a connection."
                 />
-              }
-            />
-            <div className="flex flex-wrap items-center gap-2 text-sm text-fg-2" aria-live="polite">
-              <span
-                className={cn(
-                  'inline-flex h-badge items-center gap-1.5 rounded-xs px-2 font-medium',
-                  (pendingSerial ?? pendingPlace ?? locked)
-                    ? 'bg-accent-wash text-accent-text'
-                    : 'bg-pressed text-fg-2',
-                )}
-                data-testid="scan-expecting"
-              >
-                {expecting}
-              </span>
-              {site && <FlagBadge icon={MapPin}>{site.name} · staging</FlagBadge>}
-              <Button
-                size="sm"
-                variant={locked ? 'secondary' : 'ghost'}
-                icon={locked ? Lock : LockOpen}
-                onClick={toggleLock}
-                aria-pressed={Boolean(locked)}
-              >
-                {locked ? `Locked: ${locked}` : 'Lock place'}
-              </Button>
-              <span className="text-xs text-fg-3 max-md:hidden">
-                <Kbd>L</Kbd> · <Kbd>Alt</Kbd> <Kbd>L</Kbd> sticky place
-              </span>
-              {(pendingSerial ?? pendingPlace) && (
+              )}
+              <ScanInput
+                ref={inputRef}
+                label="Scan serial or place"
+                onSubmit={onValue}
+                disabled={!online || siteId === undefined}
+                disabledReason="Offline — scanning needs a connection."
+                onActiveChange={setActive}
+                tools={
+                  <>
+                    <ScanCueToggles />
+                    <Button
+                      size="sm"
+                      icon={Camera}
+                      shortcut="f3"
+                      onMouseDown={keepFocus}
+                      onClick={() => setCameraOpen(true)}
+                      className="max-md:hidden pointer-coarse:h-11"
+                    >
+                      Camera
+                    </Button>
+                  </>
+                }
+              />
+              <div className="flex flex-wrap items-center gap-2 text-sm text-fg-2">
+                <span
+                  className={cn(
+                    'inline-flex h-badge items-center gap-1.5 rounded-xs px-2 font-medium',
+                    (pendingSerial ?? pendingPlace ?? locked)
+                      ? 'bg-accent-wash text-accent-text'
+                      : 'bg-pressed text-fg-2',
+                  )}
+                  aria-live="polite"
+                  data-testid="scan-expecting"
+                >
+                  {expecting}
+                </span>
+                <HubSelect
+                  value={siteId}
+                  onChange={(next) => {
+                    patch({ siteId: next })
+                    inputRef.current?.refocus()
+                  }}
+                  className="pointer-coarse:h-11"
+                />
                 <Button
                   size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setPendingSerial(null)
-                    setPendingPlace(null)
-                  }}
+                  variant={locked ? 'secondary' : 'ghost'}
+                  icon={locked ? Lock : LockOpen}
+                  onMouseDown={keepFocus}
+                  onClick={toggleLock}
+                  aria-pressed={Boolean(locked)}
+                  className="pointer-coarse:h-11"
                 >
-                  Clear
+                  {locked ? `Locked: ${locked}` : 'Lock place'}
                 </Button>
-              )}
-              {session.pending > 0 && (
-                <span className="ml-auto text-xs text-fg-3">
-                  {session.pending} scan{session.pending === 1 ? '' : 's'} being checked
+                <span className="text-xs text-fg-3 max-md:hidden pointer-coarse:hidden">
+                  <Kbd>L</Kbd> · <Kbd>Alt</Kbd> <Kbd>L</Kbd> sticky place
                 </span>
-              )}
+                {(pendingSerial ?? pendingPlace) && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onMouseDown={keepFocus}
+                    onClick={() => {
+                      setPendingSerial(null)
+                      setPendingPlace(null)
+                    }}
+                    className="pointer-coarse:h-11"
+                  >
+                    Clear
+                  </Button>
+                )}
+                {session.pending > 0 && (
+                  <span aria-hidden className="ml-auto text-xs text-fg-3">
+                    {pendingText(session.pending)}
+                  </span>
+                )}
+              </div>
+              <PendingAnnouncer count={session.pending} />
+              {latest?.state === 'failed' ? (
+                <ScanFailedBanner
+                  sequence={latest.sequence}
+                  value={latest.value}
+                  error={latest.error}
+                />
+              ) : latest?.result ? (
+                <VerdictBanner
+                  result={latest.result}
+                  sequence={latest.sequence}
+                  at={latest.at}
+                  details={<AssetLine result={latest.result} />}
+                  onUndo={
+                    latest.result.undo && latest.result.applied && !latest.undone
+                      ? () => void session.undo(latest)
+                      : undefined
+                  }
+                  undoPending={session.undoingId === latest.id}
+                  dockUndo
+                />
+              ) : null}
+              <ScanAnnouncer latest={latest} />
             </div>
-            {latest?.state === 'failed' ? (
-              <Banner tone="critical" icon={MapPin} title={`Scan #${latest.sequence} not checked`}>
-                {latest.error} {latest.value}
-              </Banner>
-            ) : latest?.result ? (
-              <VerdictBanner
-                result={latest.result}
-                sequence={latest.sequence}
-                at={latest.at}
-                details={<AssetLine result={latest.result} />}
-                onUndo={
-                  latest.result.undo && latest.result.applied && !latest.undone
-                    ? () => void session.undo(latest)
-                    : undefined
-                }
-                undoPending={session.undoingId === latest.id}
+            <div className="flex min-h-[240px] flex-1 flex-col border-t border-line bg-surface">
+              <ScanList
+                entries={session.entries}
+                describe={(result) => <AssetLine result={result} />}
+                onUndo={(entry) => session.undo(entry)}
+                empty="Scan a device serial and a shelf place to store it."
               />
-            ) : null}
+            </div>
           </div>
-          <div className="flex min-h-[240px] flex-1 flex-col border-t border-line bg-surface">
-            <ScanList
-              entries={session.entries}
-              describe={(result) => <AssetLine result={result} />}
-              onUndo={(entry) => void session.undo(entry)}
-              empty="Scan a device serial and a shelf place to store it."
-            />
-          </div>
+          <aside className="border-l border-line bg-surface max-xl:border-t max-xl:border-l-0 xl:min-h-0 xl:overflow-y-auto">
+            <Counters counters={session.counters} />
+            <PlaceLookup siteId={siteId} />
+            <SoundCueLegend />
+          </aside>
         </div>
-        <aside className="min-h-0 overflow-y-auto border-l border-line bg-surface max-xl:border-t max-xl:border-l-0">
-          <PlaceLookup siteId={siteId} />
-          <Counters counters={session.counters} />
-        </aside>
       </div>
+      <ScanDock
+        onUndo={() => session.undoLast()}
+        canUndo={canUndoLast(session)}
+        onCamera={() => setCameraOpen(true)}
+        finish={
+          <Button
+            size="touch"
+            icon={ListChecks}
+            onClick={finish}
+            disabled={!canFinish}
+            className="w-full px-2"
+          >
+            Finish
+          </Button>
+        }
+      />
+      <CameraScanner
+        open={cameraOpen}
+        onOpenChange={(open) => {
+          setCameraOpen(open)
+          if (!open) inputRef.current?.refocus()
+        }}
+        onDetected={onValue}
+        latest={latest}
+        title="Scan serial or place"
+      />
     </Page>
   )
 }
@@ -325,22 +424,45 @@ function PlaceLookup({ siteId }: { siteId: number | undefined }) {
 }
 
 const COUNTERS = [
-  ['ok', 'OK', 'done'],
-  ['warning', 'Warnings', 'caution'],
-  ['error', 'Errors', 'critical'],
+  { key: 'ok', label: 'OK', tone: 'done', icon: CircleCheck, emphasis: false },
+  { key: 'warning', label: 'Warnings', tone: 'caution', icon: TriangleAlert, emphasis: true },
+  { key: 'error', label: 'Errors', tone: 'critical', icon: OctagonX, emphasis: true },
 ] as const
 
+/**
+ * Session tallies: hairline-divided and quiet like the inventory aside; warnings and errors get
+ * their tone wash only while above zero.
+ */
 function Counters({ counters }: { counters: { ok: number; warning: number; error: number } }) {
   return (
-    <section className="grid gap-2 p-4" aria-label="Session counters">
-      <h2 className="text-sm font-semibold">This session</h2>
-      <dl className="grid grid-cols-3 gap-2 text-center">
-        {COUNTERS.map(([key, label, tone]) => (
-          <div key={key} className={`hg-tone-${tone} rounded-sm bg-(--t-wash) p-2`}>
-            <dt className="text-xs text-fg-2">{label}</dt>
-            <dd className="hg-mono text-lg font-semibold text-(--t-fg)">{counters[key]}</dd>
-          </div>
-        ))}
+    <section className="grid border-b border-line" aria-labelledby="session-counters-heading">
+      <h2 id="session-counters-heading" className="px-4 pt-4 pb-2 text-sm font-semibold">
+        This session
+      </h2>
+      <dl className="grid grid-cols-3 divide-x divide-line border-t border-line">
+        {COUNTERS.map(({ key, label, tone, icon, emphasis }) => {
+          const value = counters[key]
+          const loud = emphasis && value > 0
+          return (
+            <div
+              key={key}
+              className={cn(`hg-tone-${tone} grid gap-0.5 px-4 py-3`, loud && 'bg-(--t-wash)')}
+            >
+              <dt className="flex items-center gap-1.5 text-xs text-fg-2">
+                <Icon icon={icon} size={14} className="text-(--t)" />
+                {label}
+              </dt>
+              <dd
+                className={cn(
+                  'text-2xl font-semibold [font-variant-numeric:proportional-nums]',
+                  loud && 'text-(--t-fg)',
+                )}
+              >
+                {formatNumber(value)}
+              </dd>
+            </div>
+          )
+        })}
       </dl>
     </section>
   )
