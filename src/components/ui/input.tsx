@@ -14,12 +14,15 @@ import { cn } from '@/lib/utils'
 import { Icon } from './icon'
 import { Kbd } from './kbd'
 
-/** Shared input frame: sunken well, line-strong border, focus ring (DESIGN.md §10 Input). */
+/**
+ * Shared input frame: sunken well, line-strong border, focus ring (DESIGN.md §10 Input). The
+ * error border follows the field's own `aria-invalid` (the frame is presentational).
+ */
 export const inputFrame = cn(
   'flex h-control min-w-0 items-center gap-1.5 rounded-sm border border-line-strong bg-sunken px-2 text-md text-fg',
   'focus-within:border-focus focus-within:shadow-[0_0_0_1px_var(--hg-focus)]',
   'has-[input:disabled]:border-line has-[input:disabled]:text-fg-disabled',
-  'aria-invalid:border-tone-critical',
+  'has-[[aria-invalid=true]]:border-tone-critical',
 )
 
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
@@ -35,7 +38,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   ref,
 ) {
   return (
-    <div className={cn(inputFrame, frameClassName)} aria-invalid={invalid || undefined}>
+    <div className={cn(inputFrame, frameClassName)}>
       {icon && <Icon icon={icon} size={14} className="text-fg-3" />}
       <input
         ref={ref}
@@ -98,6 +101,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
       <input
         ref={innerRef}
         type="search"
+        aria-keyshortcuts={slashShortcut ? '/' : undefined}
         value={value}
         placeholder={placeholder}
         onChange={(event) => onValueChange(event.target.value)}
@@ -119,12 +123,12 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(functi
             onValueChange('')
             innerRef.current?.focus()
           }}
-          className="grid size-5 place-items-center rounded-2xs text-fg-3 hover:bg-hover hover:text-fg"
+          className="grid size-6 shrink-0 place-items-center rounded-xs text-fg-3 hover:bg-hover hover:text-fg"
         >
           <Icon icon={X} size={14} />
         </button>
       ) : (
-        slashShortcut && <Kbd>/</Kbd>
+        slashShortcut && <Kbd hint>/</Kbd>
       )}
     </div>
   )
