@@ -299,14 +299,14 @@ export function MatrixPage({
           query.isError ? (
             <EmptyState
               icon={Boxes}
-              title="The stock matrix could not be loaded."
+              title="The stock matrix could not be loaded"
               actions={<Button onClick={() => void query.refetch()}>Retry</Button>}
             />
           ) : (
             <SkeletonRows rows={12} widths={[80, 200, 160, 90, 120, 120, 120, 120]} />
           )
         ) : rows.length === 0 ? (
-          <EmptyState icon={Filter} title="No articles match these filters.">
+          <EmptyState icon={Filter} title="No articles match these filters">
             Remove a filter to see more articles.
           </EmptyState>
         ) : (

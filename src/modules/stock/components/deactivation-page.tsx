@@ -321,7 +321,7 @@ export function DeactivationPage({
           total: history.data?.meta.total ?? 0,
           onPageChange: (page) => onSearchChange({ page }),
         }}
-        empty={<EmptyState icon={FileX} title="No deactivation uploads yet." />}
+        empty={<EmptyState icon={FileX} title="No deactivation uploads yet" />}
         className="min-h-72"
       />
       <ConfirmDialog

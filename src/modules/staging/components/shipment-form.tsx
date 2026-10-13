@@ -39,7 +39,7 @@ export function ShipToCard({ shipTo }: { shipTo: ShipToView }) {
         {shipTo.kind === 'pickup_point' ? (
           <FlagBadge icon={Store}>Pickup point</FlagBadge>
         ) : (
-          <FlagBadge icon={User}>User address</FlagBadge>
+          <FlagBadge icon={User}>Employee address</FlagBadge>
         )}
       </div>
       <address className="text-sm not-italic">

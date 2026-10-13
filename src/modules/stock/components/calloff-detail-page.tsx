@@ -259,7 +259,7 @@ export function CallOffDetailPage({ orderId }: { orderId: number }) {
         {query.isError ? (
           <EmptyState
             icon={FileText}
-            title="This call-off order could not be loaded."
+            title="This call-off order could not be loaded"
             actions={<Button onClick={() => void query.refetch()}>Retry</Button>}
           />
         ) : (
@@ -409,7 +409,7 @@ export function CallOffDetailPage({ orderId }: { orderId: number }) {
           }
         >
           {order.lines.length === 0 ? (
-            <EmptyState icon={FileText} title="No lines yet.">
+            <EmptyState icon={FileText} title="No lines yet">
               Add articles with the picker above.
             </EmptyState>
           ) : (

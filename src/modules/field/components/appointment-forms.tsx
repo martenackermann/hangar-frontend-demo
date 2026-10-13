@@ -121,7 +121,7 @@ export function BookAppointmentForm({
   )
 }
 
-/** Request reschedule (SR #16): reason, notify the user, cancel at the provider. */
+/** Request reschedule (SR #16): reason, notify the employee, cancel at the provider. */
 export function RequestRescheduleForm({
   sr,
   onDone,
@@ -168,7 +168,7 @@ export function RequestRescheduleForm({
       <Switch
         checked={notifyUser}
         onCheckedChange={setNotifyUser}
-        label="Email the user to book a new date"
+        label="Email the employee to book a new date"
       />
       <Switch
         checked={cancelAtProvider}

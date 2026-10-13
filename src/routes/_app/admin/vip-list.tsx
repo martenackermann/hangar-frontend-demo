@@ -189,7 +189,7 @@ function VipListPage() {
           onRetry={() => void query.refetch()}
           onOpen={canManage ? (row) => setEditing(row) : undefined}
           empty={
-            <EmptyState icon={Crown} title="The VIP list is empty." actions={addButton}>
+            <EmptyState icon={Crown} title="The VIP list is empty" actions={addButton}>
               Add board members and their assistants to handle their requests personally.
             </EmptyState>
           }

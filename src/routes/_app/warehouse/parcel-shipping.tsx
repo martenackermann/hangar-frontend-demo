@@ -127,7 +127,7 @@ function ParcelShippingPage() {
           ) : list.isError ? (
             <DrawerError error={list.error} onRetry={() => void list.refetch()} />
           ) : rows.length === 0 ? (
-            <EmptyState icon={Package} title="No parcel orders ready for packing.">
+            <EmptyState icon={Package} title="No parcel orders ready for packing">
               Orders appear here once they are closed.
             </EmptyState>
           ) : (
@@ -167,7 +167,7 @@ function ParcelShippingPage() {
                 onClosed={() => patch({ selected: undefined })}
               />
             ) : (
-              <EmptyState icon={PackageCheck} title="Select an order to pack.">
+              <EmptyState icon={PackageCheck} title="Select an order to pack">
                 Scan each device into the parcel, then create the shipment.
               </EmptyState>
             )}

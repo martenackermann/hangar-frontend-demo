@@ -159,7 +159,7 @@ function PickingPage() {
         ) : query.isError ? (
           <DrawerError error={query.error} onRetry={() => void query.refetch()} />
         ) : !data || data.groups.length === 0 ? (
-          <EmptyState icon={PackageCheck} title="Nothing to pick for this date.">
+          <EmptyState icon={PackageCheck} title="Nothing to pick for this date">
             Orders appear here once they are closed and booked.
           </EmptyState>
         ) : (
@@ -233,7 +233,7 @@ function PickGroup({
             </th>
             <th className="w-16 py-1.5 font-medium">Time</th>
             <th className="w-28 py-1.5 font-medium">SR number</th>
-            <th className="py-1.5 font-medium">User</th>
+            <th className="py-1.5 font-medium">Employee</th>
             <th className="py-1.5 font-medium">Devices (goods-out)</th>
             <th className="w-48 px-3 py-1.5 text-right font-medium">Picked</th>
           </tr>

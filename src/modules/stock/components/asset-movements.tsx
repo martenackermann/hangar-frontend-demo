@@ -31,11 +31,11 @@ export function AssetMovements({ asset }: { asset: AssetDetail }) {
     enums.assetStatus.find((s) => s.value === status)?.tone ?? 'intake'
   if (!data)
     return query.isError ? (
-      <EmptyState icon={History} title="The ledger could not be loaded." />
+      <EmptyState icon={History} title="The ledger could not be loaded" />
     ) : (
       <SkeletonRows rows={6} />
     )
-  if (data.data.length === 0) return <EmptyState icon={History} title="No movements recorded." />
+  if (data.data.length === 0) return <EmptyState icon={History} title="No movements recorded" />
   return (
     <div className={cn('grid gap-3', query.isPlaceholderData && 'opacity-60')}>
       <ol className="grid">

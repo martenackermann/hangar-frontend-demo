@@ -270,7 +270,7 @@ export function DashboardPage({
       ) : !kpis ? (
         <SkeletonRows rows={10} />
       ) : !hasActivity ? (
-        <EmptyState icon={Gauge} title="No activity yet.">
+        <EmptyState icon={Gauge} title="No activity yet">
           Data appears here after the first import.
         </EmptyState>
       ) : (
@@ -375,7 +375,7 @@ export function DashboardPage({
             </TableSection>
             <TableSection title="Stock alerts">
               {kpis.stockAlerts.length === 0 ? (
-                <EmptyState icon={Gauge} title="No shortfalls.">
+                <EmptyState icon={Gauge} title="No shortfalls">
                   Every hub covers its open demand.
                 </EmptyState>
               ) : (

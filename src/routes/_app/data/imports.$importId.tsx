@@ -130,7 +130,7 @@ function ImportDetailPage() {
         <PageHeader title="Import" />
         <EmptyState
           icon={CircleAlert}
-          title="This import could not be loaded."
+          title="This import could not be loaded"
           actions={<Button onClick={() => void detail.refetch()}>Retry</Button>}
         >
           It may not exist any more.
@@ -417,7 +417,7 @@ function ImportDetailPage() {
                 <EmptyState
                   icon={running ? FileText : CircleAlert}
                   title={
-                    running ? 'Issues appear while rows are processed.' : 'No errors or warnings.'
+                    running ? 'Issues appear while rows are processed' : 'No errors or warnings'
                   }
                 />
               }

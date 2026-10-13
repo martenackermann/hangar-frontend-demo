@@ -21,10 +21,10 @@ test('Dana creates a call-off draft from ⌘K and sends it to the logistics part
   await expect(page.getByText('Draft', { exact: true }).first()).toBeVisible()
 
   // a draft without suggested lines gets one by hand
-  if (await page.getByText('No lines yet.').isVisible()) {
+  if (await page.getByText('No lines yet').isVisible()) {
     await page.getByRole('combobox', { name: 'Add article' }).click()
     await page.getByRole('option').first().click()
-    await expect(page.getByText('No lines yet.')).toBeHidden()
+    await expect(page.getByText('No lines yet')).toBeHidden()
   }
   const quantity = page.getByRole('textbox', { name: /^Quantity / }).first()
   await expect(quantity).toBeVisible()

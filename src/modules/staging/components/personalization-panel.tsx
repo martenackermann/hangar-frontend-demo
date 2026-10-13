@@ -283,7 +283,7 @@ function Panel({ sr }: { sr: ServiceRequestDetail }) {
 
 export function EmptyPanel() {
   return (
-    <EmptyState icon={PackageOpen} title="Select a request from the queue.">
+    <EmptyState icon={PackageOpen} title="Select a request from the queue">
       Claim it, then scan the devices into its slots, oldest stock first.
     </EmptyState>
   )

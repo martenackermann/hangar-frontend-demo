@@ -220,7 +220,7 @@ function UsersPage() {
           error={query.error}
           onRetry={() => void query.refetch()}
           onOpen={(row) => setEditing(row)}
-          empty={<EmptyState icon={Users} title="No users match these filters." />}
+          empty={<EmptyState icon={Users} title="No users match these filters" />}
         />
       </div>
       <UserDialog

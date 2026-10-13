@@ -332,7 +332,7 @@ export function InventoryListPage({
           onPageChange: (page) => onSearchChange({ page }),
           onPerPageChange: (perPage) => onSearchChange({ perPage, page: 1 }),
         }}
-        empty={<EmptyState icon={Warehouse} title="No inventories yet." />}
+        empty={<EmptyState icon={Warehouse} title="No inventories yet" />}
         className="min-h-80"
       />
     </Page>

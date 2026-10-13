@@ -150,7 +150,7 @@ export function AssetOverview({ asset }: { asset: AssetDetail }) {
             </button>
           )}
         </KeyValue>
-        <KeyValue label="Assigned user">{asset.assignedContact?.displayName}</KeyValue>
+        <KeyValue label="Employee">{asset.assignedContact?.displayName}</KeyValue>
         <KeyValue label="Lease return">
           {asset.leaseReturn && (
             <button

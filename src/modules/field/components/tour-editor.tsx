@@ -59,7 +59,7 @@ export function TourEditor({
     return (
       <EmptyState
         icon={TriangleAlert}
-        title="The route could not be loaded."
+        title="The route could not be loaded"
         actions={<Button onClick={() => void candidates.refetch()}>Retry</Button>}
       />
     )

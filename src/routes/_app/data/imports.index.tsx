@@ -289,7 +289,7 @@ function ImportsPage() {
               </div>
             )}
             empty={
-              <EmptyState icon={FileUp} title="No imports yet." actions={newImport}>
+              <EmptyState icon={FileUp} title="No imports yet" actions={newImport}>
                 Upload an ITSM export — the type is detected from its columns.
               </EmptyState>
             }

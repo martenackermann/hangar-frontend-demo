@@ -179,7 +179,7 @@ function PersonalizationPage() {
             ) : query.isError ? (
               <DrawerError error={query.error} onRetry={() => void query.refetch()} />
             ) : rows.length === 0 ? (
-              <EmptyState icon={Inbox} title="No requests waiting for personalization at this hub.">
+              <EmptyState icon={Inbox} title="No requests waiting for personalization at this hub">
                 Switch the queue tab or hub, or clear the filters.
               </EmptyState>
             ) : (
