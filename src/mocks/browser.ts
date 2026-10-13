@@ -1,63 +1,68 @@
-import { createStore, get, set } from 'idb-keyval'
 import { getResponse, http, type RequestHandler } from 'msw'
 import { setupWorker } from 'msw/browser'
+import seedMeta from 'virtual:hangar-seed-meta'
 import { env } from '@/lib/env'
-import { loadFixture } from './core/fixture'
-import {
-  db,
-  DB_STORAGE_KEY,
-  initDemoDb,
-  resetDemoData,
-  type DemoStorage,
-  type PersistedDatabase,
-} from './db'
+import { loadFixture, setFixtureHead, type FixtureHead } from './core/fixture'
+import { db, loadSeedFaker } from './db'
 import { handlers, seeds } from './handlers'
+import { openIndexedDbStorage } from './idb-storage'
 
 declare global {
   interface Window {
     /** Debug handle in demo mode: `__hangarDemo.db.collection('service_requests').all()`. */
-    __hangarDemo?: { db: typeof db; reset: () => void }
+    __hangarDemo?: { db: typeof db; reset: () => Promise<void> }
   }
 }
 
 /**
- * Demo mode bootstrap, awaited by src/main.tsx before the first render: load the fixture, open
- * the in-browser database (persisted, dates shifted to today), start MSW.
+ * Demo mode bootstrap, awaited by src/main.tsx before the first render: open the in-browser
+ * database (IndexedDB) and start MSW. Only the first visit, a new dataset or a new seed version
+ * fetch `seed.json` and load faker to seed it; later visits restore the stored database.
  * Dev: MSW's own /mockServiceWorker.js. Builds: the PWA worker /sw.js imports the MSW worker
  * through public/msw-bridge.js (one service worker per scope).
  */
-/** IndexedDB persistence (structured clone, no size issues); preloaded so `init` stays sync. */
-async function openStorage(): Promise<DemoStorage | null> {
-  try {
-    localStorage.removeItem('hangar.demo-db.v2') // pre-IndexedDB versions
-  } catch {
-    // storage disabled
-  }
-  try {
-    const store = createStore('hangar-demo', 'database')
-    const persisted = await get<PersistedDatabase>(DB_STORAGE_KEY, store)
-    return { read: () => persisted, write: (payload) => set(DB_STORAGE_KEY, payload, store) }
-  } catch {
-    return null // private mode / IndexedDB unavailable: in memory only
-  }
-}
-
 export async function startMockWorker(): Promise<void> {
-  const [fixture, storage] = await Promise.all([loadFixture(), openStorage()])
-  const { seeded } = initDemoDb({ fixture, seeds, storage })
-  window.__hangarDemo = { db, reset: resetDemoData }
-  window.addEventListener('pagehide', () => db.flush())
-
+  const started = performance.now()
   const apiPrefix = new URL(env.apiUrl, window.location.origin).href
   const worker = setupWorker(persistBeforeResponding(apiPrefix, handlers), ...handlers)
-  await worker.start({
+  // The worker does not need the database until the first request: start both at once.
+  const workerReady = worker.start({
     serviceWorker: { url: import.meta.env.DEV ? '/mockServiceWorker.js' : '/sw.js' },
     quiet: !import.meta.env.DEV,
     onUnhandledRequest(request, print) {
       if (request.url.startsWith(apiPrefix)) print.warning()
     },
   })
-  console.info(`[demo] Mock API ready${seeded ? ' (fresh demo data loaded)' : ''}.`)
+  const seeded = await openDatabase()
+  window.__hangarDemo = { db, reset: resetDemo }
+  window.addEventListener('pagehide', () => db.flush())
+  await workerReady
+  const ms = Math.round(performance.now() - started)
+  console.info(`[demo] Mock API ready in ${ms} ms${seeded ? ' (fresh demo data loaded)' : ''}.`)
+}
+
+/** Restore the stored database, or seed it from the fixture; true when seeded. */
+async function openDatabase(): Promise<boolean> {
+  try {
+    localStorage.removeItem('hangar.demo-db.v2') // pre-IndexedDB versions
+  } catch {
+    // storage disabled
+  }
+  const storage = await openIndexedDbStorage()
+  if (db.open({ fixtureMeta: seedMeta, seeds, storage })) {
+    const head = db.fixtureHead
+    if (head) setFixtureHead(head as unknown as FixtureHead)
+    return false
+  }
+  const [fixture] = await Promise.all([loadFixture(), loadSeedFaker()])
+  db.seed(fixture)
+  return true
+}
+
+async function resetDemo(): Promise<void> {
+  const [fixture] = await Promise.all([loadFixture(), loadSeedFaker()])
+  db.reset({ fixture })
+  await db.persist()
 }
 
 /**

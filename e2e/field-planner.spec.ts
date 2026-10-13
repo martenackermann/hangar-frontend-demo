@@ -5,8 +5,6 @@ import { expect, persona, signIn, test } from './fixtures'
  * unmatched appointments, sync, calendars admin and the SR drawer tabs.
  */
 
-const SHOTS = 'docs/screenshots/field'
-
 test.use({ viewport: { width: 1440, height: 900 } })
 
 test('Dana plans tours in the week grid', async ({ page }) => {
@@ -17,7 +15,6 @@ test('Dana plans tours in the week grid', async ({ page }) => {
   await expect(grid).toBeVisible()
   await expect(grid.getByRole('rowheader')).toHaveCount(9)
   await expect(page.getByRole('region', { name: 'Technician lanes' })).toBeVisible()
-  await page.screenshot({ path: `${SHOTS}/tour-planner-1440.png` })
 
   // today's Riverton cell opens the editor with Theo's five stops
   await grid
@@ -29,7 +26,6 @@ test('Dana plans tours in the week grid', async ({ page }) => {
   await expect(panel.getByRole('heading', { name: 'Riverton route' })).toBeVisible()
   await expect(panel.getByRole('list', { name: undefined }).first()).toBeVisible()
   await expect(panel.getByRole('button', { name: /Alt plus arrow keys/ })).toHaveCount(5)
-  await page.screenshot({ path: `${SHOTS}/tour-editor-1440.png` })
 
   // keyboard reorder: Alt+↓ moves the first stop down, Save stores the order
   await panel.getByRole('button', { name: /^Stop 1: / }).focus()
@@ -42,7 +38,6 @@ test('Dana plans tours in the week grid', async ({ page }) => {
   await page.getByRole('button', { name: /^Unmatched/ }).click()
   await expect(panel.getByRole('heading', { name: 'Unmatched appointments' })).toBeVisible()
   await expect(panel.getByRole('listitem')).toHaveCount(5)
-  await page.screenshot({ path: `${SHOTS}/unmatched-1440.png` })
 
   // sync now runs as a job
   await page.getByRole('button', { name: /^Synced|^Sync$/ }).click()
@@ -57,7 +52,6 @@ test('Ada manages the booking calendars', async ({ page }) => {
   await expect(page.getByText('Riverton route')).toBeVisible()
   await page.getByRole('switch', { name: 'Oakridge route enabled' }).click()
   await expect(page.getByText('Oakridge route updated')).toBeVisible()
-  await page.screenshot({ path: `${SHOTS}/calendars-1440.png` })
 })
 
 test('the SR drawer shows the Appointment and Deployment tabs', async ({ page }) => {
@@ -83,7 +77,6 @@ test('the SR drawer shows the Appointment and Deployment tabs', async ({ page })
   await expect(drawer.getByText('Appointment history')).toBeVisible()
   await drawer.getByRole('tab', { name: 'Deployment' }).click()
   await expect(drawer.getByText(/Verification ·/)).toBeVisible()
-  await page.screenshot({ path: `${SHOTS}/sr-drawer-deployment-1440.png` })
 })
 
 test('a viewer reads the planner without editing controls', async ({ page }) => {

@@ -435,8 +435,8 @@ keywords? }`. Groups: Overview, Requests, Warehouse, Field (first for technician
 ## 10. Mock API (demo mode and tests)
 
 Demo mode runs the whole product in the browser: MSW plus an in-memory database loaded from
-`src/mocks/fixtures/seed.json` and persisted in IndexedDB (`hangar-demo`, key `hangar.demo-db.v3`). The same
-handlers run in Vitest. A screen that works in demo mode must work against the backend
+`src/mocks/fixtures/seed.json` and persisted in IndexedDB (`hangar-demo`, records under
+`hangar.demo-db.v4/…`). The same handlers run in Vitest. A screen that works in demo mode must work against the backend
 unchanged: same shapes, same validation, same permissions.
 
 - **Order**: slice handlers, then core handlers, then a 501 fallback. A slice can override a
@@ -474,6 +474,13 @@ unchanged: same shapes, same validation, same permissions.
 
 - **Dates shift** to today by whole weeks on load (SPEC_RESOLUTIONS #47), so weekdays and
   "today's tour" stay stable. "Reset demo data" (⌘K, admin) reloads the fixture.
+- **Persistence** (`src/mocks/persistence.ts`, `idb-storage.ts`): every collection change marks
+  its rows dirty; a save writes only the changed 64-row buckets (plus the id list when rows were
+  added or removed) and a meta record, in one IndexedDB transaction. Mutating requests answer
+  only after their save is written, and `pagehide` flushes the rest, so a reload never loses a
+  change. A restored database needs neither `seed.json` nor faker (both load only to seed or
+  reset); a new fixture or seed `version` reseeds. Rows are frozen in dev and tests: mutate
+  them only through the collection API, or the change is not saved.
 - **Workflow engine** (`@/mocks/workflow`): the SR, lease and asset transition maps are
   defined once: the fixture's `enums.transitions` (exported by the backend), served as
   `/meta/enums.transitions` and read through `servedEnums()`. `internal` actions (import, sync,
@@ -522,7 +529,7 @@ filterTo`, `problem(status, code, title, …)` and `problems.*` (problem+json), 
 `../hangar-backend-demo` (`HANGAR_BACKEND_DIR` overrides; it needs the backend database, e.g.
 `DATABASE_URL=postgresql+psycopg://dev:dev@localhost:5432/hangar_main`), validates the
 envelope and writes the file with `meta.source = "backend"`. `--from=<file>` imports an
-existing export. The current file (anchor 2026-10-13, ~3.5 MB) holds 7 users, 4 sites,
+existing export. The current file (anchor 2026-10-13, ~5 MB) holds 7 users, 4 sites,
 9 regions, 40 articles, 1,134 assets, 2,667 movements, 300 SRs, 876 items, 150 lease returns,
 420 contacts and 1,707 status transitions, plus the backend's `enums` and `config`.
 
@@ -534,7 +541,8 @@ the core export yet: H4 provides them (backend export or mock seed). The mock se
 
 `pnpm seed:handmade` (`scripts/seed-fixture/generate.ts`) writes the smaller hand-made dataset
 used before the backend existed; use it only when the backend is unavailable. The fixture is
-served as a static asset (not bundled) and precached for offline demo use.
+served as a static asset (not bundled), fetched only to seed or reset, and kept in the service
+worker's runtime cache (not precached) so a reset works offline too.
 
 ## 12. Testing
 
@@ -546,6 +554,11 @@ served as a static asset (not bundled) and precached for offline demo use.
   `server.use(...)`. Prefer `getByRole` queries.
 - **Playwright**: `e2e/fixtures.ts` exports `test` (fails on console errors), `PERSONAS`,
   `persona('theo')` and `signIn(page, persona)`. Slices add `e2e/<module>-*.spec.ts`.
+  Functional specs never write files (no `page.screenshot({ path })`): `pnpm test:e2e` must
+  leave `git status` clean; screenshots live in `*screenshots.spec.ts` (`pnpm screenshots`).
+  Prefer web-first assertions over sleeps. Scan sounds are off under automation (`sound.ts`).
+  `E2E_PORT` moves the dev server Playwright starts (worktrees), `E2E_BASE_URL` targets a
+  running one, `E2E_WORKERS` (default 2) sets the parallelism.
 - Foundation suites cover the table, the saved-view and URL codec, the scan input and
   session, the workflow engine and transition maps, navigation permissions, the database, the
   list helpers and the API client.
@@ -556,9 +569,14 @@ served as a static asset (not bundled) and precached for offline demo use.
   is `public/icon.svg` (`pnpm icons:gen`). `index.html` applies theme and density before the
   first paint.
 - A scope has one service worker, so demo builds run MSW inside the Workbox worker
-  (`public/msw-bridge.js`, `/api/` only). Dev mode uses `/mockServiceWorker.js`.
-- Vercel: `pnpm build:demo` → `dist` with an SPA rewrite. CI runs lint, typecheck, test,
-  build:demo and e2e.
+  (`public/msw-bridge.js`, `/api/` only) and MSW registers `/sw.js` itself (no `registerSW.js`
+  in demo builds: a second registration made MSW reload the page in a loop on the first visit).
+  Dev mode uses `/mockServiceWorker.js`.
+- Precache: app shell, route chunks, fonts and icons. `seed.json` and the zxing WASM are
+  runtime-cached (CacheFirst) instead. Demo builds `modulepreload` the mock layer chunk, and
+  `index.html` shows a boot splash until React renders.
+- Vercel: `pnpm build:demo` → `dist` with an SPA rewrite (except `/api/`). CI runs lint,
+  typecheck, test, build:demo and e2e (demo mode, 2 workers).
 
 ## 14. Decisions made in the foundation
 

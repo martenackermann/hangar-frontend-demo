@@ -19,13 +19,13 @@ import {
   TOKEN_TTL_MS,
   type MockActor,
 } from '@/mocks/auth'
-import { db } from '@/mocks/db'
+import { db, loadSeedFaker } from '@/mocks/db'
 import { serveFile } from '@/mocks/files'
 import { apiPath, intParam, listOf, noContent, problem, problems, readJson } from '@/mocks/http'
 import { advanceJob, serializeJob, startJob } from '@/mocks/jobs'
 import { multiValue } from '@/mocks/list'
 import { applyAction, applyBulk, type Resource } from '@/mocks/workflow'
-import { getFixture, servedEnums } from './fixture'
+import { fixtureHead, loadFixture, servedEnums } from './fixture'
 import {
   assetDetail,
   displayName,
@@ -380,7 +380,7 @@ export const coreHandlers: RequestHandler[] = [
 
   // meta
   http.get(apiPath('/meta/config'), () => {
-    const fixture = getFixture().config
+    const fixture = fixtureHead().config
     // The browser demo has no SMTP/Mailpit, whatever the fixture was exported with.
     const config: AppConfig = {
       ...fixture,
@@ -614,14 +614,16 @@ export const coreHandlers: RequestHandler[] = [
   // demo reset (SPEC_RESOLUTIONS #48: the job keeps its own row)
   http.post(
     apiPath('/demo/reset'),
-    authed('demo.reset', ({ actor }) => {
+    authed('demo.reset', async ({ actor }) => {
+      // A restored demo database has neither the fixture nor faker loaded yet (both lazy).
+      const [fixture] = await Promise.all([loadFixture(), loadSeedFaker()])
       const accepted = startJob({
         kind: 'demo_reset',
         actor,
         durationMs: 1200,
         run: () => {
           const job = db.collection('background_jobs').get(accepted.jobId)
-          db.reset()
+          db.reset({ fixture })
           if (job) db.collection('background_jobs').upsert({ ...job, status: 'running' })
           return { kind: 'demo_reset', seededAt: new Date().toISOString() }
         },

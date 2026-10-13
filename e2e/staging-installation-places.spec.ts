@@ -6,15 +6,6 @@ import { expect, persona, signIn, test } from './fixtures'
  * serial and a place (two values → one request), sees the verdict and undoes it.
  */
 
-// Headless Chromium on CI boxes without an audio device can crash later pages once the scan
-// stations have played their WebAudio cues, so the specs run with sound off (F2 in the app).
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    const key = 'hangar.prefs.v1'
-    const stored = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, unknown>
-    localStorage.setItem(key, JSON.stringify({ ...stored, sound: false }))
-  })
-})
 interface Fixture {
   tables: {
     stock_locations: { id: number; code: string }[]
@@ -49,7 +40,6 @@ test('technician scans serial + place, sees the verdict and undoes it', async ({
   const banner = page.getByRole('status').filter({ hasText: 'Placed' }).first()
   await expect(banner).toBeVisible()
   await expect(banner).toContainText('B9-12')
-  await page.screenshot({ path: 'docs/screenshots/staging/installation-places-placed.png' })
 
   // place first, then a serial; the occupied place is a warning but applied
   await input.fill('B9-12')
@@ -70,7 +60,6 @@ test('technician scans serial + place, sees the verdict and undoes it', async ({
   await input.fill('NOPE12345')
   await input.press('Enter')
   await expect(page.getByText('Unknown serial').first()).toBeVisible()
-  await page.screenshot({ path: 'docs/screenshots/staging/installation-places-session.png' })
 })
 
 test('viewer cannot open the scan station', async ({ page }) => {
@@ -88,5 +77,4 @@ test('the scan station works on a phone-sized screen', async ({ page }) => {
   await input.fill('B9-20')
   await input.press('Enter')
   await expect(page.getByTestId('scan-expecting')).toHaveText('Place B9-20 — now scan a serial')
-  await page.screenshot({ path: 'docs/screenshots/staging/installation-places-390.png' })
 })

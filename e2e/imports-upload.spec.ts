@@ -1,13 +1,9 @@
-import { mkdirSync } from 'node:fs'
 import { expect, persona, signIn, test } from './fixtures'
 
 /**
  * H2 imports (demo mode, MSW mock import engine): upload with type detection, live progress,
  * import detail with issue table, severity filter and failed-row report.
- * Screenshots go to docs/screenshots/imports/.
  */
-const OUT = 'docs/screenshots/imports'
-mkdirSync(OUT, { recursive: true })
 
 function csvFile(name: string, lines: string[]) {
   return { name, mimeType: 'text/csv', buffer: Buffer.from(`${lines.join('\n')}\n`, 'utf8') }
@@ -32,7 +28,6 @@ test('Dana uploads a contacts export and reads the result', async ({ page }) => 
   // the seeded history (SPEC §11.7): the T−1 service-request file has issues
   await expect(page.getByText('Imported with issues')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Formats' })).toBeVisible()
-  await page.screenshot({ path: `${OUT}/imports-list-1440.png` })
 
   await page.getByRole('button', { name: /New import/ }).click()
   const wizard = page.getByRole('dialog')
@@ -41,7 +36,6 @@ test('Dana uploads a contacts export and reads the result', async ({ page }) => 
   await expect(wizard.getByText('Detected from the column headers.')).toBeVisible()
   await expect(wizard.getByText(/ · 3 rows · /)).toBeVisible()
   await expect(wizard.getByText(/required columns found/)).toBeVisible()
-  await page.screenshot({ path: `${OUT}/import-wizard-check-1440.png` })
 
   await wizard.getByRole('button', { name: 'Continue' }).click()
   await expect(wizard.getByText('Dry run (validate only, no changes)')).toBeVisible()
@@ -57,7 +51,6 @@ test('Dana uploads a contacts export and reads the result', async ({ page }) => 
   await expect(
     page.getByText(/1 row with errors were not imported|1 row with errors/),
   ).toBeVisible()
-  await page.screenshot({ path: `${OUT}/import-detail-1440.png` })
 
   // severity filter is part of the URL
   await page.getByRole('radio', { name: 'Errors' }).click()
@@ -96,7 +89,6 @@ test('the seeded T−1 import shows its issues and post-processing summary', asy
   // phone layout: tiles stack, issues become cards
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(page.getByText(/appears more than once in this file/)).toBeVisible()
-  await page.screenshot({ path: `${OUT}/import-detail-390.png`, fullPage: true })
 })
 
 test('files that cannot be imported are explained before anything starts', async ({ page }) => {
@@ -112,7 +104,6 @@ test('files that cannot be imported are explained before anything starts', async
   await page.getByRole('option', { name: 'Contacts' }).click()
   await expect(wizard.getByText('user_id, last_name')).toBeVisible()
   await expect(wizard.getByRole('button', { name: 'Continue' })).toBeDisabled()
-  await page.screenshot({ path: `${OUT}/import-wizard-not-detected-1440.png` })
 
   // a file that is not CSV/XLSX is refused
   await wizard.getByRole('button', { name: 'Back' }).click()
